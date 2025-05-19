@@ -2,9 +2,11 @@
     <h2 class="content-title">
         <i class="fas fa-user-shield"></i> Bienvenido al Panel de Administración
     </h2>
-    <p>Hola <strong id="welcome-user-name">...</strong>, bienvenido al sistema de gestión de EVONET.</p>
-    <p>Como administrador <strong>root</strong>, tienes acceso completo a todas las funcionalidades del sistema.</p>
-    <p>Utiliza el menú lateral para navegar entre las diferentes secciones.</p>
+    <div id="welcome-message">
+        <p>Hola <strong id="welcome-user-name">...</strong>, bienvenido al sistema de gestión de EVONET.</p>
+        <p>Como <strong id="user-role-text">administrador</strong>, tienes acceso a las funcionalidades correspondientes.</p>
+        <p>Utiliza el menú lateral para navegar entre las diferentes secciones.</p>
+    </div>
 </div>
 
 <div class="card">
@@ -49,9 +51,7 @@
     <h2 class="content-title">
         <i class="fas fa-code"></i> Datos completos (JSON)
     </h2>
-    <div class="json-display" id="user-data-json">
-        Cargando datos...
-    </div>
+    <pre class="json-display" id="user-data-json">Cargando datos...</pre>
 </div>
 
 <style>
@@ -102,13 +102,78 @@
 </style>
 
 <script>
-    // Obtener datos del usuario desde sessionStorage
-    const userData = sessionStorage.getItem('userData');
-    const userEmail = sessionStorage.getItem('userEmail');
+    // Función principal para cargar los datos de usuario
+    function loadUserData() {
+        console.log("Cargando datos de usuario en el módulo bienvenida...");
+        
+        // Obtener datos directamente de sessionStorage (sin depender de Firebase)
+        const userEmail = sessionStorage.getItem('userEmail') || 'usuario@ejemplo.com';
+        let userData = null;
+        
+        try {
+            const userDataStr = sessionStorage.getItem('userData');
+            if (userDataStr) {
+                userData = JSON.parse(userDataStr);
+                console.log("Datos del usuario cargados correctamente:", userData);
+            } else {
+                console.warn("No se encontraron datos estructurados del usuario en sessionStorage");
+            }
+        } catch (error) {
+            console.error("Error al procesar los datos del usuario:", error);
+        }
+        
+        // Actualizar la interfaz con los datos disponibles
+        updateUI(userData, userEmail);
+    }
+    
+    // Función para actualizar la interfaz
+    function updateUI(userData, userEmail) {
+        // Elementos del DOM
+        const welcomeNameElem = document.getElementById('welcome-user-name');
+        const userRoleTextElem = document.getElementById('user-role-text');
+        const profileNameElem = document.getElementById('profile-name');
+        const profileEmailElem = document.getElementById('profile-email');
+        const profileRoleElem = document.getElementById('profile-role');
+        const profileStatusElem = document.getElementById('profile-status');
+        const profileLastLoginElem = document.getElementById('profile-lastLogin');
+        const profilePhoneElem = document.getElementById('profile-phone');
+        const userDataJsonElem = document.getElementById('user-data-json');
+        
+        // Verificar que existan los elementos antes de modificarlos
+        if (!welcomeNameElem || !userDataJsonElem) {
+            console.error("Elementos del DOM no encontrados. Puede que el HTML no se haya cargado correctamente.");
+            return;
+        }
+        
+        if (userData) {
+            // Actualizar elementos con los datos del usuario
+            welcomeNameElem.textContent = userData.name || userEmail;
+            userRoleTextElem.textContent = userData.role || 'usuario';
+            profileNameElem.textContent = userData.name || 'No disponible';
+            profileEmailElem.textContent = userData.email || userEmail;
+            profileRoleElem.textContent = userData.role || 'No disponible';
+            profileStatusElem.textContent = userData.status || 'No disponible';
+            profileLastLoginElem.textContent = formatDate(userData.lastLoginAt);
+            profilePhoneElem.textContent = userData.phone || 'No disponible';
+            userDataJsonElem.textContent = JSON.stringify(userData, null, 2);
+        } else {
+            // Datos por defecto si no hay información del usuario
+            welcomeNameElem.textContent = userEmail;
+            userRoleTextElem.textContent = 'usuario';
+            profileNameElem.textContent = 'No disponible';
+            profileEmailElem.textContent = userEmail;
+            profileRoleElem.textContent = 'No disponible';
+            profileStatusElem.textContent = 'No disponible';
+            profileLastLoginElem.textContent = 'No disponible';
+            profilePhoneElem.textContent = 'No disponible';
+            userDataJsonElem.textContent = 'No se encontraron datos del usuario';
+        }
+    }
     
     // Función para formatear la fecha
     function formatDate(dateString) {
         if (!dateString) return 'No disponible';
+        
         try {
             const date = new Date(dateString);
             return date.toLocaleString('es-MX', {
@@ -119,74 +184,17 @@
                 minute: '2-digit'
             });
         } catch (e) {
+            console.error("Error al formatear fecha:", e);
             return dateString || 'No disponible';
         }
     }
     
-    if (userData) {
-        try {
-            const data = JSON.parse(userData);
-            console.log("Datos del usuario cargados:", data);
-            
-            // Actualizar saludo personalizado
-            document.getElementById('welcome-user-name').textContent = data.name || userEmail || 'Administrador';
-            
-            // Llenar campos de información de perfil
-            document.getElementById('profile-name').textContent = data.name || 'No disponible';
-            document.getElementById('profile-email').textContent = data.email || userEmail || 'No disponible';
-            document.getElementById('profile-role').textContent = data.role || 'No disponible';
-            document.getElementById('profile-status').textContent = data.status || 'No disponible';
-            document.getElementById('profile-lastLogin').textContent = formatDate(data.lastLoginAt);
-            document.getElementById('profile-phone').textContent = data.phone || 'No disponible';
-            
-            // Mostrar JSON completo
-            document.getElementById('user-data-json').textContent = JSON.stringify(data, null, 2);
-            
-        } catch (error) {
-            console.error("Error al procesar datos del usuario:", error);
-            document.getElementById('welcome-user-name').textContent = userEmail || 'Administrador';
-            document.getElementById('user-data-json').textContent = "Error al cargar los datos del usuario: " + error.message;
-        }
-    } else {
-        console.warn("No se encontraron datos del usuario en sessionStorage");
-        document.getElementById('welcome-user-name').textContent = userEmail || 'Administrador';
-        document.getElementById('user-data-json').textContent = "No se encontraron datos del usuario en sessionStorage";
-        
-        // Intentar obtener datos de Firebase si el usuario está autenticado
-        if (firebase && firebase.auth) {
-            const user = firebase.auth().currentUser;
-            if (user) {
-                console.log("Usuario autenticado, buscando datos en Firestore");
-                firebase.firestore().collection('users').doc(user.uid).get()
-                    .then(doc => {
-                        if (doc.exists) {
-                            const data = doc.data();
-                            console.log("Datos obtenidos de Firestore:", data);
-                            
-                            // Guardar en sessionStorage para uso futuro
-                            sessionStorage.setItem('userData', JSON.stringify(data));
-                            
-                            // Actualizar interfaz con los datos obtenidos
-                            document.getElementById('welcome-user-name').textContent = data.name || user.email || 'Administrador';
-                            document.getElementById('profile-name').textContent = data.name || 'No disponible';
-                            document.getElementById('profile-email').textContent = data.email || user.email || 'No disponible';
-                            document.getElementById('profile-role').textContent = data.role || 'No disponible';
-                            document.getElementById('profile-status').textContent = data.status || 'No disponible';
-                            document.getElementById('profile-lastLogin').textContent = formatDate(data.lastLoginAt);
-                            document.getElementById('profile-phone').textContent = data.phone || 'No disponible';
-                            
-                            // Mostrar JSON completo
-                            document.getElementById('user-data-json').textContent = JSON.stringify(data, null, 2);
-                        } else {
-                            console.warn("No se encontró el documento del usuario en Firestore");
-                            document.getElementById('user-data-json').textContent = "No se encontró información del usuario en la base de datos.";
-                        }
-                    })
-                    .catch(error => {
-                        console.error("Error al obtener datos de Firestore:", error);
-                        document.getElementById('user-data-json').textContent = "Error al obtener datos: " + error.message;
-                    });
-            }
-        }
+    // Ejecutar la carga de datos apenas se cargue el script
+    try {
+        loadUserData();
+    } catch (error) {
+        console.error("Error al inicializar el módulo de bienvenida:", error);
+        document.getElementById('welcome-message').innerHTML = 
+            '<p>Ocurrió un error al cargar los datos. Por favor, actualice la página.</p>';
     }
 </script>

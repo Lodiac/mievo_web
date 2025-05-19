@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EVONET - Panel de Administración</title>
     
-    <!-- Estilos - Solo dashboard.css, no importamos el CSS del login -->
+    <!-- Estilos -->
     <link rel="stylesheet" href="../css/dashboard.css">
     
     <!-- Fuentes -->
@@ -15,19 +15,40 @@
     
     <!-- Font Awesome para iconos -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* Ajustes adicionales para el header */
+        .header-logo img {
+            height: 30px; /* Logo más pequeño */
+            width: auto;
+        }
+        
+        .user-header-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .user-name {
+            color: white;
+            font-weight: 500;
+        }
+    </style>
 </head>
 <body>
     <!-- Header superior -->
     <header class="header">
         <div class="header-logo">
             <img src="../img/logo_2.png" alt="EVONET" class="logo-small">
-            <span class="header-title">Panel de Administración</span>
+            <!-- Se eliminó el texto "Panel de Administración" -->
         </div>
-        <span class="company-name">EVONET S.A. de C.V.</span>
-        <span class="user-role root">root</span>
-        <button id="logout-btn" class="logout-btn">
-            <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
-        </button>
+        <div class="user-header-info">
+            <span class="user-name" id="header-user-name">Cargando...</span>
+            <span class="user-role" id="header-user-role">...</span>
+            <button id="logout-btn" class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+            </button>
+        </div>
     </header>
     
     <!-- Contenedor principal -->
@@ -75,7 +96,19 @@
             // Verificar si hay datos en sessionStorage
             const userEmail = sessionStorage.getItem('userEmail');
             const userUID = sessionStorage.getItem('userUID');
-            const userData = sessionStorage.getItem('userData');
+            let userData = null;
+            
+            try {
+                const userDataStr = sessionStorage.getItem('userData');
+                if (userDataStr) {
+                    userData = JSON.parse(userDataStr);
+                }
+            } catch (e) {
+                console.error('Error al parsear userData de sessionStorage:', e);
+            }
+            
+            // Actualizar el header con información del usuario
+            updateUserHeader(userData, userEmail);
             
             if (!userEmail || !userUID) {
                 // Si no hay datos de sesión, redirigir al login
@@ -94,6 +127,26 @@
                         window.location.href = '../index.html';
                     }
                 });
+            }
+            
+            // Función para actualizar el header con los datos del usuario
+            function updateUserHeader(userData, userEmail) {
+                const userNameElement = document.getElementById('header-user-name');
+                const userRoleElement = document.getElementById('header-user-role');
+                
+                if (userData) {
+                    // Mostrar nombre real del usuario en lugar de "EVONET S.A. de C.V."
+                    userNameElement.textContent = userData.name || userEmail;
+                    
+                    // Actualizar el rol del usuario y su clase CSS
+                    const userRole = userData.role || 'user';
+                    userRoleElement.textContent = userRole;
+                    userRoleElement.className = 'user-role'; // Resetear clases
+                    userRoleElement.classList.add(userRole); // Añadir clase específica
+                } else {
+                    userNameElement.textContent = userEmail || 'Usuario';
+                    userRoleElement.textContent = 'user';
+                }
             }
             
             // Manejar cierre de sesión
@@ -117,43 +170,68 @@
                 }
             });
             
-            // Sistema de navegación SPA con caché de módulos
+            // Sistema de navegación SPA con validación segura
             const menuItems = document.querySelectorAll('.menu-item');
             const mainContent = document.getElementById('main-content');
             const loadingContent = document.getElementById('loading-content');
             
-            // Caché para módulos cargados
-            const moduleCache = {};
+            // Obtener el rol del usuario
+            const userRole = userData?.role || 'guest';
             
-            // Función mejorada para cargar módulos
+            // Función mejorada para cargar módulos con validación en servidor
             async function loadModule(moduleName) {
                 // Mostrar loader
                 loadingContent.style.display = 'flex';
+                mainContent.innerHTML = '';
                 
                 try {
-                    // Verificar si el módulo ya está en caché
-                    if (!moduleCache[moduleName]) {
-                        // Cargar el contenido del módulo
-                        const response = await fetch(`modules/modules_root/${moduleName}.html`);
-                        if (!response.ok) {
-                            throw new Error(`Error al cargar el módulo: ${response.status}`);
+                    // Usar el endpoint PHP para obtener el módulo con validación de seguridad
+                    const response = await fetch(`../api/get_module.php?name=${moduleName}&role=${userRole}&uid=${userUID}`);
+                    
+                    // Manejar respuestas de error
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        let errorMessage = 'Error desconocido';
+                        
+                        // Determinar mensaje según código de estado
+                        switch (response.status) {
+                            case 401:
+                                errorMessage = 'Tu sesión ha expirado. Vuelve a iniciar sesión.';
+                                // Redirigir al login
+                                sessionStorage.clear();
+                                window.location.href = '../index.html';
+                                return;
+                                
+                            case 403:
+                                errorMessage = 'No tienes permiso para acceder a este módulo.';
+                                break;
+                                
+                            case 404:
+                                errorMessage = `El módulo "${moduleName}" no existe.`;
+                                break;
+                                
+                            default:
+                                errorMessage = `Error al cargar el módulo: ${response.status}`;
                         }
                         
-                        // Almacenar en caché
-                        moduleCache[moduleName] = await response.text();
+                        // Agregar texto de error del servidor si está disponible
+                        if (errorText) {
+                            errorMessage += `<br>Detalle: ${errorText}`;
+                        }
+                        
+                        throw new Error(errorMessage);
                     }
                     
-                    // Limpiar cualquier contenido previo y eventos
-                    mainContent.innerHTML = '';
+                    // Obtener el HTML del módulo
+                    const moduleHTML = await response.text();
                     
-                    // Insertar desde caché
-                    mainContent.innerHTML = moduleCache[moduleName];
+                    // Insertar el HTML en el contenido principal
+                    mainContent.innerHTML = moduleHTML;
                     
-                    // Ocultar loader después de insertar el contenido
-                    loadingContent.style.display = 'none';
-                    
-                    // Extraer y ejecutar scripts
+                    // Procesar scripts después de insertar contenido
                     const scripts = mainContent.querySelectorAll('script');
+                    const scriptPromises = [];
+                    
                     scripts.forEach(oldScript => {
                         const newScript = document.createElement('script');
                         
@@ -162,23 +240,44 @@
                             newScript.setAttribute(attr.name, attr.value);
                         });
                         
+                        // Crear una promesa para saber cuándo se carga el script
+                        const scriptPromise = new Promise((resolve, reject) => {
+                            newScript.onload = resolve;
+                            newScript.onerror = reject;
+                        });
+                        
                         // Transferir contenido
                         newScript.textContent = oldScript.textContent;
                         
                         // Reemplazar el script viejo con el nuevo
                         oldScript.parentNode.replaceChild(newScript, oldScript);
+                        
+                        // Si es un script inline, resolverlo inmediatamente
+                        if (!newScript.src) {
+                            scriptPromises.push(Promise.resolve());
+                        } else {
+                            scriptPromises.push(scriptPromise);
+                        }
                     });
+                    
+                    // Esperar a que todos los scripts se procesen antes de ocultar el loader
+                    await Promise.all(scriptPromises);
+                    
+                    // Ocultar loader después de que todos los scripts estén cargados
+                    loadingContent.style.display = 'none';
                     
                 } catch (error) {
                     console.error('Error al cargar el módulo:', error);
                     loadingContent.style.display = 'none';
-                    mainContent.innerHTML = `
-                        <div class="card">
-                            <h2>Error al cargar el módulo</h2>
-                            <p>No se pudo cargar el contenido solicitado. Por favor, intenta de nuevo.</p>
-                            <p>Error: ${error.message}</p>
-                        </div>
-                    `;
+                    
+                    // Mensaje personalizado según el tipo de error
+                    mainContent.innerHTML = `<div class="card">
+                        <h2 class="content-title">
+                            <i class="fas fa-exclamation-triangle"></i> Error
+                        </h2>
+                        <p>${error.message}</p>
+                        <p>Por favor, selecciona otro módulo del menú lateral o contacta con soporte.</p>
+                    </div>`;
                 }
             }
             
