@@ -1,0 +1,286 @@
+<div class="card">
+    <h2 class="content-title">
+        <i class="fas fa-chart-line"></i> Panel de Control
+    </h2>
+    <p>Esta es la vista principal del dashboard con estadísticas y métricas clave.</p>
+    
+    <div class="dashboard-stats">
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-store"></i>
+            </div>
+            <div class="stat-info">
+                <h3>Total Tiendas</h3>
+                <p class="stat-value">128</p>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-info">
+                <h3>Vendedores</h3>
+                <p class="stat-value">47</p>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-clipboard-list"></i>
+            </div>
+            <div class="stat-info">
+                <h3>Solicitudes</h3>
+                <p class="stat-value">12</p>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-user-check"></i>
+            </div>
+            <div class="stat-info">
+                <h3>Usuarios Activos</h3>
+                <p class="stat-value">23</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row-cards">
+    <div class="card half-card">
+        <h2 class="content-title">
+            <i class="fas fa-clock"></i> Actividad Reciente
+        </h2>
+        <div class="recent-activity">
+            <div class="activity-item">
+                <div class="activity-time">Hace 2 horas</div>
+                <div class="activity-details">
+                    <strong>Juan Pérez</strong> agregó una nueva tienda: <strong>Tienda Central</strong>
+                </div>
+            </div>
+            
+            <div class="activity-item">
+                <div class="activity-time">Hace 4 horas</div>
+                <div class="activity-details">
+                    <strong>María González</strong> actualizó información de: <strong>Tienda Norte</strong>
+                </div>
+            </div>
+            
+            <div class="activity-item">
+                <div class="activity-time">Hace 1 día</div>
+                <div class="activity-details">
+                    <strong>Carlos Rodríguez</strong> asignó un nuevo vendedor a: <strong>Tienda Sur</strong>
+                </div>
+            </div>
+            
+            <div class="activity-item">
+                <div class="activity-time">Hace 2 días</div>
+                <div class="activity-details">
+                    <strong>Ana Martínez</strong> aprobó solicitud de: <strong>Tienda Oriente</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card half-card">
+        <h2 class="content-title">
+            <i class="fas fa-user-plus"></i> Nuevos Usuarios
+        </h2>
+        <div class="new-users">
+            <div class="user-item">
+                <div class="user-avatar">RM</div>
+                <div class="user-details">
+                    <div class="user-name">Roberto Méndez</div>
+                    <div class="user-role vendedor">vendedor</div>
+                </div>
+                <div class="user-date">Hoy</div>
+            </div>
+            
+            <div class="user-item">
+                <div class="user-avatar">LG</div>
+                <div class="user-details">
+                    <div class="user-name">Laura Gómez</div>
+                    <div class="user-role subdistribuidor">subdistribuidor</div>
+                </div>
+                <div class="user-date">Ayer</div>
+            </div>
+            
+            <div class="user-item">
+                <div class="user-avatar">JS</div>
+                <div class="user-details">
+                    <div class="user-name">Jorge Sánchez</div>
+                    <div class="user-role vendedor">vendedor</div>
+                </div>
+                <div class="user-date">14/05/2025</div>
+            </div>
+            
+            <div class="user-item">
+                <div class="user-avatar">PL</div>
+                <div class="user-details">
+                    <div class="user-name">Patricia López</div>
+                    <div class="user-role admin">admin</div>
+                </div>
+                <div class="user-date">12/05/2025</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <h2 class="content-title">
+        <i class="fas fa-map-marker-alt"></i> Distribución de Tiendas
+    </h2>
+    <div class="store-distribution">
+        <div class="distribution-chart" id="store-chart">
+            <!-- Aquí se cargará la gráfica -->
+            <div class="chart-container">
+                <div class="chart-bar" style="height: 80%;">
+                    <div class="chart-label">CDMX</div>
+                    <div class="chart-value">45</div>
+                </div>
+                <div class="chart-bar" style="height: 60%;">
+                    <div class="chart-label">Guadalajara</div>
+                    <div class="chart-value">33</div>
+                </div>
+                <div class="chart-bar" style="height: 45%;">
+                    <div class="chart-label">Monterrey</div>
+                    <div class="chart-value">25</div>
+                </div>
+                <div class="chart-bar" style="height: 30%;">
+                    <div class="chart-label">Puebla</div>
+                    <div class="chart-value">17</div>
+                </div>
+                <div class="chart-bar" style="height: 20%;">
+                    <div class="chart-label">Querétaro</div>
+                    <div class="chart-value">8</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .row-cards {
+        display: flex;
+        gap: 25px;
+        margin-bottom: 25px;
+    }
+    
+    .half-card {
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .new-users {
+        margin-top: 20px;
+    }
+    
+    .user-item {
+        display: flex;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .user-item:last-child {
+        border-bottom: none;
+    }
+    
+    .user-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: var(--primary-light);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        margin-right: 15px;
+    }
+    
+    .user-details {
+        flex: 1;
+    }
+    
+    .user-date {
+        color: var(--text-light);
+        font-size: 0.85rem;
+    }
+    
+    .user-role {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.7rem;
+        margin-top: 5px;
+        background-color: var(--primary-color);
+        color: white;
+    }
+    
+    .store-distribution {
+        margin-top: 20px;
+        height: 300px;
+    }
+    
+    .chart-container {
+        display: flex;
+        justify-content: space-around;
+        align-items: flex-end;
+        height: 100%;
+        padding: 0 20px;
+    }
+    
+    .chart-bar {
+        width: 18%;
+        background-color: var(--primary-color);
+        border-radius: 6px 6px 0 0;
+        position: relative;
+        transition: height 1s ease;
+    }
+    
+    .chart-label {
+        position: absolute;
+        bottom: -30px;
+        left: 0;
+        right: 0;
+        text-align: center;
+        font-size: 0.85rem;
+        color: var(--text-light);
+    }
+    
+    .chart-value {
+        position: absolute;
+        top: -25px;
+        left: 0;
+        right: 0;
+        text-align: center;
+        font-weight: 600;
+        color: var(--primary-color);
+    }
+    
+    @media (max-width: 768px) {
+        .row-cards {
+            flex-direction: column;
+        }
+    }
+</style>
+
+<script>
+    // Aquí iría el código para obtener datos reales desde Firestore
+    console.log("Dashboard módulo cargado");
+    
+    // Solo para demostración, haremos una animación de entrada para las gráficas
+    setTimeout(() => {
+        const bars = document.querySelectorAll('.chart-bar');
+        bars.forEach(bar => {
+            const originalHeight = bar.style.height;
+            bar.style.height = '0%';
+            
+            setTimeout(() => {
+                bar.style.height = originalHeight;
+            }, 100);
+        });
+    }, 500);
+</script>

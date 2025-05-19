@@ -1,0 +1,195 @@
+<div class="card">
+    <h2 class="content-title">
+        <i class="fas fa-user-shield"></i> Bienvenido al Panel de Administración
+    </h2>
+    <p>Hola <strong id="welcome-user-name">...</strong>, bienvenido al sistema de gestión de EVONET.</p>
+    <p>Como administrador <strong>root</strong>, tienes acceso completo a todas las funcionalidades del sistema.</p>
+    <p>Utiliza el menú lateral para navegar entre las diferentes secciones.</p>
+</div>
+
+<div class="card">
+    <h2 class="content-title">
+        <i class="fas fa-info-circle"></i> Información de tu cuenta
+    </h2>
+    
+    <div class="user-profile-info">
+        <div class="user-profile-field">
+            <div class="field-label">Nombre completo:</div>
+            <div class="field-value" id="profile-name">Cargando...</div>
+        </div>
+        
+        <div class="user-profile-field">
+            <div class="field-label">Correo electrónico:</div>
+            <div class="field-value" id="profile-email">Cargando...</div>
+        </div>
+        
+        <div class="user-profile-field">
+            <div class="field-label">Rol:</div>
+            <div class="field-value" id="profile-role">Cargando...</div>
+        </div>
+        
+        <div class="user-profile-field">
+            <div class="field-label">Estado:</div>
+            <div class="field-value" id="profile-status">Cargando...</div>
+        </div>
+        
+        <div class="user-profile-field">
+            <div class="field-label">Último inicio de sesión:</div>
+            <div class="field-value" id="profile-lastLogin">Cargando...</div>
+        </div>
+        
+        <div class="user-profile-field">
+            <div class="field-label">Teléfono:</div>
+            <div class="field-value" id="profile-phone">Cargando...</div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <h2 class="content-title">
+        <i class="fas fa-code"></i> Datos completos (JSON)
+    </h2>
+    <div class="json-display" id="user-data-json">
+        Cargando datos...
+    </div>
+</div>
+
+<style>
+    .user-profile-info {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+        margin-top: 20px;
+    }
+    
+    .user-profile-field {
+        background-color: #f9f9f9;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    }
+    
+    .field-label {
+        color: var(--text-light);
+        font-size: 0.9rem;
+        margin-bottom: 5px;
+    }
+    
+    .field-value {
+        font-weight: 500;
+        font-size: 1.1rem;
+        color: var(--primary-color);
+    }
+    
+    .content-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .content-title i {
+        color: var(--primary-color);
+    }
+    
+    .json-display {
+        background-color: #f9f9f9;
+        color: #333;
+        padding: 20px;
+        border-radius: 8px;
+        overflow: auto;
+        max-height: 400px;
+        font-family: monospace;
+        white-space: pre-wrap;
+        font-size: 14px;
+    }
+</style>
+
+<script>
+    // Obtener datos del usuario desde sessionStorage
+    const userData = sessionStorage.getItem('userData');
+    const userEmail = sessionStorage.getItem('userEmail');
+    
+    // Función para formatear la fecha
+    function formatDate(dateString) {
+        if (!dateString) return 'No disponible';
+        try {
+            const date = new Date(dateString);
+            return date.toLocaleString('es-MX', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        } catch (e) {
+            return dateString || 'No disponible';
+        }
+    }
+    
+    if (userData) {
+        try {
+            const data = JSON.parse(userData);
+            console.log("Datos del usuario cargados:", data);
+            
+            // Actualizar saludo personalizado
+            document.getElementById('welcome-user-name').textContent = data.name || userEmail || 'Administrador';
+            
+            // Llenar campos de información de perfil
+            document.getElementById('profile-name').textContent = data.name || 'No disponible';
+            document.getElementById('profile-email').textContent = data.email || userEmail || 'No disponible';
+            document.getElementById('profile-role').textContent = data.role || 'No disponible';
+            document.getElementById('profile-status').textContent = data.status || 'No disponible';
+            document.getElementById('profile-lastLogin').textContent = formatDate(data.lastLoginAt);
+            document.getElementById('profile-phone').textContent = data.phone || 'No disponible';
+            
+            // Mostrar JSON completo
+            document.getElementById('user-data-json').textContent = JSON.stringify(data, null, 2);
+            
+        } catch (error) {
+            console.error("Error al procesar datos del usuario:", error);
+            document.getElementById('welcome-user-name').textContent = userEmail || 'Administrador';
+            document.getElementById('user-data-json').textContent = "Error al cargar los datos del usuario: " + error.message;
+        }
+    } else {
+        console.warn("No se encontraron datos del usuario en sessionStorage");
+        document.getElementById('welcome-user-name').textContent = userEmail || 'Administrador';
+        document.getElementById('user-data-json').textContent = "No se encontraron datos del usuario en sessionStorage";
+        
+        // Intentar obtener datos de Firebase si el usuario está autenticado
+        if (firebase && firebase.auth) {
+            const user = firebase.auth().currentUser;
+            if (user) {
+                console.log("Usuario autenticado, buscando datos en Firestore");
+                firebase.firestore().collection('users').doc(user.uid).get()
+                    .then(doc => {
+                        if (doc.exists) {
+                            const data = doc.data();
+                            console.log("Datos obtenidos de Firestore:", data);
+                            
+                            // Guardar en sessionStorage para uso futuro
+                            sessionStorage.setItem('userData', JSON.stringify(data));
+                            
+                            // Actualizar interfaz con los datos obtenidos
+                            document.getElementById('welcome-user-name').textContent = data.name || user.email || 'Administrador';
+                            document.getElementById('profile-name').textContent = data.name || 'No disponible';
+                            document.getElementById('profile-email').textContent = data.email || user.email || 'No disponible';
+                            document.getElementById('profile-role').textContent = data.role || 'No disponible';
+                            document.getElementById('profile-status').textContent = data.status || 'No disponible';
+                            document.getElementById('profile-lastLogin').textContent = formatDate(data.lastLoginAt);
+                            document.getElementById('profile-phone').textContent = data.phone || 'No disponible';
+                            
+                            // Mostrar JSON completo
+                            document.getElementById('user-data-json').textContent = JSON.stringify(data, null, 2);
+                        } else {
+                            console.warn("No se encontró el documento del usuario en Firestore");
+                            document.getElementById('user-data-json').textContent = "No se encontró información del usuario en la base de datos.";
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Error al obtener datos de Firestore:", error);
+                        document.getElementById('user-data-json').textContent = "Error al obtener datos: " + error.message;
+                    });
+            }
+        }
+    }
+</script>

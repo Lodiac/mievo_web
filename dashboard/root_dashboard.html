@@ -3,84 +3,269 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EVONET - Dashboard Root</title>
-    <link rel="stylesheet" href="../css/styles.css">
+    <title>EVONET - Panel de Administración</title>
+    
+    <!-- Estilos - Solo dashboard.css, no importamos el CSS del login -->
+    <link rel="stylesheet" href="css/dashboard.css">
+    
+    <!-- Fuentes -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome para iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
-        .dashboard-container {
-            padding: 20px;
-            max-width: 1200px;
-            margin: 0 auto;
+        /* Estilos específicos para forzar el tema claro y ajustar a la imagen proporcionada */
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            color: #333;
         }
+        
+        /* Header estilo EVONET */
         .header {
+            background-color: #303498;
+            color: white;
+            padding: 0 20px;
+            height: 70px;
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid #eee;
+            justify-content: space-between;
         }
+        
+        .header-logo {
+            display: flex;
+            align-items: center;
+        }
+        
         .logo-small {
-            max-width: 150px;
+            height: 30px;
+            margin-right: 15px;
         }
-        .user-info {
-            text-align: right;
-        }
-        .user-role {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            margin-top: 8px;
-            background-color: #d32f2f;
+        
+        .header-title {
+            font-size: 1.3rem;
+            font-weight: 500;
             color: white;
         }
+        
+        .company-name {
+            margin-left: auto;
+            margin-right: 20px;
+            font-weight: 500;
+            color: white;
+        }
+        
+        .user-role {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            background-color: #d32f2f;
+            color: white;
+            margin-right: 15px;
+            font-weight: 500;
+        }
+        
         .logout-btn {
-            background-color: var(--accent-color);
+            background-color: #d32f2f;
             color: white;
             border: none;
             border-radius: 4px;
-            padding: 8px 16px;
+            padding: 8px 15px;
             cursor: pointer;
-            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
-        .json-display {
-            background-color: #f9f9f9;
+        
+        /* Sidebar y menú estilo EVONET */
+        .dashboard-container {
+            display: flex;
+            min-height: calc(100vh - 70px);
+        }
+        
+        .sidebar {
+            width: 250px;
+            background-color: #1e1e2d;
+            color: #a2a3b7;
+        }
+        
+        .sidebar-menu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .menu-item {
+            display: flex;
+            align-items: center;
+            padding: 15px 20px;
+            cursor: pointer;
+            color: #a2a3b7;
+            transition: all 0.2s ease;
+            border-left: 3px solid transparent;
+        }
+        
+        .menu-item:hover {
+            background-color: #1a1a27;
+            color: white;
+        }
+        
+        .menu-item.active {
+            background-color: #1a1a27;
+            color: white;
+            border-left-color: #d32f2f;
+        }
+        
+        .menu-icon {
+            width: 20px;
+            text-align: center;
+            margin-right: 10px;
+        }
+        
+        /* Contenido principal */
+        .content {
+            flex: 1;
             padding: 20px;
-            border-radius: 8px;
-            overflow: auto;
-            max-height: 600px;
-            font-family: monospace;
-            white-space: pre-wrap;
-            font-size: 14px;
-            border: 1px solid #ddd;
+            background-color: #f8f9fa;
+            overflow-y: auto;
         }
-        .title {
-            color: var(--primary-color);
+        
+        /* Loader */
+        .loading-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 50px;
+        }
+        
+        .loading-spinner {
+            border: 4px solid rgba(0,0,0,0.1);
+            border-radius: 50%;
+            border-top: 4px solid #303498;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Estilos para los módulos */
+        h1, h2, h3, h4, h5, h6 {
+            color: #333;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            padding: 20px;
             margin-bottom: 20px;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .dashboard-container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                order: 2;
+            }
+            
+            .sidebar-menu {
+                display: flex;
+                overflow-x: auto;
+            }
+            
+            .menu-item {
+                padding: 15px;
+                white-space: nowrap;
+                border-left: none;
+                border-bottom: 3px solid transparent;
+            }
+            
+            .menu-item.active {
+                border-left: none;
+                border-bottom-color: #d32f2f;
+            }
+            
+            .content {
+                order: 1;
+            }
+            
+            .company-name {
+                display: none;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .header-title {
+                display: none;
+            }
+            
+            .user-role {
+                display: none;
+            }
         }
     </style>
 </head>
 <body>
+    <!-- Header superior -->
+    <header class="header">
+        <div class="header-logo">
+            <img src="../img/logo.png" alt="EVONET" class="logo-small">
+            <span class="header-title">Panel de Administración</span>
+        </div>
+        <span class="company-name">EVONET S.A. de C.V.</span>
+        <span class="user-role">root</span>
+        <button id="logout-btn" class="logout-btn">
+            <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+        </button>
+    </header>
+    
+    <!-- Contenedor principal -->
     <div class="dashboard-container">
-        <div class="header">
-            <div>
-                <img src="../img/logo.png" alt="EVONET" class="logo-small">
-                <h1 class="title">Dashboard de Administrador Root</h1>
-            </div>
-            <div class="user-info">
-                <p>Bienvenido, <span id="user-name">...</span></p>
-                <p>Rol: <span class="user-role">root</span></p>
-                <button id="logout-btn" class="logout-btn">Cerrar Sesión</button>
-            </div>
-        </div>
+        <!-- Menú lateral -->
+        <nav class="sidebar">
+            <ul class="sidebar-menu">
+                <li class="menu-item active" data-module="bienvenida">
+                    <i class="fas fa-home menu-icon"></i> <span class="menu-text">Bienvenida</span>
+                </li>
+                <li class="menu-item" data-module="dashboard">
+                    <i class="fas fa-chart-line menu-icon"></i> <span class="menu-text">Dashboard</span>
+                </li>
+                <li class="menu-item" data-module="tiendas">
+                    <i class="fas fa-store menu-icon"></i> <span class="menu-text">Tiendas</span>
+                </li>
+                <li class="menu-item" data-module="solicitudes">
+                    <i class="fas fa-clipboard-list menu-icon"></i> <span class="menu-text">Solicitudes</span>
+                </li>
+                <li class="menu-item" data-module="vendedores">
+                    <i class="fas fa-users menu-icon"></i> <span class="menu-text">Vendedores</span>
+                </li>
+            </ul>
+        </nav>
         
-        <h2>Información del Usuario</h2>
-        <div class="json-display" id="user-data">
-            Cargando datos...
-        </div>
+        <!-- Contenido principal -->
+        <main class="content" id="main-content">
+            <!-- El contenido se cargará dinámicamente aquí -->
+            <div class="loading-content" id="loading-content">
+                <div class="loading-spinner"></div>
+                <p>Cargando contenido...</p>
+            </div>
+        </main>
     </div>
 
     <!-- Firebase SDK -->
@@ -104,16 +289,16 @@
                 return;
             }
             
-            // Mostrar datos del usuario
-            if (userData) {
-                try {
-                    const data = JSON.parse(userData);
-                    document.getElementById('user-name').textContent = data.name || userEmail;
-                    document.getElementById('user-data').textContent = JSON.stringify(data, null, 2);
-                } catch (error) {
-                    console.error("Error al procesar datos del usuario:", error);
-                    document.getElementById('user-data').textContent = "Error al cargar datos";
-                }
+            // Verificar que el usuario siga autenticado
+            if (firebase.apps.length > 0) {
+                firebase.auth().onAuthStateChanged(user => {
+                    if (!user) {
+                        // Si el usuario ya no está autenticado, redirigir al login
+                        console.log("Usuario ya no está autenticado, redirigiendo al login");
+                        sessionStorage.clear();
+                        window.location.href = '../index.html';
+                    }
+                });
             }
             
             // Manejar cierre de sesión
@@ -137,17 +322,75 @@
                 }
             });
             
-            // Verificar que el usuario siga autenticado
-            if (firebase.apps.length > 0) {
-                firebase.auth().onAuthStateChanged(user => {
-                    if (!user) {
-                        // Si el usuario ya no está autenticado, redirigir al login
-                        console.log("Usuario ya no está autenticado, redirigiendo al login");
-                        sessionStorage.clear();
-                        window.location.href = '../index.html';
+            // Sistema de navegación SPA
+            const menuItems = document.querySelectorAll('.menu-item');
+            const mainContent = document.getElementById('main-content');
+            const loadingContent = document.getElementById('loading-content');
+            
+            // Función para cargar módulos - RUTA CORREGIDA
+            async function loadModule(moduleName) {
+                // Mostrar loader
+                loadingContent.style.display = 'flex';
+                mainContent.innerHTML = '';
+                
+                try {
+                    // Cargar el contenido del módulo - RUTA CORREGIDA
+                    const response = await fetch(`modules/modules_root/${moduleName}.html`);
+                    if (!response.ok) {
+                        throw new Error(`Error al cargar el módulo: ${response.status}`);
                     }
-                });
+                    
+                    const moduleContent = await response.text();
+                    
+                    // Ocultar loader
+                    loadingContent.style.display = 'none';
+                    
+                    // Insertar el contenido en el main
+                    mainContent.innerHTML = moduleContent;
+                    
+                    // Ejecutar scripts si los hay
+                    const scripts = mainContent.querySelectorAll('script');
+                    scripts.forEach(script => {
+                        const newScript = document.createElement('script');
+                        
+                        if (script.src) {
+                            newScript.src = script.src;
+                        } else {
+                            newScript.textContent = script.textContent;
+                        }
+                        
+                        document.body.appendChild(newScript);
+                        script.remove();
+                    });
+                    
+                } catch (error) {
+                    console.error('Error al cargar el módulo:', error);
+                    loadingContent.style.display = 'none';
+                    mainContent.innerHTML = `
+                        <div class="card">
+                            <h2>Error al cargar el módulo</h2>
+                            <p>No se pudo cargar el contenido solicitado. Por favor, intenta de nuevo.</p>
+                            <p>Error: ${error.message}</p>
+                        </div>
+                    `;
+                }
             }
+            
+            // Configurar menú
+            menuItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    // Marcar ítem activo
+                    menuItems.forEach(i => i.classList.remove('active'));
+                    item.classList.add('active');
+                    
+                    // Cargar el módulo correspondiente
+                    const module = item.dataset.module;
+                    loadModule(module);
+                });
+            });
+            
+            // Cargar el módulo inicial (Bienvenida)
+            loadModule('bienvenida');
         });
     </script>
 </body>

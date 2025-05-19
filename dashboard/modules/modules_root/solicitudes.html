@@ -1,0 +1,298 @@
+<div class="card">
+    <h2 class="content-title">
+        <i class="fas fa-clipboard-list"></i> Gestión de Solicitudes
+    </h2>
+    <p>En esta sección puedes administrar todas las solicitudes pendientes y completadas.</p>
+    
+    <div class="tabs-container">
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="pending">Pendientes</button>
+            <button class="tab-btn" data-tab="approved">Aprobadas</button>
+            <button class="tab-btn" data-tab="rejected">Rechazadas</button>
+        </div>
+        
+        <div class="actions-bar">
+            <div class="search-box">
+                <input type="text" placeholder="Buscar solicitud..." id="search-request">
+                <button class="search-btn"><i class="fas fa-search"></i></button>
+            </div>
+            <button class="action-btn primary"><i class="fas fa-filter"></i> Filtrar</button>
+        </div>
+    </div>
+    
+    <div class="tab-content" id="pending-tab">
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Solicitante</th>
+                        <th>Tipo</th>
+                        <th>Fecha</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="pending-table-body">
+                    <tr>
+                        <td>SOL001</td>
+                        <td>Juan Pérez</td>
+                        <td>Nueva Tienda</td>
+                        <td>18/05/2025</td>
+                        <td><span class="status pending">Pendiente</span></td>
+                        <td class="actions">
+                            <button class="action-icon view"><i class="fas fa-eye"></i></button>
+                            <button class="action-icon approve"><i class="fas fa-check"></i></button>
+                            <button class="action-icon reject"><i class="fas fa-times"></i></button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>SOL002</td>
+                        <td>María González</td>
+                        <td>Cambio de Vendedor</td>
+                        <td>17/05/2025</td>
+                        <td><span class="status pending">Pendiente</span></td>
+                        <td class="actions">
+                            <button class="action-icon view"><i class="fas fa-eye"></i></button>
+                            <button class="action-icon approve"><i class="fas fa-check"></i></button>
+                            <button class="action-icon reject"><i class="fas fa-times"></i></button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>SOL003</td>
+                        <td>Carlos Rodríguez</td>
+                        <td>Actualización de Datos</td>
+                        <td>16/05/2025</td>
+                        <td><span class="status pending">Pendiente</span></td>
+                        <td class="actions">
+                            <button class="action-icon view"><i class="fas fa-eye"></i></button>
+                            <button class="action-icon approve"><i class="fas fa-check"></i></button>
+                            <button class="action-icon reject"><i class="fas fa-times"></i></button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <div class="tab-content" id="approved-tab" style="display: none;">
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Solicitante</th>
+                        <th>Tipo</th>
+                        <th>Fecha Aprobación</th>
+                        <th>Aprobado por</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="approved-table-body">
+                    <tr>
+                        <td>SOL005</td>
+                        <td>Ana Martínez</td>
+                        <td>Nueva Tienda</td>
+                        <td>15/05/2025</td>
+                        <td>Admin Root</td>
+                        <td class="actions">
+                            <button class="action-icon view"><i class="fas fa-eye"></i></button>
+                            <button class="action-icon message"><i class="fas fa-envelope"></i></button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>SOL004</td>
+                        <td>Luis Torres</td>
+                        <td>Actualización de Datos</td>
+                        <td>14/05/2025</td>
+                        <td>Admin Sistema</td>
+                        <td class="actions">
+                            <button class="action-icon view"><i class="fas fa-eye"></i></button>
+                            <button class="action-icon message"><i class="fas fa-envelope"></i></button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <div class="tab-content" id="rejected-tab" style="display: none;">
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Solicitante</th>
+                        <th>Tipo</th>
+                        <th>Fecha Rechazo</th>
+                        <th>Motivo</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="rejected-table-body">
+                    <tr>
+                        <td>SOL006</td>
+                        <td>Pedro Sánchez</td>
+                        <td>Nueva Tienda</td>
+                        <td>13/05/2025</td>
+                        <td>Información incompleta</td>
+                        <td class="actions">
+                            <button class="action-icon view"><i class="fas fa-eye"></i></button>
+                            <button class="action-icon reconsider"><i class="fas fa-redo"></i></button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>SOL007</td>
+                        <td>Laura Gómez</td>
+                        <td>Cambio de Vendedor</td>
+                        <td>12/05/2025</td>
+                        <td>Datos incorrectos</td>
+                        <td class="actions">
+                            <button class="action-icon view"><i class="fas fa-eye"></i></button>
+                            <button class="action-icon reconsider"><i class="fas fa-redo"></i></button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <div class="pagination">
+        <button class="pagination-btn"><i class="fas fa-chevron-left"></i></button>
+        <button class="pagination-btn active">1</button>
+        <button class="pagination-btn">2</button>
+        <button class="pagination-btn"><i class="fas fa-chevron-right"></i></button>
+    </div>
+</div>
+
+<style>
+    .tabs-container {
+        margin-top: 20px;
+    }
+    
+    .tabs {
+        display: flex;
+        border-bottom: 1px solid var(--border-color);
+        margin-bottom: 20px;
+    }
+    
+    .tab-btn {
+        padding: 12px 20px;
+        background: none;
+        border: none;
+        border-bottom: 3px solid transparent;
+        cursor: pointer;
+        font-weight: 500;
+        color: var(--text-light);
+        transition: all 0.2s ease;
+    }
+    
+    .tab-btn:hover {
+        color: var(--primary-color);
+    }
+    
+    .tab-btn.active {
+        color: var(--primary-color);
+        border-bottom-color: var(--primary-color);
+    }
+    
+    .actions-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    
+    .status.pending {
+        background-color: var(--warning-color);
+    }
+    
+    .action-icon.approve {
+        background-color: var(--success-color);
+        color: white;
+    }
+    
+    .action-icon.reject {
+        background-color: var(--error-color);
+        color: white;
+    }
+    
+    .action-icon.message {
+        background-color: var(--info-color);
+        color: white;
+    }
+    
+    .action-icon.reconsider {
+        background-color: var(--warning-color);
+        color: white;
+    }
+</style>
+
+<script>
+    // Función para cambiar entre pestañas
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+    
+    tabButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            // Desactivar todas las pestañas
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            tabContents.forEach(content => content.style.display = 'none');
+            
+            // Activar la pestaña seleccionada
+            this.classList.add('active');
+            const tabId = this.dataset.tab + '-tab';
+            document.getElementById(tabId).style.display = 'block';
+        });
+    });
+    
+    // Función para buscar solicitudes
+    const searchInput = document.getElementById('search-request');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const activeTab = document.querySelector('.tab-btn.active').dataset.tab;
+            const rows = document.querySelectorAll(`#${activeTab}-table-body tr`);
+            
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchTerm) ? '' : 'none';
+            });
+        });
+    }
+    
+    // Configurar acciones de botones
+    document.querySelectorAll('.action-icon.view').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const row = this.closest('tr');
+            const id = row.cells[0].textContent;
+            alert(`Viendo detalles de solicitud: ${id}`);
+        });
+    });
+    
+    document.querySelectorAll('.action-icon.approve').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const row = this.closest('tr');
+            const id = row.cells[0].textContent;
+            if (confirm(`¿Deseas aprobar la solicitud ${id}?`)) {
+                alert(`Solicitud ${id} aprobada (simulación)`);
+                // Aquí iría el código para aprobar realmente la solicitud
+            }
+        });
+    });
+    
+    document.querySelectorAll('.action-icon.reject').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const row = this.closest('tr');
+            const id = row.cells[0].textContent;
+            const reason = prompt(`Por favor, indica el motivo de rechazo para la solicitud ${id}:`);
+            if (reason) {
+                alert(`Solicitud ${id} rechazada: ${reason} (simulación)`);
+                // Aquí iría el código para rechazar realmente la solicitud
+            }
+        });
+    });
+    
+    // Aquí iría el código para cargar datos reales desde Firestore
+    console.log("Módulo de solicitudes cargado");
+</script>
