@@ -40,41 +40,7 @@ async function loadFirebaseConfig() {
     } catch (error) {
         console.error('Error al cargar/inicializar Firebase:', error);
         
-        // Intentar inicializar con configuración de respaldo si es un error de carga
-        if (error.message.includes('fetch') || error.message.includes('HTTP')) {
-            console.warn("Intentando inicializar con configuración de respaldo...");
-            
-            const backupConfig = {
-                apiKey: "AIzaSyD5x_KNGvw2VviPY_04Scw7xMIwHZlTygo",
-                authDomain: "mievo-dec57.firebaseapp.com",
-                projectId: "mievo-dec57"
-            };
-            
-            try {
-                const app = firebase.apps.length === 0 ? 
-                    firebase.initializeApp(backupConfig) :
-                    firebase.app();
-                    
-                console.log("Firebase inicializado con configuración de respaldo");
-                
-                // Disparar evento de inicialización completa
-                const event = new Event('firebase-initialized');
-                window.dispatchEvent(event);
-                
-                return app;
-            } catch (backupError) {
-                console.error("Error incluso con configuración de respaldo:", backupError);
-                const errorMsg = document.getElementById('error-message');
-                if (errorMsg) {
-                    errorMsg.textContent = 'Error al conectar con el servicio. Por favor, intenta más tarde.';
-                }
-            }
-        } else {
-            const errorMsg = document.getElementById('error-message');
-            if (errorMsg) {
-                errorMsg.textContent = 'Error al conectar con el servicio. Por favor, intenta más tarde.';
-            }
-        }
+        
     }
 }
 
