@@ -1,10 +1,14 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard</title>
+    <title>Redirección</title>
     <link rel="stylesheet" href="css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         .dashboard {
             text-align: center;
@@ -12,21 +16,39 @@
         }
         .user-info {
             margin-bottom: 2rem;
+            color: var(--text-color);
         }
         .logout-btn {
-            background-color: #d93025;
+            background-color: var(--error-color);
+            transition: all 0.3s ease;
         }
         .logout-btn:hover {
-            background-color: #b7261f;
+            background-color: #d32f2f;
+            transform: translateY(-2px);
+        }
+        .logout-btn:active {
+            transform: translateY(0);
+        }
+        .logo-container {
+            margin-bottom: 1.5rem;
+        }
+        .logo {
+            max-width: 180px;
+            height: auto;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="login-form dashboard">
-            <h2>Dashboard</h2>
+            <!-- Contenedor para el logo -->
+            <div class="logo-container">
+                <img src="img/logo.png" alt="Logo" class="logo">
+            </div>
+            <h2>Redireccionando</h2>
             <div class="user-info">
                 <p>Bienvenido, <span id="user-email"></span></p>
+                <p>Serás redirigido automáticamente en unos segundos...</p>
             </div>
             <button id="logout-btn" class="login-btn logout-btn">Cerrar Sesión</button>
         </div>
@@ -69,6 +91,13 @@
                     if (user) {
                         // Usuario autenticado
                         document.getElementById('user-email').textContent = user.email;
+                        
+                        // Simular redirección tras 3 segundos (para una aplicación real, 
+                        // aquí podrías redireccionar a tu sistema principal)
+                        setTimeout(() => {
+                            console.log("Redirección simulada a sistema principal");
+                            // window.location.href = 'tu-sistema-principal.html';
+                        }, 3000);
                     } else {
                         // Usuario no autenticado, redirigir al login
                         window.location.href = 'index.html';
@@ -78,11 +107,19 @@
                 // Manejar cierre de sesión
                 document.getElementById('logout-btn').addEventListener('click', () => {
                     console.log('Cerrando sesión...');
+                    
+                    // Añadir clase loading al botón
+                    const logoutBtn = document.getElementById('logout-btn');
+                    logoutBtn.classList.add('loading');
+                    logoutBtn.disabled = true;
+                    
                     firebase.auth().signOut().then(() => {
                         console.log('Sesión cerrada con éxito');
                         window.location.href = 'index.html';
                     }).catch(error => {
                         console.error('Error al cerrar sesión:', error);
+                        logoutBtn.classList.remove('loading');
+                        logoutBtn.disabled = false;
                     });
                 });
             }

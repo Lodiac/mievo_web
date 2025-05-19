@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('Usuario autenticado:', user);
             
             // Redirigir a la página principal o mostrar mensaje de éxito
-            window.location.href = 'dashboard.html';
+            window.location.href = 'redirect.html';
             
         } catch (error) {
             console.error('Error de autenticación:', error);
