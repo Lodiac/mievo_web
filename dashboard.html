@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .dashboard {
+            text-align: center;
+            padding: 2rem;
+        }
+        .user-info {
+            margin-bottom: 2rem;
+        }
+        .logout-btn {
+            background-color: #d93025;
+        }
+        .logout-btn:hover {
+            background-color: #b7261f;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="login-form dashboard">
+            <h2>Dashboard</h2>
+            <div class="user-info">
+                <p>Bienvenido, <span id="user-email"></span></p>
+            </div>
+            <button id="logout-btn" class="login-btn logout-btn">Cerrar Sesión</button>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-auth-compat.js"></script>
+    
+    <!-- Scripts personalizados -->
+    <script src="js/firebase-config.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Verificar si el usuario está autenticado
+            firebase.auth().onAuthStateChanged(user => {
+                if (user) {
+                    // Usuario autenticado
+                    document.getElementById('user-email').textContent = user.email;
+                } else {
+                    // Usuario no autenticado, redirigir al login
+                    window.location.href = 'index.html';
+                }
+            });
+            
+            // Manejar cierre de sesión
+            document.getElementById('logout-btn').addEventListener('click', () => {
+                firebase.auth().signOut().then(() => {
+                    window.location.href = 'index.html';
+                });
+            });
+        });
+    </script>
+</body>
+</html>
