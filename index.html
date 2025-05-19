@@ -4,26 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mi evo - Acceso</title>
+    <link rel="icon" type="image/x-icon" href="../img/icon.ico"> 
+
     <link rel="stylesheet" href="css/styles.css">
-    <!-- Añadimos fuente Poppins desde Google Fonts -->
+    <!-- Fuentes -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Estilos específicos para asegurar que el logo se muestre correctamente -->
-    <style>
-        .logo-container {
-            text-align: center;
-            margin-bottom: 2rem;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        .logo {
-            max-width: 220px;
-            height: auto;
-            display: block;
-        }
-    </style>
+    <!-- Font Awesome para iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <div class="container">
@@ -36,7 +25,7 @@
             <div id="error-message" class="error-message"></div>
             <div id="success-message" class="success-message"></div>
             
-            <!-- CAMBIO CLAVE: Cambiamos el formulario a div para evitar comportamiento de formulario -->
+            <!-- Formulario sin etiqueta form para evitar comportamiento por defecto -->
             <div class="login-inputs">
                 <div class="form-group">
                     <label for="email">Correo electrónico</label>
@@ -46,7 +35,6 @@
                     <label for="password">Contraseña</label>
                     <input type="password" id="password" placeholder="Ingresa tu contraseña" required>
                 </div>
-                <!-- CAMBIO CLAVE: Cambiamos a tipo button explícitamente -->
                 <button type="button" id="login-button" class="login-btn">
                     Iniciar Sesión
                 </button>
