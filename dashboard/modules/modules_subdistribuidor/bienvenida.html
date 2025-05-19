@@ -1,0 +1,200 @@
+<div class="card">
+    <h2 class="content-title">
+        <i class="fas fa-user-shield"></i> Bienvenido al Panel de Subdistribuidor
+    </h2>
+    <div id="welcome-message">
+        <p>Hola <strong id="welcome-user-name">...</strong>, bienvenido al sistema de gestión de EVONET.</p>
+        <p>Como <strong id="user-role-text">subdistribuidor</strong>, tienes acceso a las funcionalidades correspondientes.</p>
+        <p>Utiliza el menú lateral para navegar entre las diferentes secciones.</p>
+    </div>
+</div>
+
+<div class="card">
+    <h2 class="content-title">
+        <i class="fas fa-info-circle"></i> Información de tu cuenta
+    </h2>
+    
+    <div class="user-profile-info">
+        <div class="user-profile-field">
+            <div class="field-label">Nombre completo:</div>
+            <div class="field-value" id="profile-name">Cargando...</div>
+        </div>
+        
+        <div class="user-profile-field">
+            <div class="field-label">Correo electrónico:</div>
+            <div class="field-value" id="profile-email">Cargando...</div>
+        </div>
+        
+        <div class="user-profile-field">
+            <div class="field-label">Rol:</div>
+            <div class="field-value" id="profile-role">Cargando...</div>
+        </div>
+        
+        <div class="user-profile-field">
+            <div class="field-label">Estado:</div>
+            <div class="field-value" id="profile-status">Cargando...</div>
+        </div>
+        
+        <div class="user-profile-field">
+            <div class="field-label">Último inicio de sesión:</div>
+            <div class="field-value" id="profile-lastLogin">Cargando...</div>
+        </div>
+        
+        <div class="user-profile-field">
+            <div class="field-label">Teléfono:</div>
+            <div class="field-value" id="profile-phone">Cargando...</div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <h2 class="content-title">
+        <i class="fas fa-code"></i> Datos completos (JSON)
+    </h2>
+    <pre class="json-display" id="user-data-json">Cargando datos...</pre>
+</div>
+
+<style>
+    .user-profile-info {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+        margin-top: 20px;
+    }
+    
+    .user-profile-field {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
+        transition: transform 0.2s ease;
+    }
+    
+    .user-profile-field:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    }
+    
+    .field-label {
+        color: var(--text-light);
+        font-size: 0.9rem;
+        margin-bottom: 5px;
+    }
+    
+    .field-value {
+        font-weight: 500;
+        font-size: 1.1rem;
+        color: #0288d1; /* Color específico para subdistribuidor */
+    }
+    
+    .json-display {
+        background-color: #f8f9fa;
+        color: #333;
+        padding: 20px;
+        border-radius: 8px;
+        overflow: auto;
+        max-height: 400px;
+        font-family: monospace;
+        white-space: pre-wrap;
+        font-size: 14px;
+        border: 1px solid #e9ecef;
+    }
+</style>
+
+<script>
+    // Función principal para cargar los datos de usuario
+    function loadUserData() {
+        console.log("Cargando datos de usuario en el módulo bienvenida...");
+        
+        // Obtener datos directamente de sessionStorage (sin depender de Firebase)
+        const userEmail = sessionStorage.getItem('userEmail') || 'usuario@ejemplo.com';
+        let userData = null;
+        
+        try {
+            const userDataStr = sessionStorage.getItem('userData');
+            if (userDataStr) {
+                userData = JSON.parse(userDataStr);
+                console.log("Datos del usuario cargados correctamente:", userData);
+            } else {
+                console.warn("No se encontraron datos estructurados del usuario en sessionStorage");
+            }
+        } catch (error) {
+            console.error("Error al procesar los datos del usuario:", error);
+        }
+        
+        // Actualizar la interfaz con los datos disponibles
+        updateUI(userData, userEmail);
+    }
+    
+    // Función para actualizar la interfaz
+    function updateUI(userData, userEmail) {
+        // Elementos del DOM
+        const welcomeNameElem = document.getElementById('welcome-user-name');
+        const userRoleTextElem = document.getElementById('user-role-text');
+        const profileNameElem = document.getElementById('profile-name');
+        const profileEmailElem = document.getElementById('profile-email');
+        const profileRoleElem = document.getElementById('profile-role');
+        const profileStatusElem = document.getElementById('profile-status');
+        const profileLastLoginElem = document.getElementById('profile-lastLogin');
+        const profilePhoneElem = document.getElementById('profile-phone');
+        const userDataJsonElem = document.getElementById('user-data-json');
+        
+        // Verificar que existan los elementos antes de modificarlos
+        if (!welcomeNameElem || !userDataJsonElem) {
+            console.error("Elementos del DOM no encontrados. Puede que el HTML no se haya cargado correctamente.");
+            return;
+        }
+        
+        if (userData) {
+            // Actualizar elementos con los datos del usuario
+            welcomeNameElem.textContent = userData.name || userEmail;
+            userRoleTextElem.textContent = userData.role || 'usuario';
+            profileNameElem.textContent = userData.name || 'No disponible';
+            profileEmailElem.textContent = userData.email || userEmail;
+            profileRoleElem.textContent = userData.role || 'No disponible';
+            profileStatusElem.textContent = userData.status || 'No disponible';
+            profileLastLoginElem.textContent = formatDate(userData.lastLoginAt);
+            profilePhoneElem.textContent = userData.phone || 'No disponible';
+            userDataJsonElem.textContent = JSON.stringify(userData, null, 2);
+        } else {
+            // Datos por defecto si no hay información del usuario
+            welcomeNameElem.textContent = userEmail;
+            userRoleTextElem.textContent = 'usuario';
+            profileNameElem.textContent = 'No disponible';
+            profileEmailElem.textContent = userEmail;
+            profileRoleElem.textContent = 'No disponible';
+            profileStatusElem.textContent = 'No disponible';
+            profileLastLoginElem.textContent = 'No disponible';
+            profilePhoneElem.textContent = 'No disponible';
+            userDataJsonElem.textContent = 'No se encontraron datos del usuario';
+        }
+    }
+    
+    // Función para formatear la fecha
+    function formatDate(dateString) {
+        if (!dateString) return 'No disponible';
+        
+        try {
+            const date = new Date(dateString);
+            return date.toLocaleString('es-MX', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        } catch (e) {
+            console.error("Error al formatear fecha:", e);
+            return dateString || 'No disponible';
+        }
+    }
+    
+    // Ejecutar la carga de datos apenas se cargue el script
+    try {
+        loadUserData();
+    } catch (error) {
+        console.error("Error al inicializar el módulo de bienvenida:", error);
+        document.getElementById('welcome-message').innerHTML = 
+            '<p>Ocurrió un error al cargar los datos. Por favor, actualice la página.</p>';
+    }
+</script>

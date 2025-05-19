@@ -29,10 +29,9 @@ if (empty($requestedRole)) {
 // Mapeo de roles a módulos permitidos
 $allowedModules = [
     'root' => ['bienvenida', 'dashboard', 'tiendas', 'solicitudes', 'vendedores'],
-    'admin' => ['bienvenida', 'dashboard', 'tiendas', 'solicitudes'],
-    'subdistribuidor' => ['bienvenida', 'dashboard', 'tiendas'],
-    'vendedor' => ['bienvenida', 'dashboard'],
-    'guest' => ['bienvenida']
+    'admin' => ['bienvenida', 'dashboard', 'tiendas', 'solicitudes','vendedores'],
+    'subdistribuidor' => ['bienvenida', 'dashboard', 'tiendas', 'solicitudes', 'vendedores'],
+    'vendedor' => ['bienvenida', 'dashboard','solicitudes']
 ];
 
 // Verificar si el rol existe en nuestra configuración
@@ -52,17 +51,11 @@ $basePath = dirname(__DIR__);
 
 // CORRECCIÓN: Verificamos múltiples ubicaciones posibles para los módulos
 $possiblePaths = [
-    // Opción 1: Estructura original esperada
+   // Solo buscar en la ruta específica para el rol solicitado
     "{$basePath}/modules/modules_{$requestedRole}/{$requestedModule}.html",
     
-    // Opción 2: Sin el directorio modules intermedio
-    "{$basePath}/modules_{$requestedRole}/{$requestedModule}.html",
-    
-    // Opción 3: Directamente en la carpeta raíz del usuario
-    "{$basePath}/dashboard/modules/modules_{$requestedRole}/{$requestedModule}.html",
-    
-    // Opción 4: Usar directamente la ruta real donde sabemos que están los archivos
-    "{$basePath}/dashboard/modules/modules_root/{$requestedModule}.html"
+    // Opcionalmente, permitir una ubicación alternativa pero siempre del mismo rol
+    "{$basePath}/dashboard/modules/modules_{$requestedRole}/{$requestedModule}.html"
 ];
 
 $filePath = null;

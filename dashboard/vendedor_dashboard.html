@@ -3,84 +3,100 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EVONET - Dashboard Vendedor</title>
-    <link rel="stylesheet" href="../css/styles.css">
+    <title>EVONET - Panel de Administración</title>
+    
+    <!-- Estilos -->
+    <link rel="stylesheet" href="../css/dashboard.css">
+    
+    <!-- Fuentes -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome para iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
-        .dashboard-container {
-            padding: 20px;
-            max-width: 1200px;
-            margin: 0 auto;
+        /* Ajustes específicos para rol vendedor */
+        .header-logo img {
+            height: 30px;
+            width: auto;
         }
-        .header {
+        
+        .user-header-info {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid #eee;
+            gap: 15px;
         }
-        .logo-small {
-            max-width: 150px;
+        
+        .user-name {
+            color: white;
+            font-weight: 500;
         }
-        .user-info {
-            text-align: right;
-        }
-        .user-role {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            margin-top: 8px;
+        
+        /* Color específico para rol vendedor */
+        .user-role.vendedor {
             background-color: #388e3c;
-            color: white;
         }
-        .logout-btn {
-            background-color: var(--accent-color);
-            color: white;
-            border: none;
-            border-radius: 4px;
-            padding: 8px 16px;
-            cursor: pointer;
-            font-size: 14px;
+        
+        /* Variables de color personalizadas para vendedor */
+        :root {
+            --role-color: #388e3c;
+            --role-color-dark: #2e7d32;
+            --role-color-light: #4caf50;
         }
-        .json-display {
-            background-color: #f9f9f9;
-            padding: 20px;
-            border-radius: 8px;
-            overflow: auto;
-            max-height: 600px;
-            font-family: monospace;
-            white-space: pre-wrap;
-            font-size: 14px;
-            border: 1px solid #ddd;
+        
+        .menu-icon {
+            color: var(--role-color);
         }
-        .title {
-            color: var(--primary-color);
-            margin-bottom: 20px;
+        
+        .field-value {
+            color: var(--role-color);
         }
     </style>
 </head>
 <body>
+    <!-- Header superior -->
+    <header class="header">
+        <div class="header-logo">
+            <img src="../img/logo_2.png" alt="EVONET" class="logo-small">
+            <!-- No incluimos texto "Panel de Administración" -->
+        </div>
+        <div class="user-header-info">
+            <span class="user-name" id="header-user-name">Cargando...</span>
+            <span class="user-role vendedor" id="header-user-role">vendedor</span>
+            <button id="logout-btn" class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+            </button>
+        </div>
+    </header>
+    
+    <!-- Contenedor principal -->
     <div class="dashboard-container">
-        <div class="header">
-            <div>
-                <img src="../img/logo.png" alt="EVONET" class="logo-small">
-                <h1 class="title">Dashboard de Vendedor</h1>
-            </div>
-            <div class="user-info">
-                <p>Bienvenido, <span id="user-name">...</span></p>
-                <p>Rol: <span class="user-role">vendedor</span></p>
-                <button id="logout-btn" class="logout-btn">Cerrar Sesión</button>
-            </div>
-        </div>
+        <!-- Menú lateral -->
+        <nav class="sidebar">
+            <ul class="sidebar-menu">
+                <li class="menu-item active" data-module="bienvenida">
+                    <i class="fas fa-home menu-icon"></i> <span class="menu-text">Bienvenida</span>
+                </li>
+                <li class="menu-item" data-module="dashboard">
+                    <i class="fas fa-chart-line menu-icon"></i> <span class="menu-text">Dashboard</span>
+                </li>
+                <li class="menu-item" data-module="solicitudes">
+                    <i class="fas fa-clipboard-list menu-icon"></i> <span class="menu-text">Solicitudes</span>
+                </li>
+                <!-- Vendedor no tiene acceso a módulos tiendas y vendedores -->
+            </ul>
+        </nav>
         
-        <h2>Información del Usuario</h2>
-        <div class="json-display" id="user-data">
-            Cargando datos...
-        </div>
+        <!-- Contenido principal -->
+        <main class="content" id="main-content">
+            <!-- El contenido se cargará dinámicamente aquí -->
+            <div class="loading-content" id="loading-content">
+                <div class="loading-spinner"></div>
+                <p>Cargando contenido...</p>
+            </div>
+        </main>
     </div>
 
     <!-- Firebase SDK -->
@@ -95,7 +111,26 @@
             // Verificar si hay datos en sessionStorage
             const userEmail = sessionStorage.getItem('userEmail');
             const userUID = sessionStorage.getItem('userUID');
-            const userData = sessionStorage.getItem('userData');
+            let userData = null;
+            
+            try {
+                const userDataStr = sessionStorage.getItem('userData');
+                if (userDataStr) {
+                    userData = JSON.parse(userDataStr);
+                }
+            } catch (e) {
+                console.error('Error al parsear userData de sessionStorage:', e);
+            }
+            
+            // Verificar que el usuario tenga el rol correcto
+            if (userData && userData.role !== 'vendedor') {
+                console.error("Acceso no autorizado: el usuario no tiene rol de vendedor");
+                window.location.href = '../redirect.html';
+                return;
+            }
+            
+            // Actualizar el header con información del usuario
+            updateUserHeader(userData, userEmail);
             
             if (!userEmail || !userUID) {
                 // Si no hay datos de sesión, redirigir al login
@@ -104,15 +139,27 @@
                 return;
             }
             
-            // Mostrar datos del usuario
-            if (userData) {
-                try {
-                    const data = JSON.parse(userData);
-                    document.getElementById('user-name').textContent = data.name || userEmail;
-                    document.getElementById('user-data').textContent = JSON.stringify(data, null, 2);
-                } catch (error) {
-                    console.error("Error al procesar datos del usuario:", error);
-                    document.getElementById('user-data').textContent = "Error al cargar datos";
+            // Verificar que el usuario siga autenticado
+            if (firebase.apps.length > 0) {
+                firebase.auth().onAuthStateChanged(user => {
+                    if (!user) {
+                        // Si el usuario ya no está autenticado, redirigir al login
+                        console.log("Usuario ya no está autenticado, redirigiendo al login");
+                        sessionStorage.clear();
+                        window.location.href = '../index.html';
+                    }
+                });
+            }
+            
+            // Función para actualizar el header con los datos del usuario
+            function updateUserHeader(userData, userEmail) {
+                const userNameElement = document.getElementById('header-user-name');
+                
+                if (userData) {
+                    // Mostrar nombre real del usuario 
+                    userNameElement.textContent = userData.name || userEmail;
+                } else {
+                    userNameElement.textContent = userEmail || 'Usuario';
                 }
             }
             
@@ -137,17 +184,138 @@
                 }
             });
             
-            // Verificar que el usuario siga autenticado
-            if (firebase.apps.length > 0) {
-                firebase.auth().onAuthStateChanged(user => {
-                    if (!user) {
-                        // Si el usuario ya no está autenticado, redirigir al login
-                        console.log("Usuario ya no está autenticado, redirigiendo al login");
-                        sessionStorage.clear();
-                        window.location.href = '../index.html';
+            // Sistema de navegación SPA con validación segura
+            const menuItems = document.querySelectorAll('.menu-item');
+            const mainContent = document.getElementById('main-content');
+            const loadingContent = document.getElementById('loading-content');
+            
+            // Obtener el rol del usuario (debería ser 'vendedor')
+            const userRole = userData?.role || 'guest';
+            
+            // Función mejorada para cargar módulos con validación en servidor
+            async function loadModule(moduleName) {
+                // Mostrar loader
+                loadingContent.style.display = 'flex';
+                mainContent.innerHTML = '';
+                
+                try {
+                    // Validar el módulo localmente antes de hacer la petición al servidor
+                    const allowedModules = ['bienvenida', 'dashboard', 'solicitudes'];
+                    if (!allowedModules.includes(moduleName)) {
+                        throw new Error(`El módulo "${moduleName}" no está disponible para vendedores`);
                     }
-                });
+                    
+                    // Usar el endpoint PHP para obtener el módulo con validación de seguridad
+                    const response = await fetch(`../api/get_module.php?name=${moduleName}&role=${userRole}&uid=${userUID}`);
+                    
+                    // Manejar respuestas de error
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        let errorMessage = 'Error desconocido';
+                        
+                        // Determinar mensaje según código de estado
+                        switch (response.status) {
+                            case 401:
+                                errorMessage = 'Tu sesión ha expirado. Vuelve a iniciar sesión.';
+                                // Redirigir al login
+                                sessionStorage.clear();
+                                window.location.href = '../index.html';
+                                return;
+                                
+                            case 403:
+                                errorMessage = 'No tienes permiso para acceder a este módulo.';
+                                break;
+                                
+                            case 404:
+                                errorMessage = `El módulo "${moduleName}" no existe.`;
+                                break;
+                                
+                            default:
+                                errorMessage = `Error al cargar el módulo: ${response.status}`;
+                        }
+                        
+                        // Agregar texto de error del servidor si está disponible
+                        if (errorText) {
+                            errorMessage += `<br>Detalle: ${errorText}`;
+                        }
+                        
+                        throw new Error(errorMessage);
+                    }
+                    
+                    // Obtener el HTML del módulo
+                    const moduleHTML = await response.text();
+                    
+                    // Insertar el HTML en el contenido principal
+                    mainContent.innerHTML = moduleHTML;
+                    
+                    // Procesar scripts después de insertar contenido
+                    const scripts = mainContent.querySelectorAll('script');
+                    const scriptPromises = [];
+                    
+                    scripts.forEach(oldScript => {
+                        const newScript = document.createElement('script');
+                        
+                        // Transferir atributos
+                        Array.from(oldScript.attributes).forEach(attr => {
+                            newScript.setAttribute(attr.name, attr.value);
+                        });
+                        
+                        // Crear una promesa para saber cuándo se carga el script
+                        const scriptPromise = new Promise((resolve, reject) => {
+                            newScript.onload = resolve;
+                            newScript.onerror = reject;
+                        });
+                        
+                        // Transferir contenido
+                        newScript.textContent = oldScript.textContent;
+                        
+                        // Reemplazar el script viejo con el nuevo
+                        oldScript.parentNode.replaceChild(newScript, oldScript);
+                        
+                        // Si es un script inline, resolverlo inmediatamente
+                        if (!newScript.src) {
+                            scriptPromises.push(Promise.resolve());
+                        } else {
+                            scriptPromises.push(scriptPromise);
+                        }
+                    });
+                    
+                    // Esperar a que todos los scripts se procesen antes de ocultar el loader
+                    await Promise.all(scriptPromises);
+                    
+                    // Ocultar loader después de que todos los scripts estén cargados
+                    loadingContent.style.display = 'none';
+                    
+                } catch (error) {
+                    console.error('Error al cargar el módulo:', error);
+                    loadingContent.style.display = 'none';
+                    
+                    // Mensaje personalizado según el tipo de error
+                    mainContent.innerHTML = `<div class="card">
+                        <h2 class="content-title">
+                            <i class="fas fa-exclamation-triangle"></i> Error
+                        </h2>
+                        <p>${error.message}</p>
+                        <p>Por favor, selecciona otro módulo del menú lateral o contacta con soporte.</p>
+                    </div>`;
+                }
             }
+            
+            // Configurar menú
+            menuItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    // Marcar ítem activo
+                    menuItems.forEach(i => i.classList.remove('active'));
+                    item.classList.add('active');
+                    
+                    // Cargar el módulo correspondiente
+                    const module = item.dataset.module;
+                    loadModule(module);
+                });
+            });
+            
+            // Cargar el módulo inicial (Bienvenida)
+            loadModule('bienvenida');
         });
     </script>
 </body>
