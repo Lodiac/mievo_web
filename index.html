@@ -31,76 +31,92 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     
-    <!-- Script directo para inicialización y autenticación -->
+    <!-- Scripts personalizados -->
+    <script src="js/firebase-config.js"></script>
     <script>
-        // Configuración de Firebase (usamos directamente los valores por ahora)
-        const firebaseConfig = {
-            apiKey: "AIzaSyD5x_KNGvw2VviPY_04Scw7xMIwHZlTygo",
-            authDomain: "mievo-dec57.firebaseapp.com",
-            projectId: "mievo-dec57",
-            storageBucket: "mievo-dec57.firebasestorage.app",
-            messagingSenderId: "870501304667",
-            appId: "1:870501304667:web:2e4f2eb43d0aba370ff27e"
-        };
-
-        // Inicializar Firebase
-        firebase.initializeApp(firebaseConfig);
-
-        // Verificar estado de autenticación al cargar
-        firebase.auth().onAuthStateChanged(function(user) {
-            if (user) {
-                // Usuario ya está autenticado, redirigir al dashboard
-                console.log("Usuario ya autenticado:", user.email);
-                window.location.href = 'dashboard.html';
-            } else {
-                console.log("No hay usuario autenticado");
+        document.addEventListener('DOMContentLoaded', () => {
+            // Escuchar evento de inicialización de Firebase
+            window.addEventListener('firebase-initialized', () => {
+                console.log("Firebase inicializado desde index.html");
+                setupAuthListeners();
+            });
+            
+            // Comprobar si Firebase ya está inicializado
+            if (firebase.apps.length > 0) {
+                console.log("Firebase ya está inicializado");
+                setupAuthListeners();
             }
-        });
-
-        // Manejar el formulario de login
-        document.getElementById('login-form').addEventListener('submit', function(e) {
-            e.preventDefault();
             
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const errorMessage = document.getElementById('error-message');
-            const successMessage = document.getElementById('success-message');
-            
-            errorMessage.textContent = '';
-            successMessage.textContent = '';
-            
-            console.log("Intentando iniciar sesión con:", email);
-            
-            firebase.auth().signInWithEmailAndPassword(email, password)
-                .then((userCredential) => {
-                    // Login exitoso
-                    const user = userCredential.user;
-                    console.log("Login exitoso:", user.email);
-                    successMessage.textContent = "Inicio de sesión exitoso. Redirigiendo...";
-                    
-                    // Redirigir después de un breve retraso para mostrar el mensaje
-                    setTimeout(() => {
+            function setupAuthListeners() {
+                // Verificar estado de autenticación al cargar
+                firebase.auth().onAuthStateChanged(function(user) {
+                    if (user) {
+                        // Usuario ya está autenticado, redirigir al dashboard
+                        console.log("Usuario ya autenticado:", user.email);
                         window.location.href = 'dashboard.html';
-                    }, 1000);
-                })
-                .catch((error) => {
-                    console.error("Error de autenticación:", error.code, error.message);
-                    
-                    // Manejar errores de autenticación
-                    switch(error.code) {
-                        case 'auth/user-not-found':
-                            errorMessage.textContent = 'No existe una cuenta con este correo electrónico';
-                            break;
-                        case 'auth/wrong-password':
-                            errorMessage.textContent = 'Contraseña incorrecta';
-                            break;
-                        case 'auth/invalid-email':
-                            errorMessage.textContent = 'Correo electrónico inválido';
-                            break;
-                        default:
-                            errorMessage.textContent = 'Error al iniciar sesión: ' + error.message;
+                    } else {
+                        console.log("No hay usuario autenticado");
                     }
                 });
+
+                // Manejar el formulario de login
+                const loginForm = document.getElementById('login-form');
+                if (loginForm) {
+                    loginForm.addEventListener('submit', function(e) {
+                        e.preventDefault();
+                        
+                        const email = document.getElementById('email').value;
+                        const password = document.getElementById('password').value;
+                        const errorMessage = document.getElementById('error-message');
+                        const successMessage = document.getElementById('success-message');
+                        
+                        errorMessage.textContent = '';
+                        successMessage.textContent = '';
+                        
+                        console.log("Intentando iniciar sesión con:", email);
+                        
+                        firebase.auth().signInWithEmailAndPassword(email, password)
+                            .then((userCredential) => {
+                                // Login exitoso
+                                const user = userCredential.user;
+                                console.log("Login exitoso:", user.email);
+                                successMessage.textContent = "Inicio de sesión exitoso. Redirigiendo...";
+                                
+                                // Redirigir después de un breve retraso para mostrar el mensaje
+                                setTimeout(() => {
+                                    window.location.href = 'dashboard.html';
+                                }, 1000);
+                            })
+                            .catch((error) => {
+                                console.error("Error de autenticación:", error.code, error.message);
+                                
+                                // Manejar errores de autenticación
+                                switch(error.code) {
+                                    case 'auth/user-not-found':
+                                        errorMessage.textContent = 'No existe una cuenta con este correo electrónico';
+                                        break;
+                                    case 'auth/wrong-password':
+                                        errorMessage.textContent = 'Contraseña incorrecta';
+                                        break;
+                                    case 'auth/invalid-email':
+                                        errorMessage.textContent = 'Correo electrónico inválido';
+                                        break;
+                                    default:
+                                        errorMessage.textContent = 'Error al iniciar sesión: ' + error.message;
+                                }
+                            });
+                    });
+                }
+            }
+            
+            // Tiempo de espera por si algo falla
+            setTimeout(() => {
+                if (firebase.apps.length === 0) {
+                    console.error("Firebase no se inicializó correctamente. Cargando configuración alternativa...");
+                    document.getElementById('error-message').textContent = 
+                        'Error de conexión. Por favor, intenta más tarde.';
+                }
+            }, 3000);
         });
     </script>
 </body>

@@ -2,18 +2,29 @@
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *'); // Ajusta según tu configuración de seguridad
 
-// Datos de configuración de Firebase (mantén esto en el servidor)
+// Cargar variables de entorno
+require_once __DIR__ . '/DotEnv.php';
+(new DotEnv(__DIR__ . '/../.env'))->load();
+
+// Datos de configuración de Firebase desde variables de entorno
 $firebaseConfig = [
-    'apiKey' => 'AIzaSyD5x_KNGvw2VviPY_04Scw7xMIwHZlTygo',
-    'authDomain' => 'mievo-dec57.firebaseapp.com',
-    'projectId' => 'mievo-dec57',
-    'storageBucket' => 'mievo-dec57.firebasestorage.app',
-    'messagingSenderId' => '870501304667',
-    'appId' => '1:870501304667:web:2e4f2eb43d0aba370ff27e'
+    'apiKey' => getenv('FIREBASE_API_KEY'),
+    'authDomain' => getenv('FIREBASE_AUTH_DOMAIN'),
+    'projectId' => getenv('FIREBASE_PROJECT_ID'),
+    'storageBucket' => getenv('FIREBASE_STORAGE_BUCKET'),
+    'messagingSenderId' => getenv('FIREBASE_MESSAGING_SENDER_ID'),
+    'appId' => getenv('FIREBASE_APP_ID')
 ];
 
-// Devolver solo el apiKey y authDomain para inicialización básica
-// Puedes ajustar esto según lo que necesites exponer
+// Verificar que todas las variables estén definidas
+foreach ($firebaseConfig as $key => $value) {
+    if (empty($value)) {
+        // Log del error (solo en el servidor)
+        error_log("Error: Variable de entorno para Firebase no definida: $key");
+    }
+}
+
+// Devolver solo lo necesario para inicialización básica
 echo json_encode([
     'apiKey' => $firebaseConfig['apiKey'],
     'authDomain' => $firebaseConfig['authDomain'],
