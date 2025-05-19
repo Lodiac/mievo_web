@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EVONET - Redirección</title>
+    <title>EVONET - Verificación</title>
     <link rel="stylesheet" href="css/styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,6 +16,15 @@
         .user-info {
             margin-bottom: 2rem;
             color: var(--text-color);
+        }
+        .user-role {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin-top: 8px;
+            background-color: var(--primary-color);
+            color: white;
         }
         .logout-btn {
             background-color: var(--accent-color);
@@ -35,6 +44,28 @@
             max-width: 220px;
             height: auto;
         }
+        .access-error {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: rgba(255, 0, 0, 0.1);
+            border: 1px solid rgba(255, 0, 0, 0.3);
+            border-radius: 5px;
+            color: #d32f2f;
+        }
+        .spinner-overlay {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 20px 0;
+        }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top-color: var(--primary-color);
+            animation: spin 1s ease-in-out infinite;
+        }
     </style>
 </head>
 <body>
@@ -42,13 +73,21 @@
         <div class="login-form dashboard">
             <!-- Contenedor para el logo -->
             <div class="logo-container">
-                <img src="img/logo.png" alt="EVONET" class="logo">
+                <img src="img/logo.png" alt="EVONET" class="logo" id="evonet-logo">
             </div>
             
-            <div class="user-info">
-                <p>Bienvenido, <span id="user-email"></span></p>
-                <p>Serás redirigido automáticamente en unos segundos...</p>
+            <div class="user-info" id="user-info">
+                <div class="spinner-overlay" id="loading-spinner">
+                    <div class="spinner"></div>
+                </div>
+                <p>Verificando credenciales y permisos...</p>
             </div>
+            
+            <div id="access-denied" class="access-error" style="display:none;">
+                <p>Tu cuenta no tiene permisos para acceder al sistema.</p>
+                <p>Por favor, contacta con el administrador si crees que es un error.</p>
+            </div>
+            
             <button id="logout-btn" class="login-btn logout-btn">Cerrar Sesión</button>
         </div>
     </div>
@@ -56,6 +95,7 @@
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-firestore-compat.js"></script>
     
     <!-- Scripts personalizados -->
     <script src="js/firebase-config.js"></script>
@@ -63,65 +103,135 @@
         document.addEventListener('DOMContentLoaded', () => {
             // Variable para referencia global
             let firebaseInitialized = false;
-
+            let db = null;
+            
+            // Elementos del DOM
+            const userInfoElement = document.getElementById('user-info');
+            const loadingSpinner = document.getElementById('loading-spinner');
+            const accessDenied = document.getElementById('access-denied');
+            const logoutBtn = document.getElementById('logout-btn');
+            
+            // Roles permitidos
+            const allowedRoles = ['root', 'admin', 'subdistribuidor', 'vendedor'];
+            
             // Verificar si Firebase ya está inicializado (podría estarlo desde index.html)
             if (firebase.apps.length > 0) {
                 firebaseInitialized = true;
-                setupAuthAndLogout();
+                db = firebase.firestore();
+                verifyUserAndRedirect();
             } else {
                 // Esperar a que firebase-config.js inicialice Firebase
                 window.addEventListener('firebase-initialized', () => {
                     firebaseInitialized = true;
-                    setupAuthAndLogout();
+                    db = firebase.firestore();
+                    verifyUserAndRedirect();
                 });
                 
                 // Por si acaso, intentar después de un tiempo razonable
                 setTimeout(() => {
                     if (!firebaseInitialized && firebase.apps.length > 0) {
                         firebaseInitialized = true;
-                        setupAuthAndLogout();
+                        db = firebase.firestore();
+                        verifyUserAndRedirect();
                     }
                 }, 2000);
             }
             
-            function setupAuthAndLogout() {
-                // Verificar si el usuario está autenticado
+            // Función para verificar el usuario y redirigir
+            function verifyUserAndRedirect() {
+                // Verificar si hay un usuario autenticado
                 firebase.auth().onAuthStateChanged(user => {
                     if (user) {
                         // Usuario autenticado
-                        document.getElementById('user-email').textContent = user.email;
+                        console.log("Usuario autenticado:", user.email);
                         
-                        // Simular redirección tras 3 segundos (para una aplicación real, 
-                        // aquí podrías redireccionar a tu sistema principal)
-                        setTimeout(() => {
-                            console.log("Redirección simulada a sistema principal");
-                            // window.location.href = 'tu-sistema-principal.html';
-                        }, 3000);
+                        // Guardar datos del usuario en sessionStorage para uso en dashboards
+                        sessionStorage.setItem('userEmail', user.email);
+                        sessionStorage.setItem('userUID', user.uid);
+                        
+                        // Obtener información del usuario desde Firestore
+                        db.collection('users').doc(user.uid).get()
+                            .then(doc => {
+                                if (doc.exists) {
+                                    const userData = doc.data();
+                                    console.log("Datos del usuario:", userData);
+                                    
+                                    // Guardar todos los datos del usuario en sessionStorage
+                                    sessionStorage.setItem('userData', JSON.stringify(userData));
+                                    
+                                    // Actualizar último inicio de sesión
+                                    const currentDate = new Date().toISOString();
+                                    db.collection('users').doc(user.uid).update({
+                                        lastLoginAt: currentDate
+                                    }).catch(error => {
+                                        console.error("Error al actualizar lastLoginAt:", error);
+                                    });
+                                    
+                                    // Verificar el rol del usuario
+                                    const userRole = userData.role;
+                                    
+                                    if (allowedRoles.includes(userRole)) {
+                                        // Redirigir según el rol
+                                        console.log(`Redirigiendo a dashboard de ${userRole}...`);
+                                        setTimeout(() => {
+                                            window.location.href = `dashboard/${userRole}_dashboard.html`;
+                                        }, 1000);
+                                    } else {
+                                        // Mostrar error de acceso denegado para roles no permitidos
+                                        console.log("Acceso denegado. Rol no permitido:", userRole);
+                                        loadingSpinner.style.display = 'none';
+                                        userInfoElement.innerHTML = `
+                                            <p>Lo sentimos, <strong>${user.email}</strong></p>
+                                            <p>Tu rol actual es: <span class="user-role">${userRole}</span></p>
+                                        `;
+                                        accessDenied.style.display = 'block';
+                                    }
+                                } else {
+                                    // Documento no encontrado
+                                    console.error("No se encontró el documento del usuario en Firestore");
+                                    loadingSpinner.style.display = 'none';
+                                    userInfoElement.innerHTML = `
+                                        <p>Error: No se encontró tu información en el sistema.</p>
+                                        <p>Por favor, contacta con el administrador.</p>
+                                    `;
+                                }
+                            })
+                            .catch(error => {
+                                console.error("Error al obtener datos del usuario:", error);
+                                loadingSpinner.style.display = 'none';
+                                userInfoElement.innerHTML = `
+                                    <p>Error al cargar tus datos.</p>
+                                    <p>Por favor, intenta nuevamente más tarde.</p>
+                                `;
+                            });
                     } else {
                         // Usuario no autenticado, redirigir al login
+                        console.log("No hay usuario autenticado, redirigiendo a login");
                         window.location.href = 'index.html';
                     }
                 });
-                
-                // Manejar cierre de sesión
-                document.getElementById('logout-btn').addEventListener('click', () => {
-                    console.log('Cerrando sesión...');
-                    
-                    // Añadir clase loading al botón
-                    const logoutBtn = document.getElementById('logout-btn');
-                    logoutBtn.classList.add('loading');
-                    logoutBtn.disabled = true;
-                    
-                    firebase.auth().signOut().then(() => {
-                        console.log('Sesión cerrada con éxito');
-                        window.location.href = 'index.html';
-                    }).catch(error => {
-                        console.error('Error al cerrar sesión:', error);
-                        logoutBtn.classList.remove('loading');
-                        logoutBtn.disabled = false;
-                    });
-                });
             }
+            
+            // Manejar cierre de sesión
+            logoutBtn.addEventListener('click', () => {
+                console.log('Cerrando sesión...');
+                
+                // Añadir clase loading al botón
+                logoutBtn.classList.add('loading');
+                logoutBtn.disabled = true;
+                
+                // Limpiar datos de sesión
+                sessionStorage.clear();
+                
+                firebase.auth().signOut().then(() => {
+                    console.log('Sesión cerrada con éxito');
+                    window.location.href = 'index.html';
+                }).catch(error => {
+                    console.error('Error al cerrar sesión:', error);
+                    logoutBtn.classList.remove('loading');
+                    logoutBtn.disabled = false;
+                });
+            });
         });
     </script>
 </body>

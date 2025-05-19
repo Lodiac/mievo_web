@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EVONET - Dashboard Root</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .dashboard-container {
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        .logo-small {
+            max-width: 150px;
+        }
+        .user-info {
+            text-align: right;
+        }
+        .user-role {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin-top: 8px;
+            background-color: #d32f2f;
+            color: white;
+        }
+        .logout-btn {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .json-display {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            overflow: auto;
+            max-height: 600px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            font-size: 14px;
+            border: 1px solid #ddd;
+        }
+        .title {
+            color: var(--primary-color);
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="header">
+            <div>
+                <img src="../img/logo.png" alt="EVONET" class="logo-small">
+                <h1 class="title">Dashboard de Administrador Root</h1>
+            </div>
+            <div class="user-info">
+                <p>Bienvenido, <span id="user-name">...</span></p>
+                <p>Rol: <span class="user-role">root</span></p>
+                <button id="logout-btn" class="logout-btn">Cerrar Sesión</button>
+            </div>
+        </div>
+        
+        <h2>Información del Usuario</h2>
+        <div class="json-display" id="user-data">
+            Cargando datos...
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-firestore-compat.js"></script>
+    
+    <!-- Scripts personalizados -->
+    <script src="../js/firebase-config.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Verificar si hay datos en sessionStorage
+            const userEmail = sessionStorage.getItem('userEmail');
+            const userUID = sessionStorage.getItem('userUID');
+            const userData = sessionStorage.getItem('userData');
+            
+            if (!userEmail || !userUID) {
+                // Si no hay datos de sesión, redirigir al login
+                console.log("No hay sesión activa, redirigiendo al login");
+                window.location.href = '../index.html';
+                return;
+            }
+            
+            // Mostrar datos del usuario
+            if (userData) {
+                try {
+                    const data = JSON.parse(userData);
+                    document.getElementById('user-name').textContent = data.name || userEmail;
+                    document.getElementById('user-data').textContent = JSON.stringify(data, null, 2);
+                } catch (error) {
+                    console.error("Error al procesar datos del usuario:", error);
+                    document.getElementById('user-data').textContent = "Error al cargar datos";
+                }
+            }
+            
+            // Manejar cierre de sesión
+            document.getElementById('logout-btn').addEventListener('click', () => {
+                console.log('Cerrando sesión...');
+                
+                // Limpiar datos de sesión
+                sessionStorage.clear();
+                
+                // Verificar que Firebase esté inicializado
+                if (firebase.apps.length > 0) {
+                    firebase.auth().signOut().then(() => {
+                        console.log('Sesión cerrada con éxito');
+                        window.location.href = '../index.html';
+                    }).catch(error => {
+                        console.error('Error al cerrar sesión:', error);
+                    });
+                } else {
+                    // Si Firebase no está inicializado, solo redirigir
+                    window.location.href = '../index.html';
+                }
+            });
+            
+            // Verificar que el usuario siga autenticado
+            if (firebase.apps.length > 0) {
+                firebase.auth().onAuthStateChanged(user => {
+                    if (!user) {
+                        // Si el usuario ya no está autenticado, redirigir al login
+                        console.log("Usuario ya no está autenticado, redirigiendo al login");
+                        sessionStorage.clear();
+                        window.location.href = '../index.html';
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
