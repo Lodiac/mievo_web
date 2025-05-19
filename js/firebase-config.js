@@ -1,3 +1,4 @@
+
 // Cargar la configuración desde el backend PHP
 async function loadFirebaseConfig() {
     try {
@@ -5,11 +6,17 @@ async function loadFirebaseConfig() {
         const config = await response.json();
         
         // Inicializar Firebase con la configuración
-        return firebase.initializeApp(config);
+        const app = firebase.initializeApp(config);
+        
+        // Disparar evento de inicialización completa
+        const event = new Event('firebase-initialized');
+        window.dispatchEvent(event);
+        
+        return app;
     } catch (error) {
         console.error('Error al cargar la configuración de Firebase:', error);
-        document.getElementById('error-message').textContent = 
-            'Error al conectar con el servicio. Por favor, intenta más tarde.';
+        document.getElementById('error-message') && (document.getElementById('error-message').textContent = 
+            'Error al conectar con el servicio. Por favor, intenta más tarde.');
     }
 }
 
