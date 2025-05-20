@@ -142,6 +142,17 @@
 
 <!-- Estilos específicos para este módulo -->
 <style>
+    /* Definición de variables CSS para este módulo */
+    :root {
+        --primary-color: #303498;    /* Azul oscuro / principal */
+        --primary-dark: #282b7a;     /* Azul más oscuro para hover */
+        --accent-color: #dc3545;     /* Rojo para acentos y alertas */
+        --background-color: #f5f7fa; /* Fondo general */
+        --text-color: #333333;       /* Color de texto */
+        --text-light: #666666;       /* Color de texto secundario */
+        --border-radius: 12px;       /* Bordes redondeados */
+    }
+    
     /* Estilos para las pestañas */
     .tabs-container {
         margin-top: 20px;
@@ -165,12 +176,12 @@
     }
     
     .tab-btn:hover {
-        color: var(--primary-color);
+        color: #303498;
     }
     
     .tab-btn.active {
-        color: var(--primary-color);
-        border-bottom-color: var(--primary-color);
+        color: #303498;
+        border-bottom-color: #303498;
     }
     
     .tab-panel {
@@ -211,7 +222,7 @@
     }
     
     .custom-select:focus {
-        border-color: var(--primary-color);
+        border-color: #303498;
         box-shadow: 0 0 0 3px rgba(48, 52, 152, 0.2);
         outline: none;
     }
@@ -247,7 +258,7 @@
     }
     
     .count-badge {
-        background-color: var(--primary-color);
+        background-color: #303498;
         color: white;
         padding: 3px 10px;
         border-radius: 20px;
@@ -416,6 +427,28 @@
         background-color: #28a745;
         color: white;
     }
+    
+    /* Aplicar colores directamente a elementos importantes */
+    .content-title, .content-title i {
+        color: #303498 !important;
+    }
+    
+    .btn-primary {
+        background-color: #303498 !important;
+    }
+    
+    .btn-primary:hover {
+        background-color: #282b7a !important;
+    }
+    
+    .count-badge {
+        background-color: #303498 !important;
+    }
+    
+    .page-number.active {
+        background-color: #303498 !important;
+        border-color: #303498 !important;
+    }
 </style>
 
 <!-- Script para el módulo -->
@@ -427,9 +460,11 @@
         tiendaInternaSeleccionada: null,
         tiendasExternasSeleccionadas: new Set(),
         asignaciones: [],
+        asignacionesFiltradas: [],
         filtroAsignaciones: '',
         currentPage: 1,
-        itemsPerPage: 10
+        itemsPerPage: 10,
+        isLoading: false
     };
     
     // Referencias del DOM para la pestaña de asignación
@@ -466,6 +501,7 @@
     
     // Función para cambiar entre pestañas
     function setupTabs() {
+        console.log("Configurando pestañas...");
         tabBtns.forEach(btn => {
             btn.addEventListener('click', () => {
                 // Desactivar todas las pestañas
@@ -475,123 +511,228 @@
                 // Activar la pestaña seleccionada
                 btn.classList.add('active');
                 const tabId = btn.dataset.tab;
-                document.getElementById(`panel-${tabId}`).classList.add('active');
+                const panel = document.getElementById(`panel-${tabId}`);
                 
-                // Cargar datos si es necesario
-                if (tabId === 'ver') {
-                    cargarAsignaciones();
+                if (panel) {
+                    panel.classList.add('active');
+                    
+                    // Cargar datos específicos de la pestaña
+                    if (tabId === 'ver') {
+                        console.log("Cambiando a pestaña de visualización, cargando asignaciones...");
+                        // Mostrar loader de asignaciones
+                        asignacionesLoading.style.display = 'flex';
+                        asignacionesContainer.style.display = 'none';
+                        asignacionesEmpty.style.display = 'none';
+                        
+                        // Cargar asignaciones
+                        cargarAsignaciones();
+                    } else if (tabId === 'asignar') {
+                        console.log("Cambiando a pestaña de asignación");
+                        
+                        // Si no hay tiendas internas cargadas, cargarlas
+                        if (state.tiendasInternas.length === 0) {
+                            tiendasLoading.style.display = 'flex';
+                            cargarTiendasInternas();
+                        }
+                    }
+                } else {
+                    console.error(`Panel con ID panel-${tabId} no encontrado`);
                 }
             });
         });
     }
     
-    // Inicialización
+    // Inicialización principal del módulo
     function init() {
-        setupTabs();
-        cargarTiendasInternas();
-        setupEventListeners();
+        try {
+            console.log("Inicializando módulo atención_clientes...");
+            
+            // Verificar elementos críticos del DOM
+            if (!tiendaInternaSelector || !tiendasLoading || !tiendasError) {
+                console.error("Elementos críticos del DOM no encontrados");
+                return;
+            }
+            
+            // Resetear estado
+            resetState();
+            
+            // Configurar pestañas y event listeners
+            setupTabs();
+            setupEventListeners();
+            
+            // Cargar datos iniciales con timeout para evitar carga infinita
+            setTimeout(() => {
+                if (state.isLoading) {
+                    console.warn("La carga está tomando demasiado tiempo, reseteando estado");
+                    tiendasLoading.style.display = 'none';
+                    tiendasError.style.display = 'block';
+                    errorMessage.textContent = "Error: Tiempo de espera agotado";
+                    state.isLoading = false;
+                }
+            }, 15000); // 15 segundos de timeout
+            
+            // Iniciar carga de datos
+            state.isLoading = true;
+            cargarTiendasInternas();
+            
+        } catch (error) {
+            console.error("Error crítico en inicialización:", error);
+            // Asegurar que los estados de carga se ocultan
+            if (tiendasLoading) tiendasLoading.style.display = 'none';
+            if (tiendasError) {
+                tiendasError.style.display = 'block';
+                if (errorMessage) errorMessage.textContent = `Error de inicialización: ${error.message}`;
+            }
+        }
+    }
+    
+    // Resetear estado del módulo
+    function resetState() {
+        state.tiendasInternas = [];
+        state.tiendasExternas = [];
+        state.tiendaInternaSeleccionada = null;
+        state.tiendasExternasSeleccionadas = new Set();
+        state.asignaciones = [];
+        state.asignacionesFiltradas = [];
+        state.filtroAsignaciones = '';
+        state.currentPage = 1;
+        state.isLoading = false;
+        
+        // Resetear UI
+        if (tiendaInternaSelector) tiendaInternaSelector.innerHTML = '<option value="">Cargando tiendas internas...</option>';
+        if (searchTiendas) searchTiendas.value = '';
+        if (searchAsignaciones) searchAsignaciones.value = '';
     }
     
     // Configurar escuchadores de eventos
     function setupEventListeners() {
-        // Selector de tienda interna
-        tiendaInternaSelector.addEventListener('change', () => {
-            state.tiendaInternaSeleccionada = tiendaInternaSelector.value;
-            verificarEstadoBotonAsignar();
-        });
-        
-        // Botón de búsqueda
-        btnBuscar.addEventListener('click', () => {
-            cargarTiendasExternas(searchTiendas.value.trim());
-        });
-        
-        // Búsqueda al presionar Enter
-        searchTiendas.addEventListener('keyup', (e) => {
-            if (e.key === 'Enter') {
+        try {
+            // Selector de tienda interna
+            tiendaInternaSelector.addEventListener('change', () => {
+                state.tiendaInternaSeleccionada = tiendaInternaSelector.value;
+                verificarEstadoBotonAsignar();
+            });
+            
+            // Botón de búsqueda
+            btnBuscar.addEventListener('click', () => {
                 cargarTiendasExternas(searchTiendas.value.trim());
-            }
-        });
-        
-        // Botón de reset de búsqueda
-        btnResetSearch.addEventListener('click', () => {
-            searchTiendas.value = '';
-            cargarTiendasExternas('');
-        });
-        
-        // Casilla "Seleccionar todas"
-        selectAllTiendas.addEventListener('change', () => {
-            const checkboxes = document.querySelectorAll('.tree-parent-checkbox, .tree-child-checkbox');
-            checkboxes.forEach(checkbox => {
-                checkbox.checked = selectAllTiendas.checked;
-                
-                // Actualizar el conjunto de tiendas seleccionadas
-                const tiendaId = checkbox.dataset.id;
-                if (selectAllTiendas.checked) {
-                    state.tiendasExternasSeleccionadas.add(tiendaId);
-                } else {
-                    state.tiendasExternasSeleccionadas.delete(tiendaId);
+            });
+            
+            // Búsqueda al presionar Enter
+            searchTiendas.addEventListener('keyup', (e) => {
+                if (e.key === 'Enter') {
+                    cargarTiendasExternas(searchTiendas.value.trim());
                 }
             });
             
-            actualizarContadorSeleccionadas();
-            verificarEstadoBotonAsignar();
-        });
-        
-        // Botón de asignar
-        btnAsignar.addEventListener('click', asignarTiendas);
-        
-        // Búsqueda de asignaciones
-        btnBuscarAsignaciones.addEventListener('click', () => {
-            state.filtroAsignaciones = searchAsignaciones.value.trim();
-            state.currentPage = 1;
-            filtrarYMostrarAsignaciones();
-        });
-        
-        // Búsqueda al presionar Enter en asignaciones
-        searchAsignaciones.addEventListener('keyup', (e) => {
-            if (e.key === 'Enter') {
+            // Botón de reset de búsqueda
+            btnResetSearch.addEventListener('click', () => {
+                searchTiendas.value = '';
+                cargarTiendasExternas('');
+            });
+            
+            // Casilla "Seleccionar todas"
+            selectAllTiendas.addEventListener('change', () => {
+                const checkboxes = document.querySelectorAll('.tree-parent-checkbox, .tree-child-checkbox');
+                checkboxes.forEach(checkbox => {
+                    checkbox.checked = selectAllTiendas.checked;
+                    
+                    // Actualizar el conjunto de tiendas seleccionadas
+                    const tiendaId = checkbox.dataset.id;
+                    if (tiendaId) {
+                        if (selectAllTiendas.checked) {
+                            state.tiendasExternasSeleccionadas.add(tiendaId);
+                        } else {
+                            state.tiendasExternasSeleccionadas.delete(tiendaId);
+                        }
+                    }
+                });
+                
+                actualizarContadorSeleccionadas();
+                verificarEstadoBotonAsignar();
+            });
+            
+            // Botón de asignar
+            btnAsignar.addEventListener('click', asignarTiendas);
+            
+            // Búsqueda de asignaciones
+            btnBuscarAsignaciones.addEventListener('click', () => {
                 state.filtroAsignaciones = searchAsignaciones.value.trim();
                 state.currentPage = 1;
                 filtrarYMostrarAsignaciones();
-            }
-        });
-        
-        // Botón de reset de búsqueda de asignaciones
-        btnResetAsignaciones.addEventListener('click', () => {
-            searchAsignaciones.value = '';
-            state.filtroAsignaciones = '';
-            state.currentPage = 1;
-            filtrarYMostrarAsignaciones();
-        });
-        
-        // Paginación
-        prevPageAsignaciones.addEventListener('click', () => {
-            if (state.currentPage > 1) {
-                state.currentPage--;
-                renderAsignaciones();
-                updatePagination();
-            }
-        });
-        
-        nextPageAsignaciones.addEventListener('click', () => {
-            const totalPages = Math.ceil(state.asignaciones.length / state.itemsPerPage);
-            if (state.currentPage < totalPages) {
-                state.currentPage++;
-                renderAsignaciones();
-                updatePagination();
-            }
-        });
+            });
+            
+            // Búsqueda al presionar Enter en asignaciones
+            searchAsignaciones.addEventListener('keyup', (e) => {
+                if (e.key === 'Enter') {
+                    state.filtroAsignaciones = searchAsignaciones.value.trim();
+                    state.currentPage = 1;
+                    filtrarYMostrarAsignaciones();
+                }
+            });
+            
+            // Botón de reset de búsqueda de asignaciones
+            btnResetAsignaciones.addEventListener('click', () => {
+                searchAsignaciones.value = '';
+                state.filtroAsignaciones = '';
+                state.currentPage = 1;
+                filtrarYMostrarAsignaciones();
+            });
+            
+            // Paginación
+            prevPageAsignaciones.addEventListener('click', () => {
+                if (state.currentPage > 1) {
+                    state.currentPage--;
+                    renderAsignaciones();
+                    updatePagination();
+                }
+            });
+            
+            nextPageAsignaciones.addEventListener('click', () => {
+                const totalPages = Math.ceil(state.asignacionesFiltradas.length / state.itemsPerPage);
+                if (state.currentPage < totalPages) {
+                    state.currentPage++;
+                    renderAsignaciones();
+                    updatePagination();
+                }
+            });
+            
+            console.log("Event listeners configurados correctamente");
+        } catch (error) {
+            console.error("Error al configurar event listeners:", error);
+        }
     }
     
     // Cargar tiendas internas desde la API
     async function cargarTiendasInternas() {
         try {
+            console.log("Cargando tiendas internas...");
+            
+            // Mostrar estado de carga
+            tiendasLoading.style.display = 'flex';
+            tiendasExternasContainer.style.display = 'none';
+            tiendasEmpty.style.display = 'none';
+            tiendasError.style.display = 'none';
+            
             const userRole = sessionStorage.getItem('userData') ? 
                             JSON.parse(sessionStorage.getItem('userData')).role : 'guest';
             const userUID = sessionStorage.getItem('userUID') || '';
             
             const response = await fetch(`../api/get_tiendas_internas.php?role=${encodeURIComponent(userRole)}&uid=${encodeURIComponent(userUID)}`);
-            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(`Error HTTP: ${response.status} ${response.statusText}`);
+            }
+            
+            const responseText = await response.text();
+            let data;
+            
+            try {
+                data = JSON.parse(responseText);
+            } catch (e) {
+                console.error("Error al parsear JSON:", responseText);
+                throw new Error("Formato de respuesta inválido");
+            }
             
             if (data.error) {
                 throw new Error(data.error);
@@ -599,6 +740,8 @@
             
             if (!data.tiendas || data.tiendas.length === 0) {
                 tiendaInternaSelector.innerHTML = '<option value="">No hay tiendas internas disponibles</option>';
+                tiendasLoading.style.display = 'none';
+                tiendasEmpty.style.display = 'block';
                 return;
             }
             
@@ -613,18 +756,26 @@
                 tiendaInternaSelector.appendChild(option);
             });
             
+            console.log(`${state.tiendasInternas.length} tiendas internas cargadas correctamente`);
+            
             // Cargar tiendas externas
             cargarTiendasExternas('');
             
         } catch (error) {
             console.error('Error al cargar tiendas internas:', error);
             tiendaInternaSelector.innerHTML = '<option value="">Error al cargar tiendas</option>';
+            tiendasLoading.style.display = 'none';
+            tiendasError.style.display = 'block';
+            errorMessage.textContent = `Error: ${error.message}`;
+            state.isLoading = false;
         }
     }
     
     // Cargar tiendas externas desde la API
     async function cargarTiendasExternas(searchTerm = '') {
         try {
+            console.log(`Cargando tiendas externas ${searchTerm ? 'con filtro: ' + searchTerm : 'sin filtro'}...`);
+            
             // Mostrar spinner de carga
             tiendasLoading.style.display = 'flex';
             tiendasExternasContainer.style.display = 'none';
@@ -642,7 +793,20 @@
             }
             
             const response = await fetch(url);
-            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(`Error HTTP: ${response.status} ${response.statusText}`);
+            }
+            
+            const responseText = await response.text();
+            let data;
+            
+            try {
+                data = JSON.parse(responseText);
+            } catch (e) {
+                console.error("Error al parsear JSON:", responseText);
+                throw new Error("Formato de respuesta inválido");
+            }
             
             if (data.error) {
                 throw new Error(data.error);
@@ -651,11 +815,14 @@
             if (!data.tiendas || data.tiendas.length === 0) {
                 tiendasEmpty.style.display = 'block';
                 tiendasLoading.style.display = 'none';
+                state.isLoading = false;
                 return;
             }
             
             // Guardar tiendas externas
             state.tiendasExternas = data.tiendas;
+            
+            console.log(`${state.tiendasExternas.length} tiendas externas cargadas correctamente`);
             
             // Organizar tiendas en estructuras jerárquicas
             const tiendasPrincipales = state.tiendasExternas.filter(tienda => !tienda.tienda_principal_id);
@@ -791,11 +958,15 @@
             actualizarContadorSeleccionadas();
             verificarEstadoBotonAsignar();
             
+            // Finalizar estado de carga
+            state.isLoading = false;
+            
         } catch (error) {
             console.error('Error al cargar tiendas externas:', error);
             errorMessage.textContent = error.message;
             tiendasError.style.display = 'block';
             tiendasLoading.style.display = 'none';
+            state.isLoading = false;
         }
     }
     
@@ -835,6 +1006,8 @@
                 usuario_asignacion: userUID
             };
             
+            console.log("Enviando asignación de tiendas:", data);
+            
             // Enviar solicitud a la API
             const response = await fetch('../api/asignar_atencion.php', {
                 method: 'POST',
@@ -844,7 +1017,19 @@
                 body: JSON.stringify(data)
             });
             
-            const result = await response.json();
+            if (!response.ok) {
+                throw new Error(`Error HTTP: ${response.status} ${response.statusText}`);
+            }
+            
+            const responseText = await response.text();
+            let result;
+            
+            try {
+                result = JSON.parse(responseText);
+            } catch (e) {
+                console.error("Error al parsear JSON:", responseText);
+                throw new Error("Formato de respuesta inválido");
+            }
             
             if (result.error) {
                 throw new Error(result.error);
@@ -877,6 +1062,8 @@
     // Cargar asignaciones desde la API
     async function cargarAsignaciones() {
         try {
+            console.log("Cargando asignaciones...");
+            
             // Mostrar spinner de carga
             asignacionesLoading.style.display = 'flex';
             asignacionesContainer.style.display = 'none';
@@ -890,7 +1077,20 @@
             let url = `../api/get_asignaciones.php?role=${encodeURIComponent(userRole)}&uid=${encodeURIComponent(userUID)}`;
             
             const response = await fetch(url);
-            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(`Error HTTP: ${response.status} ${response.statusText}`);
+            }
+            
+            const responseText = await response.text();
+            let data;
+            
+            try {
+                data = JSON.parse(responseText);
+            } catch (e) {
+                console.error("Error al parsear JSON:", responseText);
+                throw new Error("Formato de respuesta inválido");
+            }
             
             if (data.error) {
                 throw new Error(data.error);
@@ -898,6 +1098,8 @@
             
             // Guardar asignaciones
             state.asignaciones = data.asignaciones || [];
+            
+            console.log(`${state.asignaciones.length} asignaciones cargadas correctamente`);
             
             // Filtrar y mostrar asignaciones
             filtrarYMostrarAsignaciones();
@@ -917,128 +1119,152 @@
     
     // Filtrar y mostrar asignaciones
     function filtrarYMostrarAsignaciones() {
-        // Filtrar asignaciones si hay término de búsqueda
-        let asignacionesFiltradas = state.asignaciones;
-        
-        if (state.filtroAsignaciones) {
-            const filtro = state.filtroAsignaciones.toLowerCase();
-            asignacionesFiltradas = state.asignaciones.filter(asignacion => {
-                return (
-                    asignacion.tienda_interna_nombre.toLowerCase().includes(filtro) ||
-                    asignacion.tienda_externa_nombre.toLowerCase().includes(filtro)
-                );
-            });
-        }
-        
-        // Verificar si hay asignaciones
-        if (asignacionesFiltradas.length === 0) {
+        try {
+            console.log("Filtrando asignaciones...");
+            
+            // Filtrar asignaciones si hay término de búsqueda
+            let asignacionesFiltradas = state.asignaciones;
+            
+            if (state.filtroAsignaciones) {
+                const filtro = state.filtroAsignaciones.toLowerCase();
+                asignacionesFiltradas = state.asignaciones.filter(asignacion => {
+                    return (
+                        asignacion.tienda_interna_nombre.toLowerCase().includes(filtro) ||
+                        asignacion.tienda_externa_nombre.toLowerCase().includes(filtro)
+                    );
+                });
+            }
+            
+            // Guardar resultado filtrado
+            state.asignacionesFiltradas = asignacionesFiltradas;
+            
+            // Verificar si hay asignaciones
+            if (asignacionesFiltradas.length === 0) {
+                asignacionesLoading.style.display = 'none';
+                asignacionesContainer.style.display = 'none';
+                asignacionesEmpty.style.display = 'block';
+                return;
+            }
+            
+            // Renderizar asignaciones y configurar paginación
+            renderAsignaciones();
+            updatePagination();
+            
+            // Mostrar contenedor de asignaciones
             asignacionesLoading.style.display = 'none';
-            asignacionesContainer.style.display = 'none';
+            asignacionesContainer.style.display = 'block';
+            asignacionesEmpty.style.display = 'none';
+            
+        } catch (error) {
+            console.error("Error al filtrar asignaciones:", error);
+            asignacionesLoading.style.display = 'none';
+            asignacionesEmpty.innerHTML = `
+                <i class="fas fa-exclamation-triangle"></i>
+                <h3>Error al procesar asignaciones</h3>
+                <p>${error.message}</p>
+            `;
             asignacionesEmpty.style.display = 'block';
-            return;
         }
-        
-        // Renderizar asignaciones y configurar paginación
-        state.asignacionesFiltradas = asignacionesFiltradas;
-        renderAsignaciones();
-        updatePagination();
-        
-        // Mostrar contenedor de asignaciones
-        asignacionesLoading.style.display = 'none';
-        asignacionesContainer.style.display = 'block';
-        asignacionesEmpty.style.display = 'none';
     }
     
     // Renderizar tabla de asignaciones con paginación
     function renderAsignaciones() {
-        // Calcular índices para la página actual
-        const startIndex = (state.currentPage - 1) * state.itemsPerPage;
-        const endIndex = Math.min(startIndex + state.itemsPerPage, state.asignacionesFiltradas.length);
-        
-        // Obtener asignaciones para la página actual
-        const asignacionesPagina = state.asignacionesFiltradas.slice(startIndex, endIndex);
-        
-        // Limpiar tabla
-        asignacionesTbody.innerHTML = '';
-        
-        // Agregar filas
-        asignacionesPagina.forEach(asignacion => {
-            const row = document.createElement('tr');
+        try {
+            // Calcular índices para la página actual
+            const startIndex = (state.currentPage - 1) * state.itemsPerPage;
+            const endIndex = Math.min(startIndex + state.itemsPerPage, state.asignacionesFiltradas.length);
             
-            row.innerHTML = `
-                <td>${asignacion.tienda_interna_nombre}</td>
-                <td>${asignacion.tienda_externa_nombre}</td>
-                <td>${asignacion.tipo_tienda_externa || 'No especificado'}</td>
-                <td>${formatDate(asignacion.fecha_asignacion)}</td>
-                <td>
-                    <span class="status-badge ${asignacion.estado ? 'status-active' : 'status-inactive'}">
-                        ${asignacion.estado ? 'Activo' : 'Inactivo'}
-                    </span>
-                </td>
-                <td>
-                    ${asignacion.estado ? 
-                        `<button class="btn-action btn-delete" data-id="${asignacion.id}">
-                            <i class="fas fa-times"></i> Desactivar
-                        </button>` : 
-                        `<button class="btn-action btn-activate" data-id="${asignacion.id}">
-                            <i class="fas fa-check"></i> Activar
-                        </button>`
-                    }
-                </td>
-            `;
+            // Obtener asignaciones para la página actual
+            const asignacionesPagina = state.asignacionesFiltradas.slice(startIndex, endIndex);
             
-            // Agregar eventos a los botones
-            const btnAccion = row.querySelector('.btn-action');
-            btnAccion.addEventListener('click', () => {
-                cambiarEstadoAsignacion(asignacion.id, !asignacion.estado);
+            // Limpiar tabla
+            asignacionesTbody.innerHTML = '';
+            
+            // Agregar filas
+            asignacionesPagina.forEach(asignacion => {
+                const row = document.createElement('tr');
+                
+                row.innerHTML = `
+                    <td>${asignacion.tienda_interna_nombre}</td>
+                    <td>${asignacion.tienda_externa_nombre}</td>
+                    <td>${asignacion.tipo_tienda_externa || 'No especificado'}</td>
+                    <td>${formatDate(asignacion.fecha_asignacion)}</td>
+                    <td>
+                        <span class="status-badge ${asignacion.estado ? 'status-active' : 'status-inactive'}">
+                            ${asignacion.estado ? 'Activo' : 'Inactivo'}
+                        </span>
+                    </td>
+                    <td>
+                        ${asignacion.estado ? 
+                            `<button class="btn-action btn-delete" data-id="${asignacion.id}">
+                                <i class="fas fa-times"></i> Desactivar
+                            </button>` : 
+                            `<button class="btn-action btn-activate" data-id="${asignacion.id}">
+                                <i class="fas fa-check"></i> Activar
+                            </button>`
+                        }
+                    </td>
+                `;
+                
+                // Agregar eventos a los botones
+                const btnAccion = row.querySelector('.btn-action');
+                btnAccion.addEventListener('click', () => {
+                    cambiarEstadoAsignacion(asignacion.id, !asignacion.estado);
+                });
+                
+                asignacionesTbody.appendChild(row);
             });
-            
-            asignacionesTbody.appendChild(row);
-        });
+        } catch (error) {
+            console.error("Error al renderizar asignaciones:", error);
+        }
     }
     
     // Actualizar controles de paginación
     function updatePagination() {
-        const totalPages = Math.ceil(state.asignacionesFiltradas.length / state.itemsPerPage);
-        
-        // Actualizar estado de botones de navegación
-        prevPageAsignaciones.disabled = state.currentPage <= 1;
-        nextPageAsignaciones.disabled = state.currentPage >= totalPages;
-        
-        // Generar números de página
-        pageNumbersAsignaciones.innerHTML = '';
-        
-        // Determinar qué páginas mostrar (máximo 5 números)
-        let startPage = Math.max(1, state.currentPage - 2);
-        let endPage = Math.min(totalPages, startPage + 4);
-        
-        if (endPage - startPage < 4) {
-            startPage = Math.max(1, endPage - 4);
-        }
-        
-        // Añadir botón para la primera página si es necesario
-        if (startPage > 1) {
-            addPageButton(1);
-            if (startPage > 2) {
-                addEllipsis();
+        try {
+            const totalPages = Math.ceil(state.asignacionesFiltradas.length / state.itemsPerPage);
+            
+            // Actualizar estado de botones de navegación
+            prevPageAsignaciones.disabled = state.currentPage <= 1;
+            nextPageAsignaciones.disabled = state.currentPage >= totalPages;
+            
+            // Generar números de página
+            pageNumbersAsignaciones.innerHTML = '';
+            
+            // Determinar qué páginas mostrar (máximo 5 números)
+            let startPage = Math.max(1, state.currentPage - 2);
+            let endPage = Math.min(totalPages, startPage + 4);
+            
+            if (endPage - startPage < 4) {
+                startPage = Math.max(1, endPage - 4);
             }
-        }
-        
-        // Añadir botones para las páginas intermedias
-        for (let i = startPage; i <= endPage; i++) {
-            addPageButton(i);
-        }
-        
-        // Añadir botón para la última página si es necesario
-        if (endPage < totalPages) {
-            if (endPage < totalPages - 1) {
-                addEllipsis();
+            
+            // Añadir botón para la primera página si es necesario
+            if (startPage > 1) {
+                addPageButton(1);
+                if (startPage > 2) {
+                    addEllipsis();
+                }
             }
-            addPageButton(totalPages);
+            
+            // Añadir botones para las páginas intermedias
+            for (let i = startPage; i <= endPage; i++) {
+                addPageButton(i);
+            }
+            
+            // Añadir botón para la última página si es necesario
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    addEllipsis();
+                }
+                addPageButton(totalPages);
+            }
+            
+            // Mostrar controles de paginación
+            paginationAsignaciones.style.display = totalPages > 1 ? 'flex' : 'none';
+        } catch (error) {
+            console.error("Error al actualizar paginación:", error);
         }
-        
-        // Mostrar controles de paginación
-        paginationAsignaciones.style.display = totalPages > 1 ? 'flex' : 'none';
     }
     
     // Función para añadir botón de página
@@ -1067,6 +1293,8 @@
     // Cambiar estado de una asignación
     async function cambiarEstadoAsignacion(id, nuevoEstado) {
         try {
+            console.log(`Cambiando estado de asignación ID ${id} a ${nuevoEstado ? 'activo' : 'inactivo'}...`);
+            
             const userRole = sessionStorage.getItem('userData') ? 
                             JSON.parse(sessionStorage.getItem('userData')).role : 'guest';
             const userUID = sessionStorage.getItem('userUID') || '';
@@ -1088,11 +1316,25 @@
                 body: JSON.stringify(data)
             });
             
-            const result = await response.json();
+            if (!response.ok) {
+                throw new Error(`Error HTTP: ${response.status} ${response.statusText}`);
+            }
+            
+            const responseText = await response.text();
+            let result;
+            
+            try {
+                result = JSON.parse(responseText);
+            } catch (e) {
+                console.error("Error al parsear JSON:", responseText);
+                throw new Error("Formato de respuesta inválido");
+            }
             
             if (result.error) {
                 throw new Error(result.error);
             }
+            
+            console.log("Estado de asignación actualizado correctamente");
             
             // Recargar asignaciones
             cargarAsignaciones();
@@ -1124,4 +1366,11 @@
     
     // Iniciar el módulo
     init();
+    
+    // Exportar funciones para llamada externa (sólo para depuración)
+    window.debugAtencionClientes = {
+        recargarTiendas: cargarTiendasInternas,
+        recargarAsignaciones: cargarAsignaciones,
+        resetearEstado: resetState
+    };
 </script>
