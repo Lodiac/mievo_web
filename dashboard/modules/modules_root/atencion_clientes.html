@@ -141,65 +141,280 @@
 </div>
 
 <!-- Estilos específicos para este módulo -->
-<!-- Agregar esta sección al inicio del bloque <style> en atencion_clientes.html -->
-
 <style>
-    /* Definición de variables CSS para este módulo */
-    :root {
-        --primary-color: #303498;    /* Azul oscuro / principal */
-        --primary-dark: #282b7a;     /* Azul más oscuro para hover */
-        --accent-color: #dc3545;     /* Rojo para acentos y alertas */
-        --background-color: #f5f7fa; /* Fondo general */
-        --text-color: #333333;       /* Color de texto */
-        --text-light: #666666;       /* Color de texto secundario */
-        --border-radius: 12px;       /* Bordes redondeados */
+    /* Estilos para las pestañas */
+    .tabs-container {
+        margin-top: 20px;
     }
     
-    /* Resto de los estilos del módulo... */
-</style>
-
-<!-- Estilos directos para aplicar a elementos clave -->
-<style>
-    /* Aplicar colores directamente a elementos importantes */
-    .menu-icon, .content-title, .content-title i {
-        color: #303498 !important;
+    .tabs-header {
+        display: flex;
+        border-bottom: 1px solid #ddd;
+        margin-bottom: 20px;
     }
     
-    .menu-item.active {
-        color: #303498 !important;
-        border-left-color: #303498 !important;
+    .tab-btn {
+        padding: 10px 20px;
+        background: none;
+        border: none;
+        border-bottom: 3px solid transparent;
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.2s;
+        color: #666;
+    }
+    
+    .tab-btn:hover {
+        color: var(--primary-color);
     }
     
     .tab-btn.active {
-        color: #303498 !important;
-        border-bottom-color: #303498 !important;
+        color: var(--primary-color);
+        border-bottom-color: var(--primary-color);
     }
     
-    .count-badge {
-        background-color: #303498 !important;
+    .tab-panel {
+        display: none;
     }
     
-    .btn-primary {
-        background-color: #303498 !important;
+    .tab-panel.active {
+        display: block;
     }
     
-    .btn-primary:hover {
-        background-color: #282b7a !important;
+    /* Estilos para el selector de tienda interna */
+    .form-group {
+        margin-bottom: 25px;
+    }
+    
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 500;
+    }
+    
+    .select-container {
+        position: relative;
+        max-width: 500px;
+    }
+    
+    .custom-select {
+        width: 100%;
+        padding: 10px 15px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        appearance: none;
+        background-image: url('data:image/svg+xml;utf8,<svg fill="%23333" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18px"><path d="M7 10l5 5 5-5z"/></svg>');
+        background-repeat: no-repeat;
+        background-position: right 10px center;
+        background-color: white;
+        cursor: pointer;
     }
     
     .custom-select:focus {
-        border-color: #303498 !important;
-        box-shadow: 0 0 0 3px rgba(48, 52, 152, 0.2) !important;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(48, 52, 152, 0.2);
+        outline: none;
     }
     
-    .page-number.active {
-        background-color: #303498 !important;
-        border-color: #303498 !important;
+    /* Estilos para la vista de árbol */
+    .tree-view {
+        margin: 20px 0;
+        border: 1px solid #eee;
+        border-radius: 8px;
+        padding: 5px;
+        max-height: 500px;
+        overflow-y: auto;
     }
     
-    .pagination-btn:hover:not(:disabled) {
-        background-color: #303498 !important;
-        border-color: #303498 !important;
+    .tree-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 15px;
+        background-color: #f8f9fa;
+        border-radius: 6px;
+        margin-bottom: 10px;
+    }
+    
+    .tree-checkbox-label {
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+    }
+    
+    .tree-checkbox {
+        margin-right: 10px;
+    }
+    
+    .count-badge {
+        background-color: var(--primary-color);
+        color: white;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+    
+    .tree-item {
+        margin: 5px 0;
+    }
+    
+    .tree-parent {
+        padding: 10px 15px;
+        background-color: #f8f9fa;
+        border-radius: 6px;
+        margin-bottom: 5px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        transition: background-color 0.2s;
+    }
+    
+    .tree-parent:hover {
+        background-color: #e9ecef;
+    }
+    
+    .tree-parent-left {
+        display: flex;
+        align-items: center;
+    }
+    
+    .tree-toggle {
+        margin-right: 10px;
+        font-size: 0.8rem;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background-color: #ddd;
+        cursor: pointer;
+    }
+    
+    .tree-parent-info {
+        display: flex;
+        align-items: center;
+    }
+    
+    .tree-parent-checkbox {
+        margin-right: 10px;
+    }
+    
+    .tree-parent-name {
+        font-weight: 500;
+    }
+    
+    .tree-children {
+        margin-left: 30px;
+        border-left: 1px dashed #ddd;
+        padding-left: 15px;
+        display: none;
+    }
+    
+    .tree-children.expanded {
+        display: block;
+    }
+    
+    .tree-child {
+        padding: 8px 15px;
+        margin: 5px 0;
+        background-color: white;
+        border: 1px solid #f0f0f0;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+    }
+    
+    .tree-child-checkbox {
+        margin-right: 10px;
+    }
+    
+    .tree-child-info {
+        flex-grow: 1;
+    }
+    
+    .tree-child-name {
+        font-weight: 500;
+        display: block;
+    }
+    
+    .tree-child-detail {
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+    
+    .action-buttons {
+        margin: 20px 0;
+        display: flex;
+        justify-content: flex-end;
+    }
+    
+    /* Estilos para la tabla de datos */
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 20px 0;
+    }
+    
+    .data-table th,
+    .data-table td {
+        padding: 12px 15px;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .data-table th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+        color: #333;
+    }
+    
+    .data-table tr:hover {
+        background-color: #f5f5f5;
+    }
+    
+    .data-table .status-badge {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+    
+    .status-active {
+        background-color: #e5f5e5;
+        color: #28a745;
+    }
+    
+    .status-inactive {
+        background-color: #f8d7da;
+        color: #dc3545;
+    }
+    
+    .btn-action {
+        padding: 5px 10px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        cursor: pointer;
+        border: none;
+        margin-right: 5px;
+    }
+    
+    .btn-edit {
+        background-color: #ffc107;
+        color: #212529;
+    }
+    
+    .btn-delete {
+        background-color: #dc3545;
+        color: white;
+    }
+    
+    .btn-activate {
+        background-color: #28a745;
+        color: white;
     }
 </style>
 

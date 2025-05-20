@@ -18,6 +18,64 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
+            /* Variables CSS esenciales */
+    :root {
+        /* Colores principales */
+        --primary-color: #303498 !important;    /* Azul oscuro / principal */
+        --primary-dark: #282b7a !important;     /* Azul más oscuro para hover */
+        --accent-color: #dc3545 !important;     /* Rojo para acentos y alertas */
+        --text-color: #333333 !important;       /* Color de texto principal */
+        --text-light: #666666 !important;       /* Color de texto secundario */
+        
+        /* Colores de fondo */
+        --background-color: #f5f7fa !important; /* Fondo general de la app */
+        --sidebar-bg: #ffffff !important;       /* Fondo del menú lateral */
+        --sidebar-text: #555555 !important;     /* Color de texto del menú */
+        --sidebar-hover: #f0f2f5 !important;    /* Color de fondo al hover en menú */
+        --sidebar-active: #ebeef5 !important;   /* Color de fondo del ítem activo */
+        
+        /* Elementos UI */
+        --border-radius: 12px !important;       /* Bordes redondeados */
+        --box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important; /* Sombra estándar */
+        --border-color: #e0e0e0 !important;     /* Color para bordes */
+    }
+    
+    /* Estilos críticos que deben ser aplicados siempre */
+    .menu-icon, .content-title, .content-title i {
+        color: #303498 !important;
+    }
+    
+    .menu-item.active {
+        color: #303498 !important;
+        border-left-color: #303498 !important;
+    }
+    
+    .card {
+        border-radius: 12px !important;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;
+    }
+    
+    /* Asegurar que los botones tengan el color correcto */
+    .btn-primary {
+        background-color: #303498 !important;
+        color: white !important;
+    }
+    
+    .btn-primary:hover {
+        background-color: #282b7a !important;
+    }
+    
+    /* Forzar colores en elementos de paginación */
+    .page-number.active {
+        background-color: #303498 !important;
+        border-color: #303498 !important;
+        color: white !important;
+    }
+    
+    .pagination-btn:hover:not(:disabled) {
+        background-color: #303498 !important;
+        color: white !important;
+    }
         /* Ajustes adicionales para el header */
         .header-logo img {
             height: 30px; /* Logo más pequeño */
