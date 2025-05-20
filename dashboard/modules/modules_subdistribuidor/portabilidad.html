@@ -13,8 +13,10 @@
                     <select id="filtro-estado" class="form-control">
                         <option value="">Todos</option>
                         <option value="pendiente">Pendiente</option>
+                        <option value="procesando">Procesando</option>
                         <option value="completada">Completada</option>
                         <option value="rechazada">Rechazada</option>
+                        <option value="cancelada">Cancelada</option>
                     </select>
                 </div>
             </div>
@@ -53,12 +55,20 @@
             <div class="stat-value" id="stat-pendientes">0</div>
         </div>
         <div class="stat-card">
+            <div class="stat-title">Procesando</div>
+            <div class="stat-value" id="stat-procesando">0</div>
+        </div>
+        <div class="stat-card">
             <div class="stat-title">Completadas</div>
             <div class="stat-value" id="stat-completadas">0</div>
         </div>
         <div class="stat-card">
             <div class="stat-title">Rechazadas</div>
             <div class="stat-value" id="stat-rechazadas">0</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-title">Canceladas</div>
+            <div class="stat-value" id="stat-canceladas">0</div>
         </div>
     </div>
     
@@ -92,6 +102,17 @@
                 </thead>
                 <tbody id="solicitudes-tbody"></tbody>
             </table>
+        </div>
+        
+        <!-- Paginación -->
+        <div class="pagination-container">
+            <button id="prev-page" class="btn btn-outline">
+                <i class="fas fa-chevron-left"></i> Anterior
+            </button>
+            <span id="page-info">Página <span id="current-page">1</span> de <span id="total-pages">1</span></span>
+            <button id="next-page" class="btn btn-outline">
+                Siguiente <i class="fas fa-chevron-right"></i>
+            </button>
         </div>
     </div>
     
@@ -188,6 +209,21 @@
     .btn-primary {
         background-color: var(--primary-color);
         color: white;
+    }
+    
+    .btn-outline {
+        background-color: transparent;
+        border: 1px solid #ddd;
+        color: #333;
+    }
+    
+    .btn-outline:hover {
+        background-color: #f5f5f5;
+    }
+    
+    .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
     }
     
     /* Estadísticas */
@@ -310,6 +346,11 @@
         color: #856404;
     }
     
+    .status-procesando {
+        background-color: #D1ECF1;
+        color: #0C5460;
+    }
+    
     .status-completada {
         background-color: #D4EDDA;
         color: #155724;
@@ -318,6 +359,11 @@
     .status-rechazada {
         background-color: #F8D7DA;
         color: #721C24;
+    }
+    
+    .status-cancelada {
+        background-color: #E2E3E5;
+        color: #383D41;
     }
     
     /* Acciones */
@@ -332,6 +378,20 @@
     
     .action-btn:hover {
         color: var(--primary-dark);
+    }
+    
+    /* Paginación */
+    .pagination-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 20px;
+        gap: 15px;
+    }
+    
+    #page-info {
+        font-size: 0.9rem;
+        color: #666;
     }
     
     /* Modal */
@@ -420,6 +480,50 @@
         font-size: 0.75rem;
         margin-left: 5px;
     }
+    
+    /* Estilos para imágenes de INE */
+    .ine-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+        margin-top: 15px;
+    }
+    
+    .ine-image {
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        overflow: hidden;
+        width: 100%;
+        min-height: 200px;
+        background-color: #f5f5f5;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .ine-image h5 {
+        background-color: #0288d1;
+        color: white;
+        margin: 0;
+        padding: 8px;
+        font-size: 0.9rem;
+        text-align: center;
+    }
+    
+    .ine-image img {
+        width: 100%;
+        height: auto;
+        object-fit: contain;
+        max-height: 250px;
+    }
+    
+    .ine-image .no-image {
+        height: 200px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #777;
+        font-size: 0.9rem;
+    }
 </style>
 
 <script>
@@ -441,8 +545,16 @@
     // Elementos estadísticas
     const statTotal = document.getElementById('stat-total');
     const statPendientes = document.getElementById('stat-pendientes');
+    const statProcesando = document.getElementById('stat-procesando');
     const statCompletadas = document.getElementById('stat-completadas');
     const statRechazadas = document.getElementById('stat-rechazadas');
+    const statCanceladas = document.getElementById('stat-canceladas');
+    
+    // Elementos de paginación
+    const prevPageBtn = document.getElementById('prev-page');
+    const nextPageBtn = document.getElementById('next-page');
+    const currentPageElement = document.getElementById('current-page');
+    const totalPagesElement = document.getElementById('total-pages');
     
     // Modal
     const modal = document.getElementById('modal-detalles');
@@ -457,13 +569,45 @@
     let allSolicitudes = [];
     let filteredSolicitudes = [];
     
+    // Variables para paginación
+    let currentPage = 1;
+    const itemsPerPage = 5; // Mostrar 5 solicitudes por página
+    let totalPages = 1;
+    
     // Event listeners
-    filtroEstado.addEventListener('change', aplicarFiltros);
-    filtroOrigen.addEventListener('change', aplicarFiltros);
-    busquedaInput.addEventListener('keyup', (e) => {
-        if (e.key === 'Enter') aplicarFiltros();
+    filtroEstado.addEventListener('change', () => {
+        currentPage = 1; // Reiniciar a la primera página al filtrar
+        aplicarFiltros();
     });
+    
+    filtroOrigen.addEventListener('change', () => {
+        currentPage = 1;
+        aplicarFiltros();
+    });
+    
+    busquedaInput.addEventListener('keyup', (e) => {
+        if (e.key === 'Enter') {
+            currentPage = 1;
+            aplicarFiltros();
+        }
+    });
+    
     btnRefresh.addEventListener('click', loadSolicitudesPortabilidad);
+    
+    // Event listeners de paginación
+    prevPageBtn.addEventListener('click', () => {
+        if (currentPage > 1) {
+            currentPage--;
+            renderizarPagina();
+        }
+    });
+    
+    nextPageBtn.addEventListener('click', () => {
+        if (currentPage < totalPages) {
+            currentPage++;
+            renderizarPagina();
+        }
+    });
     
     // Event listeners del modal
     closeModal.addEventListener('click', () => modal.style.display = 'none');
@@ -503,13 +647,29 @@
             // Guardar todas las solicitudes
             allSolicitudes = data.solicitudes || [];
             
-            // Actualizar estadísticas
-            actualizarEstadisticas(data.estadisticas || {
+            // Calcular estadísticas manualmente
+            let estadisticas = {
                 total: allSolicitudes.length,
-                pendientes: allSolicitudes.filter(s => s.estado_solicitud === 'pendiente' || !s.estado_solicitud).length,
-                completadas: allSolicitudes.filter(s => s.estado_solicitud === 'completada').length,
-                rechazadas: allSolicitudes.filter(s => s.estado_solicitud === 'rechazada').length
+                pendientes: 0,
+                procesando: 0,
+                completadas: 0,
+                rechazadas: 0,
+                canceladas: 0
+            };
+            
+            // Contar por estado
+            allSolicitudes.forEach(sol => {
+                // Normalizar estado - usar 'pendiente' si está vacío o null
+                const estado = sol.estado_solicitud || 'pendiente';
+                
+                // Incrementar contador correspondiente
+                if (estadisticas.hasOwnProperty(estado + 's')) {
+                    estadisticas[estado + 's']++;
+                }
             });
+            
+            // Actualizar estadísticas
+            actualizarEstadisticas(estadisticas);
             
             // Aplicar filtros iniciales
             aplicarFiltros();
@@ -524,8 +684,10 @@
     function actualizarEstadisticas(stats) {
         statTotal.textContent = stats.total || 0;
         statPendientes.textContent = stats.pendientes || 0;
+        statProcesando.textContent = stats.procesando || 0;
         statCompletadas.textContent = stats.completadas || 0;
         statRechazadas.textContent = stats.rechazadas || 0;
+        statCanceladas.textContent = stats.canceladas || 0;
     }
     
     // Función para aplicar filtros
@@ -571,13 +733,48 @@
             return true;
         });
         
+        // Calcular número total de páginas
+        totalPages = Math.max(1, Math.ceil(filteredSolicitudes.length / itemsPerPage));
+        
+        // Ajustar página actual si es necesario
+        if (currentPage > totalPages) {
+            currentPage = totalPages;
+        }
+        
+        // Actualizar elementos de paginación
+        currentPageElement.textContent = currentPage;
+        totalPagesElement.textContent = totalPages;
+        
         // Renderizar resultados
+        renderizarPagina();
+    }
+    
+    // Función para renderizar la página actual
+    function renderizarPagina() {
+        // Habilitar/deshabilitar botones de paginación
+        prevPageBtn.disabled = currentPage <= 1;
+        nextPageBtn.disabled = currentPage >= totalPages;
+        
+        // Actualizar info de página
+        currentPageElement.textContent = currentPage;
+        totalPagesElement.textContent = totalPages;
+        
+        // Si no hay resultados, mostrar estado vacío
         if (filteredSolicitudes.length === 0) {
             showEmptyState('No se encontraron solicitudes con los filtros seleccionados');
-        } else {
-            renderSolicitudes(filteredSolicitudes);
-            showContent();
+            return;
         }
+        
+        // Calcular índices para paginación
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = Math.min(startIndex + itemsPerPage, filteredSolicitudes.length);
+        
+        // Obtener las solicitudes para esta página
+        const solicitudesPagina = filteredSolicitudes.slice(startIndex, endIndex);
+        
+        // Renderizar solicitudes de esta página
+        renderSolicitudes(solicitudesPagina);
+        showContent();
     }
     
     // Función para renderizar solicitudes
@@ -594,11 +791,13 @@
             
             switch(estado) {
                 case 'pendiente': estadoClass = 'status-pendiente'; break;
+                case 'procesando': estadoClass = 'status-procesando'; break;
                 case 'completada': estadoClass = 'status-completada'; break;
                 case 'rechazada': estadoClass = 'status-rechazada'; break;
+                case 'cancelada': estadoClass = 'status-cancelada'; break;
             }
             
-            // Formatear fecha - USANDO fecha_creacion en lugar de fecha_registro
+            // Formatear fecha - USANDO fecha_creacion
             let fechaFormateada = 'No disponible';
             if (solicitud.fecha_creacion) {
                 try {
@@ -644,7 +843,7 @@
             return;
         }
         
-        // Formatear fecha - USANDO fecha_creacion en lugar de fecha_registro
+        // Formatear fecha - USANDO fecha_creacion
         let fechaFormateada = 'No disponible';
         if (solicitud.fecha_creacion) {
             try {
@@ -701,25 +900,11 @@
             </div>
             
             <div class="detail-group">
-                <h4>Información del Dispositivo</h4>
-                <div class="detail-item">
-                    <div class="detail-label">ID del dispositivo:</div>
-                    <div class="detail-value">${solicitud.device_id || 'No disponible'}</div>
-                </div>
-                <div class="detail-item">
-                    <div class="detail-label">Modelo del dispositivo:</div>
-                    <div class="detail-value">${solicitud.device_model || 'No disponible'}</div>
-                </div>
-            </div>
-            
-            <div class="detail-group">
                 <h4>Información de la Solicitud</h4>
                 <div class="detail-item">
                     <div class="detail-label">Estado:</div>
                     <div class="detail-value">
-                        <span class="status-badge ${(solicitud.estado_solicitud || 'pendiente') === 'pendiente' ? 'status-pendiente' : 
-                                                  (solicitud.estado_solicitud || 'pendiente') === 'completada' ? 'status-completada' : 
-                                                  'status-rechazada'}">
+                        <span class="status-badge ${getEstadoClass(solicitud.estado_solicitud || 'pendiente')}">
                             ${solicitud.estado_solicitud || 'pendiente'}
                         </span>
                     </div>
@@ -742,11 +927,43 @@
                 </div>
                 ` : ''}
             </div>
+            
+            <div class="detail-group">
+                <h4>Documentación</h4>
+                <div class="ine-container">
+                    <div class="ine-image">
+                        <h5>INE Frontal</h5>
+                        ${!solicitud.ine_frontal ? 
+                            `<div class="no-image">No disponible</div>` : 
+                            `<img src="../api/get_imagen_ine.php?id=${solicitud.id}&tipo=frontal" alt="INE Frontal" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'no-image\\'>Imagen no disponible</div>';">`
+                        }
+                    </div>
+                    <div class="ine-image">
+                        <h5>INE Trasera</h5>
+                        ${!solicitud.ine_trasera ? 
+                            `<div class="no-image">No disponible</div>` : 
+                            `<img src="../api/get_imagen_ine.php?id=${solicitud.id}&tipo=trasera" alt="INE Trasera" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'no-image\\'>Imagen no disponible</div>';">`
+                        }
+                    </div>
+                </div>
+            </div>
         `;
         
         // Mostrar modal
         modal.style.display = 'block';
     };
+    
+    // Función para obtener clase CSS según estado
+    function getEstadoClass(estado) {
+        switch(estado) {
+            case 'pendiente': return 'status-pendiente';
+            case 'procesando': return 'status-procesando';
+            case 'completada': return 'status-completada';
+            case 'rechazada': return 'status-rechazada';
+            case 'cancelada': return 'status-cancelada';
+            default: return 'status-pendiente';
+        }
+    }
     
     // Funciones de utilidad para mostrar/ocultar elementos
     function showLoading() {

@@ -5,36 +5,60 @@ require_once 'db_connect.php';
 
 // Manejo de errores para asegurar respuestas JSON válidas
 try {
-    // Verificar que existe el parámetro uid
+    // Verificar que existe el parámetro uid y role
     if (!isset($_GET['uid'])) {
         throw new Exception("Parámetro uid requerido");
     }
     
+    // Si no hay role, asumir 'subdistribuidor' como valor por defecto
+    $role = isset($_GET['role']) ? $_GET['role'] : 'subdistribuidor';
+    
+    // Validar que el role sea válido
+    $validRoles = ['root', 'admin', 'subdistribuidor'];
+    if (!in_array($role, $validRoles)) {
+        throw new Exception("Rol no válido");
+    }
+    
     $uid = $_GET['uid'];
+    
+    // Validar que el uid no esté vacío
+    if (empty($uid)) {
+        throw new Exception("El parámetro uid no puede estar vacío");
+    }
     
     // Conectar a la base de datos
     $con = conexiondb();
     
     // 1. Primero, obtenemos los IDs de vendedores usando una consulta directa
     $vendedores = [];
-    $query_vendedores = "SELECT vendedor_id FROM vendedor_tienda_relacion WHERE asignado_por = '$uid'";
-    $result_vendedores = mysqli_query($con, $query_vendedores);
+    $query_vendedores = "SELECT vendedor_id FROM vendedor_tienda_relacion WHERE asignado_por = ?";
+    $stmt_vendedores = mysqli_prepare($con, $query_vendedores);
     
-    if (!$result_vendedores) {
-        throw new Exception("Error al obtener vendedores: " . mysqli_error($con));
+    if (!$stmt_vendedores) {
+        throw new Exception("Error al preparar la consulta de vendedores: " . mysqli_error($con));
     }
+    
+    mysqli_stmt_bind_param($stmt_vendedores, "s", $uid);
+    
+    if (!mysqli_stmt_execute($stmt_vendedores)) {
+        throw new Exception("Error al ejecutar la consulta de vendedores: " . mysqli_stmt_error($stmt_vendedores));
+    }
+    
+    $result_vendedores = mysqli_stmt_get_result($stmt_vendedores);
     
     while ($row = mysqli_fetch_assoc($result_vendedores)) {
         $vendedores[] = $row['vendedor_id'];
     }
     
+    mysqli_stmt_close($stmt_vendedores);
+    
     // 2. Ahora construimos la lista de UIDs para la consulta IN
-    $lista_uids = "'" . $uid . "'"; // Incluir al subdistribuidor
+    $lista_uids = "'" . mysqli_real_escape_string($con, $uid) . "'"; // Incluir al subdistribuidor
     foreach ($vendedores as $vendedor_id) {
         $lista_uids .= ",'" . mysqli_real_escape_string($con, $vendedor_id) . "'";
     }
     
-    // 3. Obtener solicitudes de portabilidad - CORREGIDO EL NOMBRE DE LA COLUMNA DE FECHA
+    // 3. Obtener solicitudes de portabilidad
     $query_solicitudes = "SELECT * FROM sol_portabilidad WHERE user_id IN ($lista_uids) ORDER BY fecha_creacion DESC";
     $result_solicitudes = mysqli_query($con, $query_solicitudes);
     
@@ -47,7 +71,11 @@ try {
         // Marcar solicitudes propias
         $row['es_propia'] = ($row['user_id'] == $uid) ? 1 : 0;
         
-        // Eliminar campos binarios
+        // Marcar si tiene imágenes (sin incluir los datos binarios)
+        $row['tiene_ine_frontal'] = !empty($row['ine_frontal']);
+        $row['tiene_ine_trasera'] = !empty($row['ine_trasera']);
+        
+        // Eliminar campos binarios para reducir el tamaño de la respuesta
         unset($row['ine_frontal']);
         unset($row['ine_trasera']);
         
@@ -89,18 +117,18 @@ try {
     $estadisticas = [
         'total' => count($solicitudes),
         'pendientes' => 0,
+        'procesando' => 0,
         'completadas' => 0,
-        'rechazadas' => 0
+        'rechazadas' => 0,
+        'canceladas' => 0
     ];
     
     foreach ($solicitudes as $solicitud) {
         $estado = $solicitud['estado_solicitud'] ?? 'pendiente';
-        if ($estado == 'pendiente' || empty($estado)) {
-            $estadisticas['pendientes']++;
-        } else if ($estado == 'completada') {
-            $estadisticas['completadas']++;
-        } else if ($estado == 'rechazada') {
-            $estadisticas['rechazadas']++;
+        
+        // Incrementar el contador correspondiente
+        if (isset($estadisticas[$estado . 's'])) {
+            $estadisticas[$estado . 's']++;
         }
     }
     
