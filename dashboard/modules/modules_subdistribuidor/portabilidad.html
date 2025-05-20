@@ -590,6 +590,7 @@
     
     // Obtener datos del usuario
     const userUID = sessionStorage.getItem('userUID') || '';
+    const userRole = sessionStorage.getItem('userRole') || 'subdistribuidor';
     
     // Variables para almacenar datos
     let allSolicitudes = [];
@@ -670,10 +671,10 @@
             // Mostrar spinner de carga
             showLoading();
             
-            console.log('Iniciando carga de solicitudes para UID:', userUID);
+            console.log('Iniciando carga de solicitudes para UID:', userUID, 'Role:', userRole);
             
-            // Hacer solicitud a la API
-            const response = await fetch(`../api/get_solicitudes_portabilidad.php?uid=${encodeURIComponent(userUID)}`);
+            // Hacer solicitud a la API incluyendo role para mayor seguridad
+            const response = await fetch(`../api/get_solicitudes_portabilidad.php?uid=${encodeURIComponent(userUID)}&role=${encodeURIComponent(userRole)}`);
             
             // Obtener el texto para depuración
             const responseText = await response.text();
@@ -682,6 +683,7 @@
             try {
                 // Intentar parsear como JSON
                 data = JSON.parse(responseText);
+                console.log('Respuesta completa de la API:', data);
             } catch (jsonError) {
                 console.error("Error al parsear JSON:", responseText);
                 throw new Error(`Error de formato en la respuesta: ${responseText.substring(0, 100)}...`);
@@ -692,19 +694,22 @@
                 throw new Error(data.error || "Error desconocido en la respuesta");
             }
             
-            // Guardar todas las solicitudes
+            // Guardar todas las solicitudes exactamente como vienen de la API
+            // NO modificamos los IDs ni los convertimos a enteros
             allSolicitudes = data.solicitudes || [];
             
             console.log('Solicitudes recibidas:', allSolicitudes.length);
             if (allSolicitudes.length > 0) {
                 console.log('Primera solicitud:', allSolicitudes[0]);
+                console.log('IDs recibidos:', allSolicitudes.map(s => s.id));
+                console.log('Tipos de IDs:', allSolicitudes.map(s => typeof s.id));
                 console.log('Estados disponibles:', [...new Set(allSolicitudes.map(s => s.estado_solicitud))]);
             }
             
-            // Normalizar estados de todas las solicitudes
+            // Normalizar estados pero SIN modificar los IDs
             allSolicitudes.forEach(solicitud => {
                 solicitud.estado_solicitud = normalizarEstado(solicitud.estado_solicitud);
-                solicitud.id = parseInt(solicitud.id, 10); // Asegurar que los IDs son números
+                // NO convertimos IDs a enteros aquí
             });
             
             // Actualizar estadísticas
@@ -744,11 +749,8 @@
         
         // Filtrar solicitudes
         filteredSolicitudes = allSolicitudes.filter(solicitud => {
-            // Normalizar estado
-            let estadoSolicitud = normalizarEstado(solicitud.estado_solicitud);
-            
             // Filtro por estado
-            if (estado && estadoSolicitud !== estado) {
+            if (estado && solicitud.estado_solicitud !== estado) {
                 return false;
             }
             
@@ -826,73 +828,78 @@
     }
     
     // Función para renderizar solicitudes
-    function renderSolicitudes(solicitudes) {
-        // Limpiar el contenedor
-        solicitudesTbody.innerHTML = '';
-        
-        // Crear filas para cada solicitud
-        solicitudes.forEach(solicitud => {
-            // Determinar clase para el estado
-            let estadoClass = '';
-            let estado = normalizarEstado(solicitud.estado_solicitud);
-            
-            switch(estado) {
-                case 'pendiente': estadoClass = 'status-pendiente'; break;
-                case 'procesando': estadoClass = 'status-procesando'; break;
-                case 'completada': estadoClass = 'status-completada'; break;
-                case 'rechazada': estadoClass = 'status-rechazada'; break;
-                case 'cancelada': estadoClass = 'status-cancelada'; break;
-            }
-            
-            // Formatear fecha
-            let fechaFormateada = 'No disponible';
-            if (solicitud.fecha_creacion) {
-                try {
-                    const fecha = new Date(solicitud.fecha_creacion);
-                    fechaFormateada = fecha.toLocaleDateString('es-MX', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric'
-                    });
-                } catch (e) {
-                    console.error('Error al formatear fecha:', e);
-                }
-            }
-            
-            // Crear fila de la tabla
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${solicitud.id}</td>
-                <td>${solicitud.nombre_completo || 'No disponible'}</td>
-                <td>${solicitud.numero_portar || 'No disponible'}</td>
-                <td>${solicitud.nip_portabilidad || 'No disponible'}</td>
-                <td>${solicitud.operador_destino || 'No disponible'}</td>
-                <td>${fechaFormateada}</td>
-                <td>${solicitud.nombre_tienda || (parseInt(solicitud.es_propia) === 1 ? 'Solicitud propia' : 'No asignada')}</td>
-                <td><span class="status-badge ${estadoClass}">${estado}</span></td>
-                <td>
-                    <button class="action-btn" title="Ver detalles" onclick="verDetalles(${solicitud.id})">
-                        <i class="fas fa-eye"></i>
-                    </button>
-                </td>
-            `;
-            
-            solicitudesTbody.appendChild(row);
-        });
-    }
+    // Reemplaza SOLO esta función en el archivo portabilidad.html
+function renderSolicitudes(solicitudes) {
+    // Depuración crítica
+    console.log("Renderizando solicitudes con IDs:", solicitudes.map(s => s.id));
     
+    // Limpiar el contenedor
+    solicitudesTbody.innerHTML = '';
+    
+    // Crear filas para cada solicitud
+    solicitudes.forEach(solicitud => {
+        // Determinar clase para el estado
+        let estadoClass = '';
+        let estado = solicitud.estado_solicitud || 'pendiente';
+        
+        switch(estado) {
+            case 'pendiente': estadoClass = 'status-pendiente'; break;
+            case 'procesando': estadoClass = 'status-procesando'; break;
+            case 'completada': estadoClass = 'status-completada'; break;
+            case 'rechazada': estadoClass = 'status-rechazada'; break;
+            case 'cancelada': estadoClass = 'status-cancelada'; break;
+        }
+        
+        // Formatear fecha
+        let fechaFormateada = 'No disponible';
+        if (solicitud.fecha_creacion) {
+            try {
+                const fecha = new Date(solicitud.fecha_creacion);
+                fechaFormateada = fecha.toLocaleDateString('es-MX', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric'
+                });
+            } catch (e) {
+                console.error('Error al formatear fecha:', e);
+            }
+        }
+        
+        // CRÍTICO: Usar ID original sin manipulación, estrictamente como string
+        const idOriginal = String(solicitud.id);
+        console.log(`Renderizando solicitud con ID: ${idOriginal} (tipo: ${typeof solicitud.id})`);
+        
+        // Crear fila de la tabla con el ID original pasado como string
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${idOriginal}</td>
+            <td>${solicitud.nombre_completo || 'No disponible'}</td>
+            <td>${solicitud.numero_portar || 'No disponible'}</td>
+            <td>${solicitud.nip_portabilidad || 'No disponible'}</td>
+            <td>${solicitud.operador_destino || 'No disponible'}</td>
+            <td>${fechaFormateada}</td>
+            <td>${solicitud.nombre_tienda || (parseInt(solicitud.es_propia) === 1 ? 'Solicitud propia' : 'No asignada')}</td>
+            <td><span class="status-badge ${estadoClass}">${estado}</span></td>
+            <td>
+                <button class="action-btn" title="Ver detalles" onclick="verDetalles('${idOriginal}')">
+                    <i class="fas fa-eye"></i>
+                </button>
+            </td>
+        `;
+        
+        solicitudesTbody.appendChild(row);
+    });
+} 
     // Función para ver detalles (debe ser global)
     window.verDetalles = function(id) {
         console.log('Buscando solicitud con ID:', id, 'Tipo:', typeof id);
         
-        // Convertir a número para asegurar la comparación correcta
-        const idBuscado = parseInt(id, 10);
-        
-        // Buscar la solicitud
-        const solicitud = allSolicitudes.find(s => parseInt(s.id, 10) === idBuscado);
+        // Buscar la solicitud usando comparación flexible (==) en lugar de estricta (===)
+        // para permitir la coincidencia entre strings y números
+        const solicitud = allSolicitudes.find(s => String(s.id) == String(id));
         
         if (!solicitud) {
-            console.error('No se encontró la solicitud con ID:', idBuscado);
+            console.error('No se encontró la solicitud con ID:', id);
             console.error('IDs disponibles:', allSolicitudes.map(s => s.id));
             alert(`No se encontró la solicitud con ID: ${id}`);
             return;
@@ -901,7 +908,7 @@
         console.log('Solicitud encontrada:', solicitud);
         
         // Normalizar el estado
-        const estado = normalizarEstado(solicitud.estado_solicitud);
+        const estado = solicitud.estado_solicitud; // Ya normalizado antes
         
         // Formatear fecha
         let fechaFormateada = 'No disponible';
