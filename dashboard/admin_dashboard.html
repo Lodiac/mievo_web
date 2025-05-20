@@ -39,6 +39,42 @@
         .user-role.admin {
             background-color: #7b1fa2;
         }
+        
+        /* Estilos para menú y submenu */
+        .menu-item {
+            margin: 5px 10px;
+            border-radius: 8px;
+        }
+        
+        .menu-item.solicitudes {
+            background-color: #f0f0f0;
+            margin-bottom: 0;
+        }
+        
+        .menu-icon {
+            color: #3f51b5;
+        }
+        
+        .submenu-item {
+            padding: 10px 10px 10px 48px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            margin: 5px 10px;
+            background-color: #f7f7f7;
+            border-radius: 8px;
+        }
+        
+        .submenu-item:hover {
+            background-color: #eaeaea;
+        }
+        
+        .submenu-icon {
+            color: #3f51b5;
+            margin-right: 10px;
+            width: 16px;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -71,10 +107,29 @@
                 <li class="menu-item" data-module="tiendas">
                     <i class="fas fa-store menu-icon"></i> <span class="menu-text">Tiendas</span>
                 </li>
-                <li class="menu-item" data-module="solicitudes">
-                    <i class="fas fa-clipboard-list menu-icon"></i> <span class="menu-text">Solicitudes</span>
+                
+                <!-- Menú de Solicitudes con formato de la captura -->
+                <li class="menu-item solicitudes submenu-open" data-module="solicitudes">
+                    <i class="fas fa-clipboard-list menu-icon solicitudes-icon"></i> 
+                    <span class="menu-text">Solicitudes</span>
+                    <i class="fas fa-chevron-up menu-dropdown-icon"></i>
                 </li>
-                <!-- Admin no tiene acceso al módulo vendedores -->
+                <li class="submenu-item" data-module="portabilidad">
+                    <i class="fas fa-exchange-alt submenu-icon"></i> 
+                    <span>Portabilidad</span>
+                </li>
+                <li class="submenu-item" data-module="recuperacion">
+                    <i class="fas fa-undo submenu-icon"></i> 
+                    <span>Recuperación de línea</span>
+                </li>
+                <li class="submenu-item" data-module="pagos">
+                    <i class="fas fa-money-bill-wave submenu-icon"></i> 
+                    <span>Pago de servicios</span>
+                </li>
+                
+                <li class="menu-item" data-module="vendedores">
+                    <i class="fas fa-users menu-icon"></i> <span class="menu-text">Vendedores</span>
+                </li>
             </ul>
         </nav>
         
@@ -175,6 +230,7 @@
             
             // Sistema de navegación SPA con validación segura
             const menuItems = document.querySelectorAll('.menu-item');
+            const submenuItems = document.querySelectorAll('.submenu-item');
             const mainContent = document.getElementById('main-content');
             const loadingContent = document.getElementById('loading-content');
             
@@ -189,7 +245,8 @@
                 
                 try {
                     // Validar el módulo localmente antes de hacer la petición al servidor
-                    const allowedModules = ['bienvenida', 'dashboard', 'tiendas', 'solicitudes'];
+                    const allowedModules = ['bienvenida', 'dashboard', 'tiendas', 'solicitudes', 'vendedores', 
+                                           'portabilidad', 'recuperacion', 'pagos'];
                     if (!allowedModules.includes(moduleName)) {
                         throw new Error(`El módulo "${moduleName}" no está disponible para administradores`);
                     }
@@ -290,11 +347,26 @@
                 }
             }
             
-            // Configurar menú
+            // Manejadores de eventos para los items del menú
             menuItems.forEach(item => {
-                item.addEventListener('click', () => {
+                item.addEventListener('click', function() {
                     // Marcar ítem activo
                     menuItems.forEach(i => i.classList.remove('active'));
+                    submenuItems.forEach(i => i.classList.remove('active'));
+                    item.classList.add('active');
+                    
+                    // Cargar el módulo correspondiente
+                    const module = item.dataset.module;
+                    loadModule(module);
+                });
+            });
+            
+            // Manejadores para submenú
+            submenuItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    // Marcar ítem activo
+                    menuItems.forEach(i => i.classList.remove('active'));
+                    submenuItems.forEach(i => i.classList.remove('active'));
                     item.classList.add('active');
                     
                     // Cargar el módulo correspondiente
