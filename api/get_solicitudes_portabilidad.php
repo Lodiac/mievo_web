@@ -58,17 +58,18 @@ try {
         $lista_uids .= ",'" . mysqli_real_escape_string($con, $vendedor_id) . "'";
     }
     
-    // 3. Obtener solicitudes de portabilidad - Consulta mejorada para calcular campos directamente en SQL
+    // 3. Obtener solicitudes de portabilidad - Consulta completa con todos los campos necesarios
     $query_solicitudes = "SELECT 
-                          id, user_id, nombre_completo, numero_portar, nip_portabilidad, 
-                          operador_destino, fecha_creacion, 
-                          COALESCE(estado_solicitud, 'pendiente') AS estado_solicitud, 
-                          comentarios, curp, fecha_nacimiento, numero_contacto, iccid,
-                          (ine_frontal IS NOT NULL AND LENGTH(ine_frontal) > 0) AS tiene_ine_frontal,
-                          (ine_trasera IS NOT NULL AND LENGTH(ine_trasera) > 0) AS tiene_ine_trasera
-                          FROM sol_portabilidad 
-                          WHERE user_id IN ($lista_uids) 
-                          ORDER BY fecha_creacion DESC";
+                          s.id, s.user_id, s.nombre_completo, s.numero_portar, s.nip_portabilidad, 
+                          s.operador_destino, s.fecha_creacion, s.estado_solicitud, 
+                          s.comentarios, s.curp, s.fecha_nacimiento, s.numero_contacto, s.iccid,
+                          s.device_id, s.device_model,
+                          (s.ine_frontal IS NOT NULL AND LENGTH(s.ine_frontal) > 0) AS tiene_ine_frontal,
+                          (s.ine_trasera IS NOT NULL AND LENGTH(s.ine_trasera) > 0) AS tiene_ine_trasera,
+                          s.estado
+                          FROM sol_portabilidad s
+                          WHERE s.user_id IN ($lista_uids) 
+                          ORDER BY s.id DESC";
     
     $result_solicitudes = mysqli_query($con, $query_solicitudes);
     
@@ -79,7 +80,12 @@ try {
     $solicitudes = [];
     while ($row = mysqli_fetch_assoc($result_solicitudes)) {
         // Asegurar que el ID es un entero
-        $row['id'] = intval($row['id']);
+        $row['id'] = (int)$row['id'];
+        
+        // Garantizar que estado_solicitud sea un string
+        if ($row['estado_solicitud'] === null) {
+            $row['estado_solicitud'] = 'pendiente';
+        }
         
         // Marcar solicitudes propias
         $row['es_propia'] = ($row['user_id'] == $uid) ? 1 : 0;
@@ -122,7 +128,7 @@ try {
         }
     }
     
-    // 6. Calcular estadísticas manualmente
+    // 6. Calcular estadísticas con estados reales
     $estadisticas = [
         'total' => count($solicitudes),
         'pendientes' => 0,
@@ -133,11 +139,19 @@ try {
     ];
     
     foreach ($solicitudes as $solicitud) {
-        $estado = $solicitud['estado_solicitud'];
+        $estado = strtolower($solicitud['estado_solicitud']);
         
         // Incrementar el contador correspondiente
-        if (isset($estadisticas[$estado . 's'])) {
-            $estadisticas[$estado . 's']++;
+        if ($estado === 'pendiente') {
+            $estadisticas['pendientes']++;
+        } elseif ($estado === 'procesando' || $estado === 'en proceso') {
+            $estadisticas['procesando']++;
+        } elseif ($estado === 'completada' || $estado === 'hecho') {
+            $estadisticas['completadas']++;
+        } elseif ($estado === 'rechazada' || $estado === 'revision') {
+            $estadisticas['rechazadas']++;
+        } elseif ($estado === 'cancelada') {
+            $estadisticas['canceladas']++;
         }
     }
     
@@ -149,7 +163,7 @@ try {
         "success" => true,
         "solicitudes" => $solicitudes,
         "estadisticas" => $estadisticas
-    ], JSON_NUMERIC_CHECK); // Asegura que los números se codifiquen como números, no como strings
+    ], JSON_NUMERIC_CHECK);
     
 } catch (Exception $e) {
     http_response_code(500);
