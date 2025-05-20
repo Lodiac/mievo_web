@@ -1,0 +1,1127 @@
+<!-- Módulo de atención a clientes (dashboard/modules/modules_root/atencion_clientes.html) -->
+<div class="card">
+    <h2 class="content-title">
+        <i class="fas fa-headset"></i> Asignación de Atención al Cliente
+    </h2>
+    
+    <!-- Panel principal con pestañas -->
+    <div class="tabs-container">
+        <div class="tabs-header">
+            <button class="tab-btn active" data-tab="asignar">Asignar tiendas</button>
+            <button class="tab-btn" data-tab="ver">Ver asignaciones actuales</button>
+        </div>
+        
+        <!-- Contenido de las pestañas -->
+        <div class="tabs-content">
+            <!-- Pestaña de asignación -->
+            <div class="tab-panel active" id="panel-asignar">
+                <div class="quick-assign-panel">
+                    <!-- Selector de tienda interna -->
+                    <div class="form-group">
+                        <label>Selecciona la tienda interna que dará atención:</label>
+                        <div class="select-container">
+                            <select id="tienda-interna-selector" class="custom-select">
+                                <option value="">Cargando tiendas internas...</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Barra de búsqueda -->
+                    <div class="search-bar">
+                        <div class="search-input-container">
+                            <i class="fas fa-search search-icon"></i>
+                            <input type="text" id="search-tiendas" placeholder="Buscar tiendas externas..." class="search-input">
+                        </div>
+                        <button id="btn-buscar" class="btn btn-outline">Buscar</button>
+                        <button id="btn-reset-search" class="btn btn-outline">Limpiar</button>
+                    </div>
+                    
+                    <!-- Estado de carga -->
+                    <div id="tiendas-loading" class="loading-spinner-container">
+                        <div class="loading-spinner"></div>
+                        <p>Cargando tiendas externas...</p>
+                    </div>
+                    
+                    <!-- Mensajes de error -->
+                    <div id="tiendas-error" class="alert alert-danger" style="display: none;">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span id="error-message">Error al cargar las tiendas</span>
+                    </div>
+                    
+                    <!-- Lista jerárquica de tiendas externas -->
+                    <div id="tiendas-externas-container" style="display: none;">
+                        <div class="tree-header">
+                            <label class="tree-checkbox-label">
+                                <input type="checkbox" id="select-all-tiendas" class="tree-checkbox">
+                                <span>Seleccionar todas</span>
+                            </label>
+                            <div class="tree-header-info">
+                                <span class="count-badge" id="tiendas-seleccionadas-count">0 seleccionadas</span>
+                            </div>
+                        </div>
+                        
+                        <div id="tiendas-tree" class="tree-view">
+                            <!-- Aquí se cargarán las tiendas de forma dinámica -->
+                        </div>
+                        
+                        <!-- Botón de acción para asignar -->
+                        <div class="action-buttons">
+                            <button id="btn-asignar" class="btn btn-primary" disabled>
+                                <i class="fas fa-link"></i> Asignar tiendas seleccionadas
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Estado vacío -->
+                    <div id="tiendas-empty" class="empty-state" style="display: none;">
+                        <i class="fas fa-store-slash"></i>
+                        <h3>No hay tiendas externas disponibles</h3>
+                        <p>No se encontraron tiendas externas para asignar</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Pestaña de visualización -->
+            <div class="tab-panel" id="panel-ver">
+                <!-- Barra de búsqueda para asignaciones -->
+                <div class="search-bar">
+                    <div class="search-input-container">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" id="search-asignaciones" placeholder="Buscar asignaciones..." class="search-input">
+                    </div>
+                    <button id="btn-buscar-asignaciones" class="btn btn-outline">Buscar</button>
+                    <button id="btn-reset-asignaciones" class="btn btn-outline">Limpiar</button>
+                </div>
+                
+                <!-- Estado de carga para asignaciones -->
+                <div id="asignaciones-loading" class="loading-spinner-container">
+                    <div class="loading-spinner"></div>
+                    <p>Cargando asignaciones...</p>
+                </div>
+                
+                <!-- Tabla de asignaciones -->
+                <div id="asignaciones-container" style="display: none;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Tienda Interna</th>
+                                <th>Tienda Externa</th>
+                                <th>Tipo</th>
+                                <th>Fecha Asignación</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="asignaciones-tbody">
+                            <!-- Aquí se cargarán las asignaciones -->
+                        </tbody>
+                    </table>
+                    
+                    <!-- Controles de paginación -->
+                    <div id="pagination-asignaciones" class="pagination" style="display: none;">
+                        <button id="prev-page-asignaciones" class="pagination-btn">
+                            <i class="fas fa-chevron-left"></i> Anterior
+                        </button>
+                        <div id="page-numbers-asignaciones" class="page-numbers"></div>
+                        <button id="next-page-asignaciones" class="pagination-btn">
+                            Siguiente <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Estado vacío para asignaciones -->
+                <div id="asignaciones-empty" class="empty-state" style="display: none;">
+                    <i class="fas fa-tasks"></i>
+                    <h3>No hay asignaciones registradas</h3>
+                    <p>Aún no se han asignado tiendas para atención al cliente</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Estilos específicos para este módulo -->
+<style>
+    /* Estilos para las pestañas */
+    .tabs-container {
+        margin-top: 20px;
+    }
+    
+    .tabs-header {
+        display: flex;
+        border-bottom: 1px solid #ddd;
+        margin-bottom: 20px;
+    }
+    
+    .tab-btn {
+        padding: 10px 20px;
+        background: none;
+        border: none;
+        border-bottom: 3px solid transparent;
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.2s;
+        color: #666;
+    }
+    
+    .tab-btn:hover {
+        color: var(--primary-color);
+    }
+    
+    .tab-btn.active {
+        color: var(--primary-color);
+        border-bottom-color: var(--primary-color);
+    }
+    
+    .tab-panel {
+        display: none;
+    }
+    
+    .tab-panel.active {
+        display: block;
+    }
+    
+    /* Estilos para el selector de tienda interna */
+    .form-group {
+        margin-bottom: 25px;
+    }
+    
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 500;
+    }
+    
+    .select-container {
+        position: relative;
+        max-width: 500px;
+    }
+    
+    .custom-select {
+        width: 100%;
+        padding: 10px 15px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        appearance: none;
+        background-image: url('data:image/svg+xml;utf8,<svg fill="%23333" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18px"><path d="M7 10l5 5 5-5z"/></svg>');
+        background-repeat: no-repeat;
+        background-position: right 10px center;
+        background-color: white;
+        cursor: pointer;
+    }
+    
+    .custom-select:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(48, 52, 152, 0.2);
+        outline: none;
+    }
+    
+    /* Estilos para la vista de árbol */
+    .tree-view {
+        margin: 20px 0;
+        border: 1px solid #eee;
+        border-radius: 8px;
+        padding: 5px;
+        max-height: 500px;
+        overflow-y: auto;
+    }
+    
+    .tree-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 15px;
+        background-color: #f8f9fa;
+        border-radius: 6px;
+        margin-bottom: 10px;
+    }
+    
+    .tree-checkbox-label {
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+    }
+    
+    .tree-checkbox {
+        margin-right: 10px;
+    }
+    
+    .count-badge {
+        background-color: var(--primary-color);
+        color: white;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+    
+    .tree-item {
+        margin: 5px 0;
+    }
+    
+    .tree-parent {
+        padding: 10px 15px;
+        background-color: #f8f9fa;
+        border-radius: 6px;
+        margin-bottom: 5px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        transition: background-color 0.2s;
+    }
+    
+    .tree-parent:hover {
+        background-color: #e9ecef;
+    }
+    
+    .tree-parent-left {
+        display: flex;
+        align-items: center;
+    }
+    
+    .tree-toggle {
+        margin-right: 10px;
+        font-size: 0.8rem;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background-color: #ddd;
+        cursor: pointer;
+    }
+    
+    .tree-parent-info {
+        display: flex;
+        align-items: center;
+    }
+    
+    .tree-parent-checkbox {
+        margin-right: 10px;
+    }
+    
+    .tree-parent-name {
+        font-weight: 500;
+    }
+    
+    .tree-children {
+        margin-left: 30px;
+        border-left: 1px dashed #ddd;
+        padding-left: 15px;
+        display: none;
+    }
+    
+    .tree-children.expanded {
+        display: block;
+    }
+    
+    .tree-child {
+        padding: 8px 15px;
+        margin: 5px 0;
+        background-color: white;
+        border: 1px solid #f0f0f0;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+    }
+    
+    .tree-child-checkbox {
+        margin-right: 10px;
+    }
+    
+    .tree-child-info {
+        flex-grow: 1;
+    }
+    
+    .tree-child-name {
+        font-weight: 500;
+        display: block;
+    }
+    
+    .tree-child-detail {
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+    
+    .action-buttons {
+        margin: 20px 0;
+        display: flex;
+        justify-content: flex-end;
+    }
+    
+    /* Estilos para la tabla de datos */
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 20px 0;
+    }
+    
+    .data-table th,
+    .data-table td {
+        padding: 12px 15px;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .data-table th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+        color: #333;
+    }
+    
+    .data-table tr:hover {
+        background-color: #f5f5f5;
+    }
+    
+    .data-table .status-badge {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+    
+    .status-active {
+        background-color: #e5f5e5;
+        color: #28a745;
+    }
+    
+    .status-inactive {
+        background-color: #f8d7da;
+        color: #dc3545;
+    }
+    
+    .btn-action {
+        padding: 5px 10px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        cursor: pointer;
+        border: none;
+        margin-right: 5px;
+    }
+    
+    .btn-edit {
+        background-color: #ffc107;
+        color: #212529;
+    }
+    
+    .btn-delete {
+        background-color: #dc3545;
+        color: white;
+    }
+    
+    .btn-activate {
+        background-color: #28a745;
+        color: white;
+    }
+</style>
+
+<!-- Script para el módulo -->
+<script>
+    // Estado global
+    const state = {
+        tiendasInternas: [],
+        tiendasExternas: [],
+        tiendaInternaSeleccionada: null,
+        tiendasExternasSeleccionadas: new Set(),
+        asignaciones: [],
+        filtroAsignaciones: '',
+        currentPage: 1,
+        itemsPerPage: 10
+    };
+    
+    // Referencias del DOM para la pestaña de asignación
+    const tiendaInternaSelector = document.getElementById('tienda-interna-selector');
+    const searchTiendas = document.getElementById('search-tiendas');
+    const btnBuscar = document.getElementById('btn-buscar');
+    const btnResetSearch = document.getElementById('btn-reset-search');
+    const tiendasLoading = document.getElementById('tiendas-loading');
+    const tiendasError = document.getElementById('tiendas-error');
+    const errorMessage = document.getElementById('error-message');
+    const tiendasExternasContainer = document.getElementById('tiendas-externas-container');
+    const tiendasEmpty = document.getElementById('tiendas-empty');
+    const selectAllTiendas = document.getElementById('select-all-tiendas');
+    const tiendasSeleccionadasCount = document.getElementById('tiendas-seleccionadas-count');
+    const tiendasTree = document.getElementById('tiendas-tree');
+    const btnAsignar = document.getElementById('btn-asignar');
+    
+    // Referencias del DOM para la pestaña de visualización
+    const searchAsignaciones = document.getElementById('search-asignaciones');
+    const btnBuscarAsignaciones = document.getElementById('btn-buscar-asignaciones');
+    const btnResetAsignaciones = document.getElementById('btn-reset-asignaciones');
+    const asignacionesLoading = document.getElementById('asignaciones-loading');
+    const asignacionesContainer = document.getElementById('asignaciones-container');
+    const asignacionesEmpty = document.getElementById('asignaciones-empty');
+    const asignacionesTbody = document.getElementById('asignaciones-tbody');
+    const prevPageAsignaciones = document.getElementById('prev-page-asignaciones');
+    const nextPageAsignaciones = document.getElementById('next-page-asignaciones');
+    const pageNumbersAsignaciones = document.getElementById('page-numbers-asignaciones');
+    const paginationAsignaciones = document.getElementById('pagination-asignaciones');
+    
+    // Referencias para pestañas
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabPanels = document.querySelectorAll('.tab-panel');
+    
+    // Función para cambiar entre pestañas
+    function setupTabs() {
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Desactivar todas las pestañas
+                tabBtns.forEach(b => b.classList.remove('active'));
+                tabPanels.forEach(p => p.classList.remove('active'));
+                
+                // Activar la pestaña seleccionada
+                btn.classList.add('active');
+                const tabId = btn.dataset.tab;
+                document.getElementById(`panel-${tabId}`).classList.add('active');
+                
+                // Cargar datos si es necesario
+                if (tabId === 'ver') {
+                    cargarAsignaciones();
+                }
+            });
+        });
+    }
+    
+    // Inicialización
+    function init() {
+        setupTabs();
+        cargarTiendasInternas();
+        setupEventListeners();
+    }
+    
+    // Configurar escuchadores de eventos
+    function setupEventListeners() {
+        // Selector de tienda interna
+        tiendaInternaSelector.addEventListener('change', () => {
+            state.tiendaInternaSeleccionada = tiendaInternaSelector.value;
+            verificarEstadoBotonAsignar();
+        });
+        
+        // Botón de búsqueda
+        btnBuscar.addEventListener('click', () => {
+            cargarTiendasExternas(searchTiendas.value.trim());
+        });
+        
+        // Búsqueda al presionar Enter
+        searchTiendas.addEventListener('keyup', (e) => {
+            if (e.key === 'Enter') {
+                cargarTiendasExternas(searchTiendas.value.trim());
+            }
+        });
+        
+        // Botón de reset de búsqueda
+        btnResetSearch.addEventListener('click', () => {
+            searchTiendas.value = '';
+            cargarTiendasExternas('');
+        });
+        
+        // Casilla "Seleccionar todas"
+        selectAllTiendas.addEventListener('change', () => {
+            const checkboxes = document.querySelectorAll('.tree-parent-checkbox, .tree-child-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = selectAllTiendas.checked;
+                
+                // Actualizar el conjunto de tiendas seleccionadas
+                const tiendaId = checkbox.dataset.id;
+                if (selectAllTiendas.checked) {
+                    state.tiendasExternasSeleccionadas.add(tiendaId);
+                } else {
+                    state.tiendasExternasSeleccionadas.delete(tiendaId);
+                }
+            });
+            
+            actualizarContadorSeleccionadas();
+            verificarEstadoBotonAsignar();
+        });
+        
+        // Botón de asignar
+        btnAsignar.addEventListener('click', asignarTiendas);
+        
+        // Búsqueda de asignaciones
+        btnBuscarAsignaciones.addEventListener('click', () => {
+            state.filtroAsignaciones = searchAsignaciones.value.trim();
+            state.currentPage = 1;
+            filtrarYMostrarAsignaciones();
+        });
+        
+        // Búsqueda al presionar Enter en asignaciones
+        searchAsignaciones.addEventListener('keyup', (e) => {
+            if (e.key === 'Enter') {
+                state.filtroAsignaciones = searchAsignaciones.value.trim();
+                state.currentPage = 1;
+                filtrarYMostrarAsignaciones();
+            }
+        });
+        
+        // Botón de reset de búsqueda de asignaciones
+        btnResetAsignaciones.addEventListener('click', () => {
+            searchAsignaciones.value = '';
+            state.filtroAsignaciones = '';
+            state.currentPage = 1;
+            filtrarYMostrarAsignaciones();
+        });
+        
+        // Paginación
+        prevPageAsignaciones.addEventListener('click', () => {
+            if (state.currentPage > 1) {
+                state.currentPage--;
+                renderAsignaciones();
+                updatePagination();
+            }
+        });
+        
+        nextPageAsignaciones.addEventListener('click', () => {
+            const totalPages = Math.ceil(state.asignaciones.length / state.itemsPerPage);
+            if (state.currentPage < totalPages) {
+                state.currentPage++;
+                renderAsignaciones();
+                updatePagination();
+            }
+        });
+    }
+    
+    // Cargar tiendas internas desde la API
+    async function cargarTiendasInternas() {
+        try {
+            const userRole = sessionStorage.getItem('userData') ? 
+                            JSON.parse(sessionStorage.getItem('userData')).role : 'guest';
+            const userUID = sessionStorage.getItem('userUID') || '';
+            
+            const response = await fetch(`../api/get_tiendas_internas.php?role=${encodeURIComponent(userRole)}&uid=${encodeURIComponent(userUID)}`);
+            const data = await response.json();
+            
+            if (data.error) {
+                throw new Error(data.error);
+            }
+            
+            if (!data.tiendas || data.tiendas.length === 0) {
+                tiendaInternaSelector.innerHTML = '<option value="">No hay tiendas internas disponibles</option>';
+                return;
+            }
+            
+            state.tiendasInternas = data.tiendas;
+            
+            // Actualizar selector
+            tiendaInternaSelector.innerHTML = '<option value="">Selecciona una tienda interna</option>';
+            state.tiendasInternas.forEach(tienda => {
+                const option = document.createElement('option');
+                option.value = tienda.id;
+                option.textContent = tienda.nombre_tienda;
+                tiendaInternaSelector.appendChild(option);
+            });
+            
+            // Cargar tiendas externas
+            cargarTiendasExternas('');
+            
+        } catch (error) {
+            console.error('Error al cargar tiendas internas:', error);
+            tiendaInternaSelector.innerHTML = '<option value="">Error al cargar tiendas</option>';
+        }
+    }
+    
+    // Cargar tiendas externas desde la API
+    async function cargarTiendasExternas(searchTerm = '') {
+        try {
+            // Mostrar spinner de carga
+            tiendasLoading.style.display = 'flex';
+            tiendasExternasContainer.style.display = 'none';
+            tiendasEmpty.style.display = 'none';
+            tiendasError.style.display = 'none';
+            
+            const userRole = sessionStorage.getItem('userData') ? 
+                            JSON.parse(sessionStorage.getItem('userData')).role : 'guest';
+            const userUID = sessionStorage.getItem('userUID') || '';
+            
+            // Construir URL con parámetros
+            let url = `../api/get_tiendas_externas.php?role=${encodeURIComponent(userRole)}&uid=${encodeURIComponent(userUID)}`;
+            if (searchTerm) {
+                url += `&search=${encodeURIComponent(searchTerm)}`;
+            }
+            
+            const response = await fetch(url);
+            const data = await response.json();
+            
+            if (data.error) {
+                throw new Error(data.error);
+            }
+            
+            if (!data.tiendas || data.tiendas.length === 0) {
+                tiendasEmpty.style.display = 'block';
+                tiendasLoading.style.display = 'none';
+                return;
+            }
+            
+            // Guardar tiendas externas
+            state.tiendasExternas = data.tiendas;
+            
+            // Organizar tiendas en estructuras jerárquicas
+            const tiendasPrincipales = state.tiendasExternas.filter(tienda => !tienda.tienda_principal_id);
+            
+            // Limpiar árbol
+            tiendasTree.innerHTML = '';
+            
+            // Construir el árbol
+            tiendasPrincipales.forEach(tiendaPrincipal => {
+                // Encontrar sucursales para esta tienda principal
+                const sucursales = state.tiendasExternas.filter(
+                    tienda => tienda.tienda_principal_id === tiendaPrincipal.id
+                );
+                
+                // Crear elemento para la tienda principal
+                const tiendaItem = document.createElement('div');
+                tiendaItem.className = 'tree-item';
+                
+                // Determinar si tiene sucursales para mostrar el botón de expandir
+                const tieneBotónExpandir = sucursales.length > 0;
+                
+                tiendaItem.innerHTML = `
+                    <div class="tree-parent">
+                        <div class="tree-parent-left">
+                            ${tieneBotónExpandir ? 
+                                '<div class="tree-toggle"><i class="fas fa-plus"></i></div>' : 
+                                '<div style="width: 20px; margin-right: 10px;"></div>'}
+                            <div class="tree-parent-info">
+                                <input type="checkbox" class="tree-parent-checkbox" data-id="${tiendaPrincipal.id}">
+                                <span class="tree-parent-name">${tiendaPrincipal.nombre_tienda || 'Tienda sin nombre'}</span>
+                            </div>
+                        </div>
+                        <div class="tree-parent-right">
+                            <span class="badge">${sucursales.length} sucursales</span>
+                        </div>
+                    </div>
+                `;
+                
+                // Crear contenedor para las sucursales si existen
+                if (sucursales.length > 0) {
+                    const childrenContainer = document.createElement('div');
+                    childrenContainer.className = 'tree-children';
+                    
+                    // Agregar cada sucursal
+                    sucursales.forEach(sucursal => {
+                        const sucursalItem = document.createElement('div');
+                        sucursalItem.className = 'tree-child';
+                        sucursalItem.innerHTML = `
+                            <input type="checkbox" class="tree-child-checkbox" data-id="${sucursal.id}">
+                            <div class="tree-child-info">
+                                <span class="tree-child-name">${sucursal.nombre_tienda || 'Sucursal sin nombre'}</span>
+                                <span class="tree-child-detail">${sucursal.direccion || 'Sin dirección'}</span>
+                            </div>
+                        `;
+                        
+                        // Agregar evento a la casilla
+                        childrenContainer.appendChild(sucursalItem);
+                    });
+                    
+                    tiendaItem.appendChild(childrenContainer);
+                    
+                    // Agregar evento para expandir/contraer
+                    const toggleBtn = tiendaItem.querySelector('.tree-toggle');
+                    if (toggleBtn) {
+                        toggleBtn.addEventListener('click', (e) => {
+                            e.stopPropagation(); // Evitar que el clic llegue al padre
+                            const icon = toggleBtn.querySelector('i');
+                            const children = tiendaItem.querySelector('.tree-children');
+                            
+                            if (children.classList.contains('expanded')) {
+                                children.classList.remove('expanded');
+                                icon.className = 'fas fa-plus';
+                            } else {
+                                children.classList.add('expanded');
+                                icon.className = 'fas fa-minus';
+                            }
+                        });
+                    }
+                }
+                
+                // Agregar evento al checkbox de la tienda principal
+                const checkbox = tiendaItem.querySelector('.tree-parent-checkbox');
+                checkbox.addEventListener('change', (e) => {
+                    // Actualizar el conjunto de tiendas seleccionadas
+                    if (e.target.checked) {
+                        state.tiendasExternasSeleccionadas.add(tiendaPrincipal.id);
+                    } else {
+                        state.tiendasExternasSeleccionadas.delete(tiendaPrincipal.id);
+                    }
+                    
+                    // Si tiene sucursales, seleccionarlas también
+                    const childrenCheckboxes = tiendaItem.querySelectorAll('.tree-child-checkbox');
+                    childrenCheckboxes.forEach(childCheckbox => {
+                        childCheckbox.checked = e.target.checked;
+                        const childId = childCheckbox.dataset.id;
+                        
+                        if (e.target.checked) {
+                            state.tiendasExternasSeleccionadas.add(childId);
+                        } else {
+                            state.tiendasExternasSeleccionadas.delete(childId);
+                        }
+                    });
+                    
+                    actualizarContadorSeleccionadas();
+                    verificarEstadoBotonAsignar();
+                });
+                
+                // Agregar eventos a los checkboxes de las sucursales
+                tiendaItem.querySelectorAll('.tree-child-checkbox').forEach(childCheckbox => {
+                    childCheckbox.addEventListener('change', (e) => {
+                        const childId = e.target.dataset.id;
+                        
+                        if (e.target.checked) {
+                            state.tiendasExternasSeleccionadas.add(childId);
+                        } else {
+                            state.tiendasExternasSeleccionadas.delete(childId);
+                        }
+                        
+                        actualizarContadorSeleccionadas();
+                        verificarEstadoBotonAsignar();
+                    });
+                });
+                
+                tiendasTree.appendChild(tiendaItem);
+            });
+            
+            // Mostrar el contenedor de tiendas
+            tiendasExternasContainer.style.display = 'block';
+            tiendasLoading.style.display = 'none';
+            
+            // Limpiar selecciones anteriores
+            state.tiendasExternasSeleccionadas.clear();
+            actualizarContadorSeleccionadas();
+            verificarEstadoBotonAsignar();
+            
+        } catch (error) {
+            console.error('Error al cargar tiendas externas:', error);
+            errorMessage.textContent = error.message;
+            tiendasError.style.display = 'block';
+            tiendasLoading.style.display = 'none';
+        }
+    }
+    
+    // Actualizar contador de tiendas seleccionadas
+    function actualizarContadorSeleccionadas() {
+        tiendasSeleccionadasCount.textContent = `${state.tiendasExternasSeleccionadas.size} seleccionadas`;
+    }
+    
+    // Verificar si se debe habilitar el botón de asignar
+    function verificarEstadoBotonAsignar() {
+        btnAsignar.disabled = !state.tiendaInternaSeleccionada || state.tiendasExternasSeleccionadas.size === 0;
+    }
+    
+    // Asignar tiendas seleccionadas
+    async function asignarTiendas() {
+        try {
+            // Verificar que se haya seleccionado una tienda interna
+            if (!state.tiendaInternaSeleccionada) {
+                throw new Error('Debes seleccionar una tienda interna');
+            }
+            
+            // Verificar que se hayan seleccionado tiendas externas
+            if (state.tiendasExternasSeleccionadas.size === 0) {
+                throw new Error('Debes seleccionar al menos una tienda externa');
+            }
+            
+            // Mostrar indicador de carga
+            btnAsignar.disabled = true;
+            btnAsignar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+            
+            const userUID = sessionStorage.getItem('userUID') || '';
+            
+            // Preparar datos para la solicitud
+            const data = {
+                tienda_interna_id: state.tiendaInternaSeleccionada,
+                tiendas_externas: Array.from(state.tiendasExternasSeleccionadas),
+                usuario_asignacion: userUID
+            };
+            
+            // Enviar solicitud a la API
+            const response = await fetch('../api/asignar_atencion.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+            
+            const result = await response.json();
+            
+            if (result.error) {
+                throw new Error(result.error);
+            }
+            
+            // Mostrar mensaje de éxito
+            alert(`Asignación exitosa: ${result.asignadas} tiendas asignadas correctamente.`);
+            
+            // Limpiar selecciones
+            tiendaInternaSelector.value = '';
+            state.tiendaInternaSeleccionada = null;
+            state.tiendasExternasSeleccionadas.clear();
+            
+            // Recargar tiendas externas
+            cargarTiendasExternas('');
+            
+            // Cambiar a la pestaña de visualización
+            document.querySelector('.tab-btn[data-tab="ver"]').click();
+            
+        } catch (error) {
+            console.error('Error al asignar tiendas:', error);
+            alert(`Error: ${error.message}`);
+        } finally {
+            // Restaurar botón
+            btnAsignar.disabled = false;
+            btnAsignar.innerHTML = '<i class="fas fa-link"></i> Asignar tiendas seleccionadas';
+        }
+    }
+    
+    // Cargar asignaciones desde la API
+    async function cargarAsignaciones() {
+        try {
+            // Mostrar spinner de carga
+            asignacionesLoading.style.display = 'flex';
+            asignacionesContainer.style.display = 'none';
+            asignacionesEmpty.style.display = 'none';
+            
+            const userRole = sessionStorage.getItem('userData') ? 
+                            JSON.parse(sessionStorage.getItem('userData')).role : 'guest';
+            const userUID = sessionStorage.getItem('userUID') || '';
+            
+            // Construir URL con parámetros
+            let url = `../api/get_asignaciones.php?role=${encodeURIComponent(userRole)}&uid=${encodeURIComponent(userUID)}`;
+            
+            const response = await fetch(url);
+            const data = await response.json();
+            
+            if (data.error) {
+                throw new Error(data.error);
+            }
+            
+            // Guardar asignaciones
+            state.asignaciones = data.asignaciones || [];
+            
+            // Filtrar y mostrar asignaciones
+            filtrarYMostrarAsignaciones();
+            
+        } catch (error) {
+            console.error('Error al cargar asignaciones:', error);
+            asignacionesLoading.style.display = 'none';
+            asignacionesContainer.style.display = 'none';
+            asignacionesEmpty.innerHTML = `
+                <i class="fas fa-exclamation-triangle"></i>
+                <h3>Error al cargar asignaciones</h3>
+                <p>${error.message}</p>
+            `;
+            asignacionesEmpty.style.display = 'block';
+        }
+    }
+    
+    // Filtrar y mostrar asignaciones
+    function filtrarYMostrarAsignaciones() {
+        // Filtrar asignaciones si hay término de búsqueda
+        let asignacionesFiltradas = state.asignaciones;
+        
+        if (state.filtroAsignaciones) {
+            const filtro = state.filtroAsignaciones.toLowerCase();
+            asignacionesFiltradas = state.asignaciones.filter(asignacion => {
+                return (
+                    asignacion.tienda_interna_nombre.toLowerCase().includes(filtro) ||
+                    asignacion.tienda_externa_nombre.toLowerCase().includes(filtro)
+                );
+            });
+        }
+        
+        // Verificar si hay asignaciones
+        if (asignacionesFiltradas.length === 0) {
+            asignacionesLoading.style.display = 'none';
+            asignacionesContainer.style.display = 'none';
+            asignacionesEmpty.style.display = 'block';
+            return;
+        }
+        
+        // Renderizar asignaciones y configurar paginación
+        state.asignacionesFiltradas = asignacionesFiltradas;
+        renderAsignaciones();
+        updatePagination();
+        
+        // Mostrar contenedor de asignaciones
+        asignacionesLoading.style.display = 'none';
+        asignacionesContainer.style.display = 'block';
+        asignacionesEmpty.style.display = 'none';
+    }
+    
+    // Renderizar tabla de asignaciones con paginación
+    function renderAsignaciones() {
+        // Calcular índices para la página actual
+        const startIndex = (state.currentPage - 1) * state.itemsPerPage;
+        const endIndex = Math.min(startIndex + state.itemsPerPage, state.asignacionesFiltradas.length);
+        
+        // Obtener asignaciones para la página actual
+        const asignacionesPagina = state.asignacionesFiltradas.slice(startIndex, endIndex);
+        
+        // Limpiar tabla
+        asignacionesTbody.innerHTML = '';
+        
+        // Agregar filas
+        asignacionesPagina.forEach(asignacion => {
+            const row = document.createElement('tr');
+            
+            row.innerHTML = `
+                <td>${asignacion.tienda_interna_nombre}</td>
+                <td>${asignacion.tienda_externa_nombre}</td>
+                <td>${asignacion.tipo_tienda_externa || 'No especificado'}</td>
+                <td>${formatDate(asignacion.fecha_asignacion)}</td>
+                <td>
+                    <span class="status-badge ${asignacion.estado ? 'status-active' : 'status-inactive'}">
+                        ${asignacion.estado ? 'Activo' : 'Inactivo'}
+                    </span>
+                </td>
+                <td>
+                    ${asignacion.estado ? 
+                        `<button class="btn-action btn-delete" data-id="${asignacion.id}">
+                            <i class="fas fa-times"></i> Desactivar
+                        </button>` : 
+                        `<button class="btn-action btn-activate" data-id="${asignacion.id}">
+                            <i class="fas fa-check"></i> Activar
+                        </button>`
+                    }
+                </td>
+            `;
+            
+            // Agregar eventos a los botones
+            const btnAccion = row.querySelector('.btn-action');
+            btnAccion.addEventListener('click', () => {
+                cambiarEstadoAsignacion(asignacion.id, !asignacion.estado);
+            });
+            
+            asignacionesTbody.appendChild(row);
+        });
+    }
+    
+    // Actualizar controles de paginación
+    function updatePagination() {
+        const totalPages = Math.ceil(state.asignacionesFiltradas.length / state.itemsPerPage);
+        
+        // Actualizar estado de botones de navegación
+        prevPageAsignaciones.disabled = state.currentPage <= 1;
+        nextPageAsignaciones.disabled = state.currentPage >= totalPages;
+        
+        // Generar números de página
+        pageNumbersAsignaciones.innerHTML = '';
+        
+        // Determinar qué páginas mostrar (máximo 5 números)
+        let startPage = Math.max(1, state.currentPage - 2);
+        let endPage = Math.min(totalPages, startPage + 4);
+        
+        if (endPage - startPage < 4) {
+            startPage = Math.max(1, endPage - 4);
+        }
+        
+        // Añadir botón para la primera página si es necesario
+        if (startPage > 1) {
+            addPageButton(1);
+            if (startPage > 2) {
+                addEllipsis();
+            }
+        }
+        
+        // Añadir botones para las páginas intermedias
+        for (let i = startPage; i <= endPage; i++) {
+            addPageButton(i);
+        }
+        
+        // Añadir botón para la última página si es necesario
+        if (endPage < totalPages) {
+            if (endPage < totalPages - 1) {
+                addEllipsis();
+            }
+            addPageButton(totalPages);
+        }
+        
+        // Mostrar controles de paginación
+        paginationAsignaciones.style.display = totalPages > 1 ? 'flex' : 'none';
+    }
+    
+    // Función para añadir botón de página
+    function addPageButton(pageNum) {
+        const pageBtn = document.createElement('div');
+        pageBtn.className = `page-number ${pageNum === state.currentPage ? 'active' : ''}`;
+        pageBtn.textContent = pageNum;
+        pageBtn.addEventListener('click', () => {
+            if (pageNum !== state.currentPage) {
+                state.currentPage = pageNum;
+                renderAsignaciones();
+                updatePagination();
+            }
+        });
+        pageNumbersAsignaciones.appendChild(pageBtn);
+    }
+    
+    // Función para añadir puntos suspensivos en la paginación
+    function addEllipsis() {
+        const ellipsis = document.createElement('div');
+        ellipsis.className = 'page-ellipsis';
+        ellipsis.textContent = '...';
+        pageNumbersAsignaciones.appendChild(ellipsis);
+    }
+    
+    // Cambiar estado de una asignación
+    async function cambiarEstadoAsignacion(id, nuevoEstado) {
+        try {
+            const userRole = sessionStorage.getItem('userData') ? 
+                            JSON.parse(sessionStorage.getItem('userData')).role : 'guest';
+            const userUID = sessionStorage.getItem('userUID') || '';
+            
+            // Preparar datos
+            const data = {
+                id: id,
+                estado: nuevoEstado ? 1 : 0,
+                user_uid: userUID,
+                role: userRole
+            };
+            
+            // Enviar solicitud
+            const response = await fetch('../api/actualizar_asignacion.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+            
+            const result = await response.json();
+            
+            if (result.error) {
+                throw new Error(result.error);
+            }
+            
+            // Recargar asignaciones
+            cargarAsignaciones();
+            
+        } catch (error) {
+            console.error('Error al cambiar estado de asignación:', error);
+            alert(`Error: ${error.message}`);
+        }
+    }
+    
+    // Formatear fecha
+    function formatDate(dateString) {
+        if (!dateString) return 'N/A';
+        
+        try {
+            const date = new Date(dateString);
+            return date.toLocaleString('es-MX', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        } catch (e) {
+            console.error('Error al formatear fecha:', e);
+            return dateString;
+        }
+    }
+    
+    // Iniciar el módulo
+    init();
+</script>
