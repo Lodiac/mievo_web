@@ -928,25 +928,25 @@
                 ` : ''}
             </div>
             
-            <div class="detail-group">
-                <h4>Documentación</h4>
-                <div class="ine-container">
-                    <div class="ine-image">
-                        <h5>INE Frontal</h5>
-                        ${!solicitud.ine_frontal ? 
-                            `<div class="no-image">No disponible</div>` : 
-                            `<img src="../api/get_imagen_ine.php?id=${solicitud.id}&tipo=frontal" alt="INE Frontal" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'no-image\\'>Imagen no disponible</div>';">`
-                        }
-                    </div>
-                    <div class="ine-image">
-                        <h5>INE Trasera</h5>
-                        ${!solicitud.ine_trasera ? 
-                            `<div class="no-image">No disponible</div>` : 
-                            `<img src="../api/get_imagen_ine.php?id=${solicitud.id}&tipo=trasera" alt="INE Trasera" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'no-image\\'>Imagen no disponible</div>';">`
-                        }
-                    </div>
-                </div>
-            </div>
+           <div class="detail-group">
+    <h4>Documentación</h4>
+    <div class="ine-container">
+        <div class="ine-image">
+            <h5>INE Frontal</h5>
+            ${solicitud.tiene_ine_frontal ? 
+                `<img src="../api/get_imagen_ine.php?id=${solicitud.id}&tipo=frontal" alt="INE Frontal" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'no-image\\'>Imagen no disponible</div>';">` :
+                `<div class="no-image">No disponible</div>`
+            }
+        </div>
+        <div class="ine-image">
+            <h5>INE Trasera</h5>
+            ${solicitud.tiene_ine_trasera ? 
+                `<img src="../api/get_imagen_ine.php?id=${solicitud.id}&tipo=trasera" alt="INE Trasera" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'no-image\\'>Imagen no disponible</div>';">` :
+                `<div class="no-image">No disponible</div>`
+            }
+        </div>
+    </div>
+</div>
         `;
         
         // Mostrar modal
