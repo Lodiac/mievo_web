@@ -10,6 +10,12 @@ try {
     }
 
     $id = intval($_GET['id']);
+    
+    // Validación adicional para el ID
+    if ($id <= 0) {
+        throw new Exception("ID de solicitud inválido");
+    }
+    
     $tipo = $_GET['tipo'];
 
     // Validar tipo de imagen
@@ -24,7 +30,25 @@ try {
     // Conectar a la base de datos
     $con = conexiondb();
 
-    // Preparar la consulta
+    // Verificar primero que la solicitud existe
+    $verificacionQuery = "SELECT id FROM sol_portabilidad WHERE id = ?";
+    $stmtVerificacion = mysqli_prepare($con, $verificacionQuery);
+    
+    if (!$stmtVerificacion) {
+        throw new Exception("Error al preparar la consulta de verificación: " . mysqli_error($con));
+    }
+    
+    mysqli_stmt_bind_param($stmtVerificacion, "i", $id);
+    mysqli_stmt_execute($stmtVerificacion);
+    mysqli_stmt_store_result($stmtVerificacion);
+    
+    if (mysqli_stmt_num_rows($stmtVerificacion) === 0) {
+        throw new Exception("No existe una solicitud con el ID $id");
+    }
+    
+    mysqli_stmt_close($stmtVerificacion);
+
+    // Preparar la consulta para obtener la imagen
     $query = "SELECT $columna FROM sol_portabilidad WHERE id = ?";
     $stmt = mysqli_prepare($con, $query);
     
@@ -40,15 +64,17 @@ try {
 
     // Obtener resultado
     mysqli_stmt_bind_result($stmt, $imagen);
-    if (!mysqli_stmt_fetch($stmt)) {
-        throw new Exception("No se encontró la imagen");
+    $resultado = mysqli_stmt_fetch($stmt);
+    
+    if (!$resultado) {
+        throw new Exception("No se pudo obtener la imagen");
     }
     
     mysqli_stmt_close($stmt);
     mysqli_close($con);
 
     // Verificar si la imagen existe
-    if (!$imagen) {
+    if (!$imagen || strlen($imagen) === 0) {
         throw new Exception("La imagen no existe o está vacía");
     }
 
@@ -61,7 +87,8 @@ try {
     echo $imagen;
 
 } catch (Exception $e) {
-    // En caso de error con la imagen, enviar texto plano
+    // En caso de error con la imagen, enviar texto plano con mensaje de error
+    error_log("Error en get_imagen_ine.php: " . $e->getMessage());
     header('Content-Type: text/plain');
     echo "Error: " . $e->getMessage();
 }

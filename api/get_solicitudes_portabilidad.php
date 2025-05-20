@@ -58,8 +58,18 @@ try {
         $lista_uids .= ",'" . mysqli_real_escape_string($con, $vendedor_id) . "'";
     }
     
-    // 3. Obtener solicitudes de portabilidad
-    $query_solicitudes = "SELECT * FROM sol_portabilidad WHERE user_id IN ($lista_uids) ORDER BY fecha_creacion DESC";
+    // 3. Obtener solicitudes de portabilidad - Consulta mejorada para calcular campos directamente en SQL
+    $query_solicitudes = "SELECT 
+                          id, user_id, nombre_completo, numero_portar, nip_portabilidad, 
+                          operador_destino, fecha_creacion, 
+                          COALESCE(estado_solicitud, 'pendiente') AS estado_solicitud, 
+                          comentarios, curp, fecha_nacimiento, numero_contacto, iccid,
+                          (ine_frontal IS NOT NULL AND LENGTH(ine_frontal) > 0) AS tiene_ine_frontal,
+                          (ine_trasera IS NOT NULL AND LENGTH(ine_trasera) > 0) AS tiene_ine_trasera
+                          FROM sol_portabilidad 
+                          WHERE user_id IN ($lista_uids) 
+                          ORDER BY fecha_creacion DESC";
+    
     $result_solicitudes = mysqli_query($con, $query_solicitudes);
     
     if (!$result_solicitudes) {
@@ -68,16 +78,15 @@ try {
     
     $solicitudes = [];
     while ($row = mysqli_fetch_assoc($result_solicitudes)) {
+        // Asegurar que el ID es un entero
+        $row['id'] = intval($row['id']);
+        
         // Marcar solicitudes propias
         $row['es_propia'] = ($row['user_id'] == $uid) ? 1 : 0;
         
-        // Marcar si tiene imágenes (sin incluir los datos binarios)
-        $row['tiene_ine_frontal'] = !empty($row['ine_frontal']);
-        $row['tiene_ine_trasera'] = !empty($row['ine_trasera']);
-        
-        // Eliminar campos binarios para reducir el tamaño de la respuesta
-        unset($row['ine_frontal']);
-        unset($row['ine_trasera']);
+        // Convertir indicadores de imágenes a booleanos
+        $row['tiene_ine_frontal'] = (bool)$row['tiene_ine_frontal'];
+        $row['tiene_ine_trasera'] = (bool)$row['tiene_ine_trasera'];
         
         $solicitudes[] = $row;
     }
@@ -124,7 +133,7 @@ try {
     ];
     
     foreach ($solicitudes as $solicitud) {
-        $estado = $solicitud['estado_solicitud'] ?? 'pendiente';
+        $estado = $solicitud['estado_solicitud'];
         
         // Incrementar el contador correspondiente
         if (isset($estadisticas[$estado . 's'])) {
@@ -140,7 +149,7 @@ try {
         "success" => true,
         "solicitudes" => $solicitudes,
         "estadisticas" => $estadisticas
-    ]);
+    ], JSON_NUMERIC_CHECK); // Asegura que los números se codifiquen como números, no como strings
     
 } catch (Exception $e) {
     http_response_code(500);

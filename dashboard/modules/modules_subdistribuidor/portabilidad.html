@@ -624,6 +624,8 @@
             // Mostrar spinner de carga
             showLoading();
             
+            console.log('Iniciando carga de solicitudes para UID:', userUID);
+            
             // Hacer solicitud a la API
             const response = await fetch(`../api/get_solicitudes_portabilidad.php?uid=${encodeURIComponent(userUID)}`);
             
@@ -647,29 +649,21 @@
             // Guardar todas las solicitudes
             allSolicitudes = data.solicitudes || [];
             
-            // Calcular estadísticas manualmente
-            let estadisticas = {
+            console.log('Solicitudes recibidas:', allSolicitudes.length);
+            if (allSolicitudes.length > 0) {
+                console.log('Primera solicitud:', allSolicitudes[0]);
+                console.log('IDs de solicitudes disponibles:', allSolicitudes.map(s => s.id));
+            }
+            
+            // Actualizar estadísticas
+            actualizarEstadisticas(data.estadisticas || {
                 total: allSolicitudes.length,
                 pendientes: 0,
                 procesando: 0,
                 completadas: 0,
                 rechazadas: 0,
                 canceladas: 0
-            };
-            
-            // Contar por estado
-            allSolicitudes.forEach(sol => {
-                // Normalizar estado - usar 'pendiente' si está vacío o null
-                const estado = sol.estado_solicitud || 'pendiente';
-                
-                // Incrementar contador correspondiente
-                if (estadisticas.hasOwnProperty(estado + 's')) {
-                    estadisticas[estado + 's']++;
-                }
             });
-            
-            // Actualizar estadísticas
-            actualizarEstadisticas(estadisticas);
             
             // Aplicar filtros iniciales
             aplicarFiltros();
@@ -836,12 +830,18 @@
     
     // Función para ver detalles (debe ser global)
     window.verDetalles = function(id) {
-        const solicitud = allSolicitudes.find(s => s.id == id);
+        console.log('Buscando solicitud con ID:', id);
+        
+        // Búsqueda mejorada con conversión explícita a números
+        const solicitud = allSolicitudes.find(s => parseInt(s.id) === parseInt(id));
         
         if (!solicitud) {
-            alert('No se encontró la solicitud seleccionada');
+            console.error('No se encontró la solicitud. IDs disponibles:', allSolicitudes.map(s => s.id));
+            alert(`No se encontró la solicitud con ID: ${id}`);
             return;
         }
+        
+        console.log('Solicitud encontrada:', solicitud);
         
         // Formatear fecha - USANDO fecha_creacion
         let fechaFormateada = 'No disponible';
@@ -854,8 +854,11 @@
             }
         }
         
-        // Título del modal
-        modalTitle.textContent = `Solicitud de Portabilidad #${solicitud.id}`;
+        // Normalizar estado para incluirlo en el título
+        const estado = solicitud.estado_solicitud || 'pendiente';
+        
+        // Título del modal con estado
+        modalTitle.textContent = `Solicitud de Portabilidad #${solicitud.id} (${estado})`;
         
         // Contenido del modal
         modalContent.innerHTML = `
@@ -904,8 +907,8 @@
                 <div class="detail-item">
                     <div class="detail-label">Estado:</div>
                     <div class="detail-value">
-                        <span class="status-badge ${getEstadoClass(solicitud.estado_solicitud || 'pendiente')}">
-                            ${solicitud.estado_solicitud || 'pendiente'}
+                        <span class="status-badge ${getEstadoClass(estado)}">
+                            ${estado}
                         </span>
                     </div>
                 </div>
@@ -928,25 +931,29 @@
                 ` : ''}
             </div>
             
-           <div class="detail-group">
-    <h4>Documentación</h4>
-    <div class="ine-container">
-        <div class="ine-image">
-            <h5>INE Frontal</h5>
-            ${solicitud.tiene_ine_frontal ? 
-                `<img src="../api/get_imagen_ine.php?id=${solicitud.id}&tipo=frontal" alt="INE Frontal" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'no-image\\'>Imagen no disponible</div>';">` :
-                `<div class="no-image">No disponible</div>`
-            }
-        </div>
-        <div class="ine-image">
-            <h5>INE Trasera</h5>
-            ${solicitud.tiene_ine_trasera ? 
-                `<img src="../api/get_imagen_ine.php?id=${solicitud.id}&tipo=trasera" alt="INE Trasera" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'no-image\\'>Imagen no disponible</div>';">` :
-                `<div class="no-image">No disponible</div>`
-            }
-        </div>
-    </div>
-</div>
+            <div class="detail-group">
+                <h4>Documentación</h4>
+                <div class="ine-container">
+                    <div class="ine-image">
+                        <h5>INE Frontal</h5>
+                        ${solicitud.tiene_ine_frontal ? 
+                            `<img src="../api/get_imagen_ine.php?id=${solicitud.id}&tipo=frontal&t=${new Date().getTime()}" 
+                                alt="INE Frontal" 
+                                onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'no-image\\'>Error al cargar imagen</div>';">` :
+                            `<div class="no-image">No disponible</div>`
+                        }
+                    </div>
+                    <div class="ine-image">
+                        <h5>INE Trasera</h5>
+                        ${solicitud.tiene_ine_trasera ? 
+                            `<img src="../api/get_imagen_ine.php?id=${solicitud.id}&tipo=trasera&t=${new Date().getTime()}" 
+                                alt="INE Trasera" 
+                                onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'no-image\\'>Error al cargar imagen</div>';">` :
+                            `<div class="no-image">No disponible</div>`
+                        }
+                    </div>
+                </div>
+            </div>
         `;
         
         // Mostrar modal
