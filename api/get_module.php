@@ -30,7 +30,7 @@ if (empty($requestedRole)) {
 $allowedModules = [
     'root' => ['bienvenida', 'dashboard', 'tiendas', 'solicitudes', 'vendedores'],
     'admin' => ['bienvenida', 'dashboard', 'tiendas', 'solicitudes','vendedores'],
-    'subdistribuidor' => ['bienvenida', 'dashboard', 'tiendas', 'solicitudes', 'vendedores'],
+    'subdistribuidor' => ['bienvenida', 'dashboard', 'tiendas', 'solicitudes', 'vendedores','portabilidad'],
     'vendedor' => ['bienvenida', 'dashboard','solicitudes']
 ];
 

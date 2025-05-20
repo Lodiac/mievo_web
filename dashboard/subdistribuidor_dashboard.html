@@ -45,6 +45,93 @@
             --role-color: #0288d1;
             --role-color-dark: #026ea7;
             --role-color-light: #03a9f4;
+            --menu-accent-bg: #f0f6ff;
+        }
+        
+        /* Estilos para el menú y submenú similar a la captura */
+        /* Estilo general para menú */
+        .sidebar-menu {
+            padding: 0;
+        }
+        
+        .menu-item {
+            position: relative;
+            padding: 12px 20px;
+            margin: 0;
+            border-radius: 0;
+            border-left: 4px solid transparent;
+            display: flex;
+            align-items: center;
+        }
+        
+        .menu-item.active {
+            background-color: var(--menu-accent-bg);
+            border-left-color: var(--primary-color);
+        }
+        
+        /* Estilos específicos para Solicitudes */
+        .menu-item.solicitudes {
+            background-color: var(--menu-accent-bg);
+            flex-direction: row;
+            padding: 12px 20px;
+            color: #333;
+        }
+        
+        .menu-icon.solicitudes-icon {
+            color: #3f51b5;
+        }
+        
+        .menu-dropdown-icon {
+            margin-left: auto;
+            transition: transform 0.3s;
+            font-size: 0.8rem;
+        }
+        
+        .menu-item.submenu-open .menu-dropdown-icon {
+            transform: rotate(180deg);
+        }
+        
+        /* Estilos para elementos del submenú */
+        .submenu-item {
+            padding: 10px 10px 10px 48px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            font-size: 0.95rem;
+            position: relative;
+        }
+        
+        .submenu-item:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+        
+        .submenu-item.active {
+            background-color: rgba(0, 0, 0, 0.05);
+            color: var(--primary-color);
+        }
+        
+        .submenu-icon {
+            margin-right: 10px;
+            width: 16px;
+            text-align: center;
+        }
+        
+        /* Estilos para el círculo en el borde izquierdo */
+        .menu-item.solicitudes {
+            border-left: 4px solid #3f51b5;
+        }
+        
+        /* Mostrar/ocultar submenús */
+        .submenu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: none;
+        }
+        
+        .menu-item.submenu-open .submenu {
+            display: block;
         }
     </style>
 </head>
@@ -69,7 +156,7 @@
         <!-- Menú lateral -->
         <nav class="sidebar">
             <ul class="sidebar-menu">
-                <li class="menu-item active" data-module="bienvenida">
+                <li class="menu-item" data-module="bienvenida">
                     <i class="fas fa-home menu-icon"></i> <span class="menu-text">Bienvenida</span>
                 </li>
                 <li class="menu-item" data-module="dashboard">
@@ -78,9 +165,26 @@
                 <li class="menu-item" data-module="tiendas">
                     <i class="fas fa-store menu-icon"></i> <span class="menu-text">Tiendas</span>
                 </li>
-                <li class="menu-item" data-module="solicitudes">
-                    <i class="fas fa-clipboard-list menu-icon"></i> <span class="menu-text">Solicitudes</span>
+                
+                <!-- Menú de Solicitudes con formato de la captura -->
+                <li class="menu-item solicitudes submenu-open" data-module="solicitudes">
+                    <i class="fas fa-clipboard-list menu-icon solicitudes-icon"></i> 
+                    <span class="menu-text">Solicitudes</span>
+                    <i class="fas fa-chevron-up menu-dropdown-icon"></i>
                 </li>
+                <li class="submenu-item" data-module="portabilidad">
+                    <i class="fas fa-exchange-alt submenu-icon"></i> 
+                    <span>Portabilidad</span>
+                </li>
+                <li class="submenu-item" data-module="recuperacion">
+                    <i class="fas fa-undo submenu-icon"></i> 
+                    <span>Recuperación de línea</span>
+                </li>
+                <li class="submenu-item" data-module="pagos">
+                    <i class="fas fa-money-bill-wave submenu-icon"></i> 
+                    <span>Pago de servicios</span>
+                </li>
+                
                 <li class="menu-item" data-module="vendedores">
                     <i class="fas fa-users menu-icon"></i> <span class="menu-text">Vendedores</span>
                 </li>
@@ -184,8 +288,10 @@
             
             // Sistema de navegación SPA con validación segura
             const menuItems = document.querySelectorAll('.menu-item');
+            const submenuItems = document.querySelectorAll('.submenu-item');
             const mainContent = document.getElementById('main-content');
             const loadingContent = document.getElementById('loading-content');
+            const solicitudesMenu = document.querySelector('.menu-item.solicitudes');
             
             // Obtener el rol del usuario (debería ser 'subdistribuidor')
             const userRole = userData?.role || 'guest';
@@ -198,7 +304,10 @@
                 
                 try {
                     // Validar el módulo localmente antes de hacer la petición al servidor
-                    const allowedModules = ['bienvenida', 'dashboard', 'tiendas', 'solicitudes', 'vendedores'];
+                    const allowedModules = [
+                        'bienvenida', 'dashboard', 'tiendas', 'solicitudes', 'vendedores',
+                        'portabilidad', 'recuperacion', 'pagos'
+                    ];
                     if (!allowedModules.includes(moduleName)) {
                         throw new Error(`El módulo "${moduleName}" no está disponible para subdistribuidores`);
                     }
@@ -299,16 +408,69 @@
                 }
             }
             
-            // Configurar menú
-            menuItems.forEach(item => {
-                item.addEventListener('click', () => {
-                    // Marcar ítem activo
-                    menuItems.forEach(i => i.classList.remove('active'));
-                    item.classList.add('active');
+            // Manejar el menú de solicitudes
+            solicitudesMenu.addEventListener('click', function() {
+                this.classList.toggle('submenu-open');
+                
+                // Cambiar el ícono
+                const icon = this.querySelector('.menu-dropdown-icon');
+                if (this.classList.contains('submenu-open')) {
+                    icon.classList.remove('fa-chevron-down');
+                    icon.classList.add('fa-chevron-up');
+                } else {
+                    icon.classList.remove('fa-chevron-up');
+                    icon.classList.add('fa-chevron-down');
+                }
+                
+                // Si cambia a cerrado, cargar el módulo principal
+                if (!this.classList.contains('submenu-open')) {
+                    // Marcar todos como inactivos
+                    menuItems.forEach(item => item.classList.remove('active'));
+                    submenuItems.forEach(item => item.classList.remove('active'));
                     
-                    // Cargar el módulo correspondiente
-                    const module = item.dataset.module;
-                    loadModule(module);
+                    // Marcar este como activo
+                    this.classList.add('active');
+                    
+                    // Cargar módulo
+                    loadModule('solicitudes');
+                }
+            });
+            
+            // Configurar menú normal
+            menuItems.forEach(item => {
+                // Excluir el menú de solicitudes que ya tiene su propio handler
+                if (!item.classList.contains('solicitudes')) {
+                    item.addEventListener('click', function() {
+                        // Quitar activo de todos
+                        menuItems.forEach(i => i.classList.remove('active'));
+                        submenuItems.forEach(i => i.classList.remove('active'));
+                        
+                        // Activar este
+                        this.classList.add('active');
+                        
+                        // Cargar módulo
+                        const moduleName = this.dataset.module;
+                        loadModule(moduleName);
+                    });
+                }
+            });
+            
+            // Configurar submenú
+            submenuItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    // Quitar activo de todos
+                    menuItems.forEach(i => i.classList.remove('active'));
+                    submenuItems.forEach(i => i.classList.remove('active'));
+                    
+                    // Asegurar que el menú de solicitudes esté abierto
+                    solicitudesMenu.classList.add('submenu-open');
+                    
+                    // Activar este item
+                    this.classList.add('active');
+                    
+                    // Cargar módulo
+                    const moduleName = this.dataset.module;
+                    loadModule(moduleName);
                 });
             });
             
