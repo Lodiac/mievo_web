@@ -139,28 +139,29 @@ try {
     mysqli_stmt_close($stmt_insertar);
     
     // 5. Generar el contenido del ticket
-    $timestamp = time();
-    $folio = "SP-{$solicitudId}-{$timestamp}";
-    $fecha_actual = date('d/m/Y H:i');
-    
-    $contenido_ticket = "TICKET DE PAGO DE SERVICIO\n";
-    $contenido_ticket .= "---------------------------------------\n";
-    $contenido_ticket .= "FOLIO: {$folio}\n";
-    $contenido_ticket .= "FECHA: {$fecha_actual}\n";
-    $contenido_ticket .= "---------------------------------------\n";
-    $contenido_ticket .= "DETALLE DEL SERVICIO\n";
-    $contenido_ticket .= "---------------------------------------\n";
-    $contenido_ticket .= "PROVEEDOR: {$solicitud['proveedor']}\n";
-    $contenido_ticket .= "SERVICIO: {$solicitud['tipo_servicio']}\n";
-    $contenido_ticket .= "CUENTA/NÚMERO: {$solicitud['cuenta']}\n";
-    $contenido_ticket .= "MONTO: $" . number_format($solicitud['monto'], 2) . "\n";
-    $contenido_ticket .= "---------------------------------------\n";
-    $contenido_ticket .= "ESTADO: {$solicitud['estado_solicitud']}\n";
-    $contenido_ticket .= "FECHA REGISTRO: " . date('d/m/Y H:i', strtotime($solicitud['fecha_creacion'])) . "\n";
-    $contenido_ticket .= "=======================================\n";
-    $contenido_ticket .= "**COMPROBANTE NO FISCAL**\n";
-    $contenido_ticket .= "GRACIAS POR SU PREFERENCIA\n";
-    $contenido_ticket .= "=======================================";
+$timestamp = time();
+$folio = "SP-{$solicitudId}-{$timestamp}";
+$fecha_actual = date('d/m/Y H:i');
+
+// Contenido centrado con espacios adicionales para mantener alineación
+$contenido_ticket = "TICKET DE PAGO DE SERVICIO\n";
+$contenido_ticket .= "---------------------------------------\n";
+$contenido_ticket .= "FOLIO: {$folio}\n";
+$contenido_ticket .= "FECHA: {$fecha_actual}\n";
+$contenido_ticket .= "---------------------------------------\n";
+$contenido_ticket .= "DETALLE DEL SERVICIO\n";
+$contenido_ticket .= "---------------------------------------\n";
+$contenido_ticket .= "PROVEEDOR: {$solicitud['proveedor']}\n";
+$contenido_ticket .= "SERVICIO: {$solicitud['tipo_servicio']}\n";
+$contenido_ticket .= "CUENTA/NÚMERO: {$solicitud['cuenta']}\n";
+$contenido_ticket .= "MONTO: $" . number_format($solicitud['monto'], 2) . "\n";
+$contenido_ticket .= "---------------------------------------\n";
+$contenido_ticket .= "ESTADO: {$solicitud['estado_solicitud']}\n";
+$contenido_ticket .= "FECHA REGISTRO: " . date('d/m/Y H:i', strtotime($solicitud['fecha_creacion'])) . "\n";
+$contenido_ticket .= "====================================\n";
+$contenido_ticket .= "**COMPROBANTE NO FISCAL**\n";
+$contenido_ticket .= "GRACIAS POR SU PREFERENCIA\n";
+$contenido_ticket .= "====================================";
     
     // Cerrar conexión
     mysqli_close($con);

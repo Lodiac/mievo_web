@@ -540,41 +540,46 @@
     
     /* Estilos para el ticket */
     .ticket-modal {
-        max-width: 500px;
-    }
+    max-width: 400px; /* Reducir el ancho para mejor apariencia */
+}
 
+.ticket-container {
+    background-color: white;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin: 20px 0;
+    font-family: monospace;
+    white-space: pre-wrap;
+    font-size: 16px; /* Aumentado de 14px */
+    line-height: 1.6; /* Aumentado de 1.4 */
+    text-align: center; /* Centrar todo el texto */
+}
+
+.ticket-actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 15px;
+}
+
+/* Estilo para impresión */
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    .ticket-container, .ticket-container * {
+        visibility: visible;
+    }
     .ticket-container {
-        background-color: white;
-        padding: 20px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        margin: 20px 0;
-        font-family: monospace;
-        white-space: pre-wrap;
-        font-size: 14px;
-        line-height: 1.4;
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        padding: 15px;
+        text-align: center;
+        font-size: 16px;
     }
 
-    .ticket-actions {
-        display: flex;
-        justify-content: center;
-        margin-top: 15px;
-    }
-
-    @media print {
-        body * {
-            visibility: hidden;
-        }
-        .ticket-container, .ticket-container * {
-            visibility: visible;
-        }
-        .ticket-container {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            padding: 15px;
-        }
     }
 </style>
 
@@ -1067,72 +1072,79 @@
 
     // Función para mostrar el ticket en un modal
     function mostrarTicketModal(ticket, folio) {
-        // Crear modal específico para el ticket
-        const ticketModal = document.createElement('div');
-        ticketModal.className = 'modal';
-        ticketModal.id = 'modal-ticket';
-        ticketModal.style.display = 'block';
-        
-        // Formatear el ticket para HTML (reemplazar saltos de línea)
-        const ticketHtml = ticket.replace(/\n/g, '<br>');
-        
-        // Contenido del modal
-        ticketModal.innerHTML = `
-            <div class="modal-content ticket-modal">
-                <span class="close-modal">&times;</span>
-                <h3>Ticket Generado</h3>
-                <div class="ticket-container">
-                    <pre>${ticketHtml}</pre>
-                </div>
-                <div class="ticket-actions">
-                    <button class="btn btn-primary" onclick="imprimirTicket('${folio}')">
-                        <i class="fas fa-print"></i> Imprimir
-                    </button>
-                </div>
+    // Crear modal específico para el ticket
+    const ticketModal = document.createElement('div');
+    ticketModal.className = 'modal';
+    ticketModal.id = 'modal-ticket';
+    ticketModal.style.display = 'block';
+    
+    // Formatear el ticket para HTML (reemplazar saltos de línea)
+    const ticketHtml = ticket.replace(/\n/g, '<br>');
+    
+    // Contenido del modal
+    ticketModal.innerHTML = `
+        <div class="modal-content ticket-modal">
+            <span class="close-modal">&times;</span>
+            <h3>Ticket Generado</h3>
+            <div class="ticket-container">
+                <pre>${ticketHtml}</pre>
             </div>
-        `;
-        
-        // Añadir el modal al DOM
-        document.body.appendChild(ticketModal);
-        
-        // Configurar el botón para cerrar
-        const closeButton = ticketModal.querySelector('.close-modal');
-        closeButton.addEventListener('click', function() {
+            <div class="ticket-actions">
+                <button class="btn btn-primary" onclick="imprimirTicket('${folio}')">
+                    <i class="fas fa-print"></i> Imprimir
+                </button>
+            </div>
+        </div>
+    `;
+    
+    // Añadir el modal al DOM
+    document.body.appendChild(ticketModal);
+    
+    // Configurar el botón para cerrar
+    const closeButton = ticketModal.querySelector('.close-modal');
+    closeButton.addEventListener('click', function() {
+        document.body.removeChild(ticketModal);
+    });
+    
+    // Cerrar el modal si se hace clic fuera del contenido
+    window.addEventListener('click', function(event) {
+        if (event.target === ticketModal) {
             document.body.removeChild(ticketModal);
-        });
-        
-        // Cerrar el modal si se hace clic fuera del contenido
-        window.addEventListener('click', function(event) {
-            if (event.target === ticketModal) {
-                document.body.removeChild(ticketModal);
-            }
-        });
-    }
+        }
+    });
+}
 
     // Función para imprimir el ticket
     window.imprimirTicket = function(folio) {
-        const ticketContainer = document.querySelector('.ticket-container');
-        const originalContents = document.body.innerHTML;
+    const ticketContainer = document.querySelector('.ticket-container');
+    const originalContents = document.body.innerHTML;
+    
+    // Preparar contenido para impresión
+    const printContents = ticketContainer.innerHTML;
+    document.body.innerHTML = `
+        <div style="font-family: monospace; padding: 20px; text-align: center; font-size: 16px;">
+            ${printContents}
+        </div>
+    `;
+    
+    // Imprimir
+    window.print();
+    
+    // Restaurar contenido original
+    document.body.innerHTML = originalContents;
+    
+    // Volver a mostrar el modal de ticket después de imprimir
+    setTimeout(() => {
+        // Buscamos ticket anteriores y los eliminamos
+        const oldTicket = document.getElementById('modal-ticket');
+        if (oldTicket) {
+            document.body.removeChild(oldTicket);
+        }
         
-        // Preparar contenido para impresión
-        const printContents = ticketContainer.innerHTML;
-        document.body.innerHTML = `
-            <div style="font-family: monospace; padding: 20px;">
-                ${printContents}
-            </div>
-        `;
-        
-        // Imprimir
-        window.print();
-        
-        // Restaurar contenido original
-        document.body.innerHTML = originalContents;
-        
-        // Volver a mostrar el modal de ticket después de imprimir
-        setTimeout(() => {
-            mostrarTicketModal(document.querySelector('#modal-ticket pre').innerHTML.replace(/<br>/g, '\n'), folio);
-        }, 500);
-    };
+        const ticketText = document.querySelector('#modal-ticket pre')?.innerHTML.replace(/<br>/g, '\n') || '';
+        mostrarTicketModal(ticketText, folio);
+    }, 500);
+};
     
     // Función para obtener clase CSS según estado
     function getEstadoClass(estado) {
