@@ -1,5 +1,5 @@
 <?php
-// api/get_imagen_ine.php
+// api/get_imagen_ine.php - Versión mejorada
 require_once 'db_connect.php';
 
 // Asegurar que siempre enviamos una respuesta, incluso en caso de error
@@ -9,10 +9,10 @@ try {
         throw new Exception("Faltan parámetros requeridos");
     }
 
-    $id = intval($_GET['id']);
+    $id = $_GET['id']; // No convertir a int para evitar problemas de tipo
     
-    // Validación adicional para el ID
-    if ($id <= 0) {
+    // Validación del ID
+    if (empty($id)) {
         throw new Exception("ID de solicitud inválido");
     }
     
@@ -30,25 +30,7 @@ try {
     // Conectar a la base de datos
     $con = conexiondb();
 
-    // Verificar primero que la solicitud existe
-    $verificacionQuery = "SELECT id FROM sol_portabilidad WHERE id = ?";
-    $stmtVerificacion = mysqli_prepare($con, $verificacionQuery);
-    
-    if (!$stmtVerificacion) {
-        throw new Exception("Error al preparar la consulta de verificación: " . mysqli_error($con));
-    }
-    
-    mysqli_stmt_bind_param($stmtVerificacion, "i", $id);
-    mysqli_stmt_execute($stmtVerificacion);
-    mysqli_stmt_store_result($stmtVerificacion);
-    
-    if (mysqli_stmt_num_rows($stmtVerificacion) === 0) {
-        throw new Exception("No existe una solicitud con el ID $id");
-    }
-    
-    mysqli_stmt_close($stmtVerificacion);
-
-    // Preparar la consulta para obtener la imagen
+    // Preparar la consulta para obtener la imagen directamente
     $query = "SELECT $columna FROM sol_portabilidad WHERE id = ?";
     $stmt = mysqli_prepare($con, $query);
     
@@ -57,7 +39,7 @@ try {
     }
 
     // Vincular parámetros y ejecutar
-    mysqli_stmt_bind_param($stmt, "i", $id);
+    mysqli_stmt_bind_param($stmt, "s", $id); // Usar 's' para string en lugar de 'i'
     if (!mysqli_stmt_execute($stmt)) {
         throw new Exception("Error al ejecutar la consulta: " . mysqli_stmt_error($stmt));
     }
@@ -81,7 +63,7 @@ try {
     // Establecer encabezados para la imagen
     header('Content-Type: image/jpeg'); // Ajustar según el formato real
     header('Content-Length: ' . strlen($imagen));
-    header('Cache-Control: public, max-age=86400'); // Cachear por 1 día
+    header('Cache-Control: no-cache, must-revalidate');
 
     // Enviar la imagen
     echo $imagen;
