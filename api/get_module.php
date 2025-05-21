@@ -29,7 +29,7 @@ if (empty($requestedRole)) {
 // Mapeo de roles a módulos permitidos
 $allowedModules = [
     'root' => ['bienvenida', 'dashboard', 'tiendas', 'solicitudes', 'vendedores','atencion_clientes'],
-    'admin' => ['bienvenida', 'dashboard', 'tiendas', 'solicitudes','vendedores','portabilidad'],
+    'admin' => ['bienvenida', 'dashboard', 'tiendas', 'solicitudes','vendedores','portabilidad','pagos'],
     'subdistribuidor' => ['bienvenida', 'dashboard', 'tiendas', 'solicitudes', 'vendedores','portabilidad','pagos'],
     'vendedor' => ['bienvenida', 'dashboard','solicitudes', 'portabilidad','pagos']
 ];
