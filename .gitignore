@@ -2,7 +2,7 @@
 .DS_Store
 Thumbs.db
 desktop.ini
-
+.vscode
 # Archivos de entorno con información sensible
 .env
 .env.local
