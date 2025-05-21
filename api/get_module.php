@@ -31,7 +31,7 @@ $allowedModules = [
     'root' => ['bienvenida', 'dashboard', 'tiendas', 'solicitudes', 'vendedores','atencion_clientes'],
     'admin' => ['bienvenida', 'dashboard', 'tiendas', 'solicitudes','vendedores','portabilidad'],
     'subdistribuidor' => ['bienvenida', 'dashboard', 'tiendas', 'solicitudes', 'vendedores','portabilidad'],
-    'vendedor' => ['bienvenida', 'dashboard','solicitudes']
+    'vendedor' => ['bienvenida', 'dashboard','solicitudes', 'portabilidad']
 ];
 
 // Verificar si el rol existe en nuestra configuración
