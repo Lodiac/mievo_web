@@ -537,6 +537,45 @@
     .comentarios-content {
         font-style: italic;
     }
+    
+    /* Estilos para el ticket */
+    .ticket-modal {
+        max-width: 500px;
+    }
+
+    .ticket-container {
+        background-color: white;
+        padding: 20px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        margin: 20px 0;
+        font-family: monospace;
+        white-space: pre-wrap;
+        font-size: 14px;
+        line-height: 1.4;
+    }
+
+    .ticket-actions {
+        display: flex;
+        justify-content: center;
+        margin-top: 15px;
+    }
+
+    @media print {
+        body * {
+            visibility: hidden;
+        }
+        .ticket-container, .ticket-container * {
+            visibility: visible;
+        }
+        .ticket-container {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            padding: 15px;
+        }
+    }
 </style>
 
 <script>
@@ -862,6 +901,9 @@
                     <button class="action-btn" title="Ver detalles" onclick="verDetalles('${solicitud.id}')">
                         <i class="fas fa-eye"></i>
                     </button>
+                    <button class="action-btn" title="Generar Ticket" onclick="generarTicket('${solicitud.id}')">
+                        <i class="fas fa-receipt"></i>
+                    </button>
                 </td>
             `;
             
@@ -981,6 +1023,117 @@
         modal.style.display = 'block';
     };
     
+    // Función para generar ticket (debe ser global)
+    window.generarTicket = async function(id) {
+        try {
+            // Mostrar spinner o indicador de carga
+            showLoading();
+            
+            console.log('Generando ticket para solicitud ID:', id);
+            
+            // Preparar datos para la solicitud
+            const data = {
+                id: id,
+                uid: userUID,
+                role: userRole
+            };
+            
+            // Hacer solicitud a la API
+            const response = await fetch('../api/generar_ticket.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+            
+            // Obtener respuesta
+            const result = await response.json();
+            
+            if (!result.success) {
+                throw new Error(result.error || 'Error desconocido al generar el ticket');
+            }
+            
+            // Mostrar el ticket en un modal
+            mostrarTicketModal(result.ticket, result.folio);
+            
+        } catch (error) {
+            console.error('Error al generar ticket:', error);
+            alert(`Error: ${error.message}`);
+        } finally {
+            hideLoading();
+        }
+    };
+
+    // Función para mostrar el ticket en un modal
+    function mostrarTicketModal(ticket, folio) {
+        // Crear modal específico para el ticket
+        const ticketModal = document.createElement('div');
+        ticketModal.className = 'modal';
+        ticketModal.id = 'modal-ticket';
+        ticketModal.style.display = 'block';
+        
+        // Formatear el ticket para HTML (reemplazar saltos de línea)
+        const ticketHtml = ticket.replace(/\n/g, '<br>');
+        
+        // Contenido del modal
+        ticketModal.innerHTML = `
+            <div class="modal-content ticket-modal">
+                <span class="close-modal">&times;</span>
+                <h3>Ticket Generado</h3>
+                <div class="ticket-container">
+                    <pre>${ticketHtml}</pre>
+                </div>
+                <div class="ticket-actions">
+                    <button class="btn btn-primary" onclick="imprimirTicket('${folio}')">
+                        <i class="fas fa-print"></i> Imprimir
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        // Añadir el modal al DOM
+        document.body.appendChild(ticketModal);
+        
+        // Configurar el botón para cerrar
+        const closeButton = ticketModal.querySelector('.close-modal');
+        closeButton.addEventListener('click', function() {
+            document.body.removeChild(ticketModal);
+        });
+        
+        // Cerrar el modal si se hace clic fuera del contenido
+        window.addEventListener('click', function(event) {
+            if (event.target === ticketModal) {
+                document.body.removeChild(ticketModal);
+            }
+        });
+    }
+
+    // Función para imprimir el ticket
+    window.imprimirTicket = function(folio) {
+        const ticketContainer = document.querySelector('.ticket-container');
+        const originalContents = document.body.innerHTML;
+        
+        // Preparar contenido para impresión
+        const printContents = ticketContainer.innerHTML;
+        document.body.innerHTML = `
+            <div style="font-family: monospace; padding: 20px;">
+                ${printContents}
+            </div>
+        `;
+        
+        // Imprimir
+        window.print();
+        
+        // Restaurar contenido original
+        document.body.innerHTML = originalContents;
+        
+        // Volver a mostrar el modal de ticket después de imprimir
+        setTimeout(() => {
+            mostrarTicketModal(document.querySelector('#modal-ticket pre').innerHTML.replace(/<br>/g, '\n'), folio);
+        }, 500);
+    };
+    
     // Función para obtener clase CSS según estado
     function getEstadoClass(estado) {
         switch(estado) {
@@ -1026,5 +1179,12 @@
         emptyState.style.display = 'block';
         estadisticasContainer.style.display = 'flex';
         emptyMessage.textContent = message;
+    }
+    
+    function hideLoading() {
+        loadingElement.style.display = 'none';
+        if (estadisticasContainer.style.display === 'none' && solicitudesContainer.style.display === 'none' && emptyState.style.display === 'none') {
+            showContent();
+        }
     }
 </script>
