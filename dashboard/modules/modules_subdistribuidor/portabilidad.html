@@ -199,34 +199,6 @@
         cursor: not-allowed;
     }
     
-    /* Estadísticas */
-    .stats-container {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-        gap: 15px;
-        margin-bottom: 20px;
-    }
-    
-    .stat-card {
-        background-color: #fff;
-        border-radius: 8px;
-        padding: 15px;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-        text-align: center;
-    }
-    
-    .stat-title {
-        color: #666;
-        font-size: 0.9rem;
-        margin-bottom: 5px;
-    }
-    
-    .stat-value {
-        font-size: 1.8rem;
-        font-weight: 600;
-        color: #0288d1;
-    }
-    
     /* Loader y estados */
     .loading-spinner-container {
         display: flex;
@@ -541,14 +513,6 @@
     const busquedaInput = document.getElementById('busqueda');
     const btnRefresh = document.getElementById('btn-refresh');
     
-    // Elementos estadísticas
-    const statTotal = document.getElementById('stat-total');
-    const statPendientes = document.getElementById('stat-pendientes');
-    const statProcesando = document.getElementById('stat-procesando');
-    const statCompletadas = document.getElementById('stat-completadas');
-    const statRechazadas = document.getElementById('stat-rechazadas');
-    const statCanceladas = document.getElementById('stat-canceladas');
-    
     // Elementos de paginación
     const prevPageBtn = document.getElementById('prev-page');
     const nextPageBtn = document.getElementById('next-page');
@@ -682,9 +646,7 @@
             // Normalizar estados pero SIN modificar los IDs
             allSolicitudes.forEach(solicitud => {
                 solicitud.estado_solicitud = normalizarEstado(solicitud.estado_solicitud);
-                // NO convertimos IDs a enteros aquí
             });
-            
             
             // Aplicar filtros iniciales
             aplicarFiltros();
@@ -694,7 +656,6 @@
             showError(`Error al cargar las solicitudes: ${error.message}`);
         }
     }
-    
     
     // Función para aplicar filtros
     function aplicarFiltros() {
@@ -783,208 +744,201 @@
     }
     
     // Función para renderizar solicitudes
-    // Reemplaza SOLO esta función en el archivo portabilidad.html
-function renderSolicitudes(solicitudes) {
-    // Depuración crítica
-    console.log("Renderizando solicitudes con IDs:", solicitudes.map(s => s.id));
-    
-    // Limpiar el contenedor
-    solicitudesTbody.innerHTML = '';
-    
-    // Crear filas para cada solicitud
-    solicitudes.forEach(solicitud => {
-        // Determinar clase para el estado
-        let estadoClass = '';
-        let estado = solicitud.estado_solicitud || 'pendiente';
+    function renderSolicitudes(solicitudes) {
+        // Depuración crítica
+        console.log("Renderizando solicitudes con IDs:", solicitudes.map(s => s.id));
         
-        switch(estado) {
-            case 'pendiente': estadoClass = 'status-pendiente'; break;
-            case 'procesando': estadoClass = 'status-procesando'; break;
-            case 'completada': estadoClass = 'status-completada'; break;
-            case 'rechazada': estadoClass = 'status-rechazada'; break;
-            case 'cancelada': estadoClass = 'status-cancelada'; break;
+        // Limpiar el contenedor
+        solicitudesTbody.innerHTML = '';
+        
+        // Crear filas para cada solicitud
+        solicitudes.forEach(solicitud => {
+            // Determinar clase para el estado
+            let estadoClass = '';
+            let estado = solicitud.estado_solicitud || 'pendiente';
+            
+            switch(estado) {
+                case 'pendiente': estadoClass = 'status-pendiente'; break;
+                case 'procesando': estadoClass = 'status-procesando'; break;
+                case 'completada': estadoClass = 'status-completada'; break;
+                case 'rechazada': estadoClass = 'status-rechazada'; break;
+                case 'cancelada': estadoClass = 'status-cancelada'; break;
+            }
+            
+            // Formatear fecha
+            let fechaFormateada = 'No disponible';
+            if (solicitud.fecha_creacion) {
+                try {
+                    const fecha = new Date(solicitud.fecha_creacion);
+                    fechaFormateada = fecha.toLocaleDateString('es-MX', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric'
+                    });
+                } catch (e) {
+                    console.error('Error al formatear fecha:', e);
+                }
+            }
+            
+            // CRÍTICO: Usar ID original sin manipulación, estrictamente como string
+            const idOriginal = String(solicitud.id);
+            console.log(`Renderizando solicitud con ID: ${idOriginal} (tipo: ${typeof solicitud.id})`);
+            
+            // Crear fila de la tabla con el ID original pasado como string
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${idOriginal}</td>
+                <td>${solicitud.nombre_completo || 'No disponible'}</td>
+                <td>${solicitud.numero_portar || 'No disponible'}</td>
+                <td>${solicitud.nip_portabilidad || 'No disponible'}</td>
+                <td>${solicitud.operador_destino || 'No disponible'}</td>
+                <td>${fechaFormateada}</td>
+                <td>${solicitud.nombre_tienda || (parseInt(solicitud.es_propia) === 1 ? 'Solicitud propia' : 'No asignada')}</td>
+                <td><span class="status-badge ${estadoClass}">${estado}</span></td>
+                <td>
+                    <button class="action-btn" title="Ver detalles" onclick="verDetalles('${idOriginal}')">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </td>
+            `;
+            
+            solicitudesTbody.appendChild(row);
+        });
+    }
+    
+    // Función para ver detalles (debe ser global)
+    window.verDetalles = function(id) {
+        console.log('Buscando solicitud con ID:', id, 'Tipo:', typeof id);
+        
+        // Buscar la solicitud usando comparación flexible
+        const solicitud = allSolicitudes.find(s => String(s.id) == String(id));
+        
+        if (!solicitud) {
+            console.error('No se encontró la solicitud con ID:', id);
+            alert(`No se encontró la solicitud con ID: ${id}`);
+            return;
         }
+        
+        console.log('Solicitud encontrada:', solicitud);
+        
+        // Normalizar el estado
+        const estado = solicitud.estado_solicitud;
         
         // Formatear fecha
         let fechaFormateada = 'No disponible';
         if (solicitud.fecha_creacion) {
             try {
                 const fecha = new Date(solicitud.fecha_creacion);
-                fechaFormateada = fecha.toLocaleDateString('es-MX', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric'
-                });
+                fechaFormateada = fecha.toLocaleString('es-MX');
             } catch (e) {
                 console.error('Error al formatear fecha:', e);
             }
         }
         
-        // CRÍTICO: Usar ID original sin manipulación, estrictamente como string
-        const idOriginal = String(solicitud.id);
-        console.log(`Renderizando solicitud con ID: ${idOriginal} (tipo: ${typeof solicitud.id})`);
+        // Título del modal con estado
+        modalTitle.textContent = `Solicitud de Portabilidad #${solicitud.id} (${estado})`;
         
-        // Crear fila de la tabla con el ID original pasado como string
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${idOriginal}</td>
-            <td>${solicitud.nombre_completo || 'No disponible'}</td>
-            <td>${solicitud.numero_portar || 'No disponible'}</td>
-            <td>${solicitud.nip_portabilidad || 'No disponible'}</td>
-            <td>${solicitud.operador_destino || 'No disponible'}</td>
-            <td>${fechaFormateada}</td>
-            <td>${solicitud.nombre_tienda || (parseInt(solicitud.es_propia) === 1 ? 'Solicitud propia' : 'No asignada')}</td>
-            <td><span class="status-badge ${estadoClass}">${estado}</span></td>
-            <td>
-                <button class="action-btn" title="Ver detalles" onclick="verDetalles('${idOriginal}')">
-                    <i class="fas fa-eye"></i>
-                </button>
-            </td>
-        `;
-        
-        solicitudesTbody.appendChild(row);
-    });
-} 
-    // Función para ver detalles (debe ser global)
-    // Reemplaza solo esta parte de la función verDetalles
-window.verDetalles = function(id) {
-    console.log('Buscando solicitud con ID:', id, 'Tipo:', typeof id);
-    
-    // Buscar la solicitud usando comparación flexible
-    const solicitud = allSolicitudes.find(s => String(s.id) == String(id));
-    
-    if (!solicitud) {
-        console.error('No se encontró la solicitud con ID:', id);
-        alert(`No se encontró la solicitud con ID: ${id}`);
-        return;
-    }
-    
-    console.log('Solicitud encontrada:', solicitud);
-    
-    // Normalizar el estado
-    const estado = solicitud.estado_solicitud;
-    
-    // Formatear fecha
-    let fechaFormateada = 'No disponible';
-    if (solicitud.fecha_creacion) {
-        try {
-            const fecha = new Date(solicitud.fecha_creacion);
-            fechaFormateada = fecha.toLocaleString('es-MX');
-        } catch (e) {
-            console.error('Error al formatear fecha:', e);
+        // Preparar sección de comentarios
+        let comentariosHtml = '';
+        if (solicitud.comentarios && solicitud.comentarios.trim() !== '') {
+            comentariosHtml = `
+                <div class="detail-item">
+                    <div class="comentarios-container">
+                        <div class="comentarios-title">Comentarios:</div>
+                        <div class="comentarios-content">${solicitud.comentarios}</div>
+                    </div>
+                </div>
+            `;
         }
-    }
-    
-    // Título del modal con estado
-    modalTitle.textContent = `Solicitud de Portabilidad #${solicitud.id} (${estado})`;
-    
-    // Preparar sección de comentarios
-    let comentariosHtml = '';
-    if (solicitud.comentarios && solicitud.comentarios.trim() !== '') {
-        comentariosHtml = `
-            <div class="detail-item">
-                <div class="comentarios-container">
-                    <div class="comentarios-title">Comentarios:</div>
-                    <div class="comentarios-content">${solicitud.comentarios}</div>
+        
+        // Contenido del modal
+        modalContent.innerHTML = `
+            <div class="detail-group">
+                <h4>Información del Cliente</h4>
+                <div class="detail-item">
+                    <div class="detail-label">Nombre completo:</div>
+                    <div class="detail-value">${solicitud.nombre_completo || 'No disponible'}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Teléfono:</div>
+                    <div class="detail-value">${solicitud.numero_contacto || 'No disponible'}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">CURP:</div>
+                    <div class="detail-value">${solicitud.curp || 'No disponible'}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Fecha de nacimiento:</div>
+                    <div class="detail-value">${solicitud.fecha_nacimiento || 'No disponible'}</div>
+                </div>
+            </div>
+            
+            <div class="detail-group">
+                <h4>Información de Portabilidad</h4>
+                <div class="detail-item">
+                    <div class="detail-label">Número a portar:</div>
+                    <div class="detail-value">${solicitud.numero_portar || 'No disponible'}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">NIP:</div>
+                    <div class="detail-value">${solicitud.nip_portabilidad || 'No disponible'}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Operador origen:</div>
+                    <div class="detail-value">${solicitud.operador_destino || 'No disponible'}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">ICC ID:</div>
+                    <div class="detail-value">${solicitud.iccid || 'No disponible'}</div>
+                </div>
+            </div>
+            
+            <div class="detail-group">
+                <h4>Información de la Solicitud</h4>
+                <div class="detail-item">
+                    <div class="detail-label">Estado:</div>
+                    <div class="detail-value">
+                        <span class="status-badge ${getEstadoClass(estado)}">
+                            ${estado}
+                        </span>
+                    </div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Fecha de creación:</div>
+                    <div class="detail-value">${fechaFormateada}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Tienda:</div>
+                    <div class="detail-value">
+                        ${solicitud.nombre_tienda || (parseInt(solicitud.es_propia) === 1 ? 'Solicitud propia' : 'No asignada')}
+                        ${parseInt(solicitud.es_propia) === 1 ? '<span class="label-propio">Tú</span>' : ''}
+                    </div>
+                </div>
+                ${comentariosHtml}
+            </div>
+            
+            <div class="detail-group">
+                <h4>Documentación</h4>
+                <div class="ine-container">
+                    <div class="ine-image">
+                        <h5>INE Frontal</h5>
+                        <img src="../api/get_imagen_ine.php?id=${solicitud.id}&tipo=frontal&t=${new Date().getTime()}" 
+                             alt="INE Frontal" 
+                             onerror="this.onerror=null; this.parentElement.innerHTML='<h5>INE Frontal</h5><div class=\\'no-image\\'>Imagen no disponible</div>';">
+                    </div>
+                    <div class="ine-image">
+                        <h5>INE Trasera</h5>
+                        <img src="../api/get_imagen_ine.php?id=${solicitud.id}&tipo=trasera&t=${new Date().getTime()}" 
+                             alt="INE Trasera" 
+                             onerror="this.onerror=null; this.parentElement.innerHTML='<h5>INE Trasera</h5><div class=\\'no-image\\'>Imagen no disponible</div>';">
+                    </div>
                 </div>
             </div>
         `;
-    }
-    
-    // Contenido del modal - ELIMINADA LA SECCIÓN DE DISPOSITIVO
-    modalContent.innerHTML = `
-        <div class="detail-group">
-            <h4>Información del Cliente</h4>
-            <div class="detail-item">
-                <div class="detail-label">Nombre completo:</div>
-                <div class="detail-value">${solicitud.nombre_completo || 'No disponible'}</div>
-            </div>
-            <div class="detail-item">
-                <div class="detail-label">Teléfono:</div>
-                <div class="detail-value">${solicitud.numero_contacto || 'No disponible'}</div>
-            </div>
-            <div class="detail-item">
-                <div class="detail-label">CURP:</div>
-                <div class="detail-value">${solicitud.curp || 'No disponible'}</div>
-            </div>
-            <div class="detail-item">
-                <div class="detail-label">Fecha de nacimiento:</div>
-                <div class="detail-value">${solicitud.fecha_nacimiento || 'No disponible'}</div>
-            </div>
-        </div>
         
-        <div class="detail-group">
-            <h4>Información de Portabilidad</h4>
-            <div class="detail-item">
-                <div class="detail-label">Número a portar:</div>
-                <div class="detail-value">${solicitud.numero_portar || 'No disponible'}</div>
-            </div>
-            <div class="detail-item">
-                <div class="detail-label">NIP:</div>
-                <div class="detail-value">${solicitud.nip_portabilidad || 'No disponible'}</div>
-            </div>
-            <div class="detail-item">
-                <div class="detail-label">Operador origen:</div>
-                <div class="detail-value">${solicitud.operador_destino || 'No disponible'}</div>
-            </div>
-            <div class="detail-item">
-                <div class="detail-label">ICC ID:</div>
-                <div class="detail-value">${solicitud.iccid || 'No disponible'}</div>
-            </div>
-        </div>
-        
-        <div class="detail-group">
-            <h4>Información de la Solicitud</h4>
-            <div class="detail-item">
-                <div class="detail-label">Estado:</div>
-                <div class="detail-value">
-                    <span class="status-badge ${getEstadoClass(estado)}">
-                        ${estado}
-                    </span>
-                </div>
-            </div>
-            <div class="detail-item">
-                <div class="detail-label">Fecha de creación:</div>
-                <div class="detail-value">${fechaFormateada}</div>
-            </div>
-            <div class="detail-item">
-                <div class="detail-label">Tienda:</div>
-                <div class="detail-value">
-                    ${solicitud.nombre_tienda || (parseInt(solicitud.es_propia) === 1 ? 'Solicitud propia' : 'No asignada')}
-                    ${parseInt(solicitud.es_propia) === 1 ? '<span class="label-propio">Tú</span>' : ''}
-                </div>
-            </div>
-            ${comentariosHtml}
-        </div>
-        
-        <div class="detail-group">
-            <h4>Documentación</h4>
-            <div class="ine-container">
-                <div class="ine-image">
-                    <h5>INE Frontal</h5>
-                    ${solicitud.tiene_ine_frontal ? 
-                        `<img src="../api/get_imagen_ine.php?id=${solicitud.id}&tipo=frontal&t=${new Date().getTime()}" 
-                            alt="INE Frontal" 
-                            onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'no-image\\'>Error al cargar imagen</div>';">` :
-                        `<div class="no-image">No disponible</div>`
-                    }
-                </div>
-                <div class="ine-image">
-                    <h5>INE Trasera</h5>
-                    ${solicitud.tiene_ine_trasera ? 
-                        `<img src="../api/get_imagen_ine.php?id=${solicitud.id}&tipo=trasera&t=${new Date().getTime()}" 
-                            alt="INE Trasera" 
-                            onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'no-image\\'>Error al cargar imagen</div>';">` :
-                        `<div class="no-image">No disponible</div>`
-                    }
-                </div>
-            </div>
-        </div>
-    `;
-    
-    // Mostrar modal
-    modal.style.display = 'block';
-};
+        // Mostrar modal
+        modal.style.display = 'block';
+    };
     
     // Función para obtener clase CSS según estado
     function getEstadoClass(estado) {

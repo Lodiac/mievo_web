@@ -48,8 +48,15 @@ try {
     mysqli_stmt_bind_result($stmt, $imagen);
     $resultado = mysqli_stmt_fetch($stmt);
     
+    // No lanzar error si no hay resultado - simplemente mostrar imagen vacía
     if (!$resultado) {
-        throw new Exception("No se pudo obtener la imagen");
+        // Cerrar recursos y mostrar imagen vacía
+        mysqli_stmt_close($stmt);
+        mysqli_close($con);
+        
+        header('Content-Type: image/png');
+        readfile(__DIR__ . '/img/no-image.png'); // Imagen de placeholder
+        exit;
     }
     
     mysqli_stmt_close($stmt);
@@ -57,7 +64,10 @@ try {
 
     // Verificar si la imagen existe
     if (!$imagen || strlen($imagen) === 0) {
-        throw new Exception("La imagen no existe o está vacía");
+        // Mostrar imagen vacía
+        header('Content-Type: image/png');
+        readfile(__DIR__ . '/img/no-image.png'); // Imagen de placeholder
+        exit;
     }
 
     // Establecer encabezados para la imagen
@@ -69,9 +79,17 @@ try {
     echo $imagen;
 
 } catch (Exception $e) {
-    // En caso de error con la imagen, enviar texto plano con mensaje de error
+    // En caso de error con la imagen, enviar una imagen de placeholder
     error_log("Error en get_imagen_ine.php: " . $e->getMessage());
-    header('Content-Type: text/plain');
-    echo "Error: " . $e->getMessage();
+    
+    // Intentar enviar imagen de placeholder
+    if (file_exists(__DIR__ . '/img/no-image.png')) {
+        header('Content-Type: image/png');
+        readfile(__DIR__ . '/img/no-image.png');
+    } else {
+        // Si no hay imagen de placeholder, enviar mensaje de error
+        header('Content-Type: text/plain');
+        echo "Error: " . $e->getMessage();
+    }
 }
 ?>
