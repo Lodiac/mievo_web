@@ -1,0 +1,90 @@
+<?php
+// api/get_solicitudes_pagoservicios.php
+header('Content-Type: application/json; charset=UTF-8');
+require_once 'db_connect.php';
+
+try {
+    // Verificar que el usuario tenga permiso
+    if (!isset($_GET['uid']) || !isset($_GET['role'])) {
+        throw new Exception("No autorizado");
+    }
+
+    $uid = $_GET['uid'];
+    $role = $_GET['role'];
+    
+    if ($role !== 'subdistribuidor') {
+        throw new Exception("Esta API solo está disponible para subdistribuidores");
+    }
+    
+    $con = conexiondb();
+    
+    // Lista de UIDs conocidos (en producción, estos se obtendrían dinámicamente)
+    $lista_uids = [
+        '6FwWdH2jZDat2IKdZP4p307uUVA2',  // El subdistribuidor principal
+        'TRKWBFlpsDWK6LSJsOQybKzm0gW2',  // Subordinado 1
+        'bdMiyg7CbPSSsYP4ggPKWLHdc5i1',  // Subordinado 2
+        'tBq2CWupcqdlHOmbp0bdJQVYYwM2'   // Subordinado 3
+    ];
+    
+    // Convertir array a string para la consulta IN()
+    $ids_str = "'" . implode("','", $lista_uids) . "'";
+    
+    // La consulta exacta que hemos verificado funciona
+    $query = "SELECT 
+                id, user_id, user_name, proveedor, tipo_servicio, cuenta, monto, numero_contacto, 
+                estado_solicitud, fecha_creacion, comentarios, 
+                CASE WHEN user_id = ? THEN 1 ELSE 0 END AS es_propia 
+              FROM sol_pagoservicios 
+              WHERE user_id IN ($ids_str) 
+              AND estado = 1 
+              ORDER BY fecha_creacion DESC";
+    
+    $stmt = mysqli_prepare($con, $query);
+    mysqli_stmt_bind_param($stmt, "s", $uid);
+    
+    if (!mysqli_stmt_execute($stmt)) {
+        throw new Exception("Error al ejecutar la consulta: " . mysqli_stmt_error($stmt));
+    }
+    
+    $result = mysqli_stmt_get_result($stmt);
+    
+    $solicitudes = [];
+    while ($row = mysqli_fetch_assoc($result)) {
+        $solicitudes[] = $row;
+    }
+    
+    // Estadísticas básicas, incluyendo estado cancelada
+    $estadisticas = [
+        'total' => count($solicitudes),
+        'pendientes' => count(array_filter($solicitudes, function($s) { 
+            return strtolower($s['estado_solicitud']) == 'pendiente'; 
+        })),
+        'procesando' => count(array_filter($solicitudes, function($s) { 
+            return strtolower($s['estado_solicitud']) == 'procesando'; 
+        })),
+        'completadas' => count(array_filter($solicitudes, function($s) { 
+            return strtolower($s['estado_solicitud']) == 'completada'; 
+        })),
+        'rechazadas' => count(array_filter($solicitudes, function($s) { 
+            return strtolower($s['estado_solicitud']) == 'rechazada'; 
+        })),
+        'canceladas' => count(array_filter($solicitudes, function($s) { 
+            return strtolower($s['estado_solicitud']) == 'cancelada'; 
+        }))
+    ];
+    
+    mysqli_stmt_close($stmt);
+    mysqli_close($con);
+    
+    // Devolver respuesta
+    echo json_encode([
+        "success" => true,
+        "solicitudes" => $solicitudes,
+        "estadisticas" => $estadisticas
+    ]);
+    
+} catch (Exception $e) {
+    http_response_code(500);
+    echo json_encode(["error" => $e->getMessage()]);
+}
+?>

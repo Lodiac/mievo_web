@@ -30,8 +30,8 @@ if (empty($requestedRole)) {
 $allowedModules = [
     'root' => ['bienvenida', 'dashboard', 'tiendas', 'solicitudes', 'vendedores','atencion_clientes'],
     'admin' => ['bienvenida', 'dashboard', 'tiendas', 'solicitudes','vendedores','portabilidad'],
-    'subdistribuidor' => ['bienvenida', 'dashboard', 'tiendas', 'solicitudes', 'vendedores','portabilidad'],
-    'vendedor' => ['bienvenida', 'dashboard','solicitudes', 'portabilidad']
+    'subdistribuidor' => ['bienvenida', 'dashboard', 'tiendas', 'solicitudes', 'vendedores','portabilidad','pagos'],
+    'vendedor' => ['bienvenida', 'dashboard','solicitudes', 'portabilidad','pagos']
 ];
 
 // Verificar si el rol existe en nuestra configuración

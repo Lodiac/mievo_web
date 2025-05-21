@@ -1,0 +1,1030 @@
+<div class="card">
+    <h2 class="content-title">
+        <i class="fas fa-money-bill-wave"></i> Gestión de Pagos de Servicios
+    </h2>
+    <p>Gestiona las solicitudes de pago de servicios realizadas por ti y tus vendedores.</p>
+    
+    <!-- Filtros -->
+    <div class="filter-controls">
+        <div class="row">
+            <div class="col">
+                <div class="form-group">
+                    <label for="filtro-estado">Estado:</label>
+                    <select id="filtro-estado" class="form-control">
+                        <option value="">Todos</option>
+                        <option value="pendiente">Pendiente</option>
+                        <option value="procesando">Procesando</option>
+                        <option value="completada">Completada</option>
+                        <option value="rechazada">Rechazada</option>
+                        <option value="cancelada">Cancelada</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col">
+                <div class="form-group">
+                    <label for="filtro-origen">Origen:</label>
+                    <select id="filtro-origen" class="form-control">
+                        <option value="">Todos</option>
+                        <option value="1">Mis solicitudes</option>
+                        <option value="0">De vendedores</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col">
+                <div class="search-input-container">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" id="busqueda" class="search-input" placeholder="Buscar por nombre, número, cuenta...">
+                </div>
+            </div>
+            <div class="col actions">
+                <button id="btn-refresh" class="btn btn-primary">
+                    <i class="fas fa-sync-alt"></i> Actualizar
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Estados de la interfaz -->
+    <div id="solicitudes-loading" class="loading-spinner-container">
+        <div class="loading-spinner"></div>
+        <p>Cargando solicitudes...</p>
+    </div>
+    
+    <div id="solicitudes-error" class="alert alert-danger" style="display: none;">
+        <i class="fas fa-exclamation-triangle"></i>
+        <span id="error-message">Error al cargar las solicitudes</span>
+    </div>
+    
+    <!-- Estadísticas -->
+    <div id="estadisticas-container" class="statistics-container" style="display: none;">
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-tasks"></i></div>
+            <div class="stat-info">
+                <span class="stat-value" id="stat-total">0</span>
+                <span class="stat-label">Total</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-clock"></i></div>
+            <div class="stat-info">
+                <span class="stat-value" id="stat-pendientes">0</span>
+                <span class="stat-label">Pendientes</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-spinner"></i></div>
+            <div class="stat-info">
+                <span class="stat-value" id="stat-procesando">0</span>
+                <span class="stat-label">Procesando</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+            <div class="stat-info">
+                <span class="stat-value" id="stat-completadas">0</span>
+                <span class="stat-label">Completadas</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-times-circle"></i></div>
+            <div class="stat-info">
+                <span class="stat-value" id="stat-rechazadas">0</span>
+                <span class="stat-label">Rechazadas</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-ban"></i></div>
+            <div class="stat-info">
+                <span class="stat-value" id="stat-canceladas">0</span>
+                <span class="stat-label">Canceladas</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Contenedor para solicitudes -->
+    <div id="solicitudes-container" style="display: none;">
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Cliente</th>
+                        <th>Proveedor</th>
+                        <th>Tipo Servicio</th>
+                        <th>Cuenta</th>
+                        <th>Monto</th>
+                        <th>Contacto</th>
+                        <th>Fecha</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="solicitudes-tbody"></tbody>
+            </table>
+        </div>
+        
+        <!-- Paginación -->
+        <div class="pagination-container">
+            <button id="prev-page" class="btn btn-outline">
+                <i class="fas fa-chevron-left"></i> Anterior
+            </button>
+            <span id="page-info">Página <span id="current-page">1</span> de <span id="total-pages">1</span></span>
+            <button id="next-page" class="btn btn-outline">
+                Siguiente <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+    </div>
+    
+    <!-- Estado vacío -->
+    <div id="empty-state" class="empty-state" style="display: none;">
+        <i class="fas fa-file-invoice-dollar"></i>
+        <h3 id="empty-message">No se encontraron solicitudes</h3>
+    </div>
+    
+    <!-- Modal de detalles -->
+    <div id="modal-detalles" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h3 id="modal-title">Detalles del Pago de Servicio</h3>
+            <div id="modal-content" class="modal-body">
+                <!-- Contenido dinámico -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Estadísticas */
+    .statistics-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .stat-card {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+        display: flex;
+        align-items: center;
+        flex: 1;
+        min-width: 150px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        transition: transform 0.2s ease;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    
+    .stat-icon {
+        font-size: 1.5rem;
+        color: var(--primary-color);
+        margin-right: 15px;
+    }
+    
+    .stat-info {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .stat-value {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #333;
+    }
+    
+    .stat-label {
+        font-size: 0.9rem;
+        color: #666;
+    }
+
+    /* Filtros */
+    .filter-controls {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    
+    .filter-controls .row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+    
+    .filter-controls .col {
+        flex: 1;
+        min-width: 200px;
+    }
+    
+    .filter-controls .actions {
+        display: flex;
+        align-items: flex-end;
+    }
+    
+    .form-group {
+        margin-bottom: 0;
+    }
+    
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-size: 0.9rem;
+        color: #666;
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 0.95rem;
+    }
+    
+    .search-input-container {
+        position: relative;
+    }
+    
+    .search-icon {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+    }
+    
+    .search-input {
+        width: 100%;
+        padding: 8px 15px 8px 35px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 0.95rem;
+    }
+    
+    .btn {
+        padding: 8px 16px;
+        border-radius: 4px;
+        font-size: 0.95rem;
+        cursor: pointer;
+        border: none;
+    }
+    
+    .btn-primary {
+        background-color: var(--primary-color);
+        color: white;
+    }
+    
+    .btn-outline {
+        background-color: transparent;
+        border: 1px solid #ddd;
+        color: #333;
+    }
+    
+    .btn-outline:hover {
+        background-color: #f5f5f5;
+    }
+    
+    .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    
+    /* Loader y estados */
+    .loading-spinner-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 50px 0;
+    }
+    
+    .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid rgba(0,0,0,0.1);
+        border-radius: 50%;
+        border-top-color: var(--primary-color);
+        animation: spin 1s linear infinite;
+        margin-bottom: 15px;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    
+    .alert {
+        padding: 15px 20px;
+        border-radius: 8px;
+        margin: 20px 0;
+    }
+    
+    .alert-danger {
+        background-color: #fdecea;
+        color: #ea4335;
+        border: 1px solid #fadad7;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        color: #666;
+    }
+    
+    .empty-state i {
+        font-size: 3rem;
+        color: #ddd;
+        margin-bottom: 15px;
+    }
+    
+    .empty-state h3 {
+        font-size: 1.2rem;
+        margin-bottom: 10px;
+    }
+    
+    /* Tabla de datos */
+    .table-responsive {
+        overflow-x: auto;
+    }
+    
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+    
+    .data-table th, .data-table td {
+        padding: 12px 15px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }
+    
+    .data-table th {
+        background-color: #f2f2f2;
+        font-weight: 600;
+    }
+    
+    .data-table tbody tr:hover {
+        background-color: #f5f5f5;
+    }
+    
+    /* Badges de estado */
+    .status-badge {
+        display: inline-block;
+        padding: 5px 10px;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+    
+    .status-pendiente {
+        background-color: #FFF3CD;
+        color: #856404;
+    }
+    
+    .status-procesando {
+        background-color: #D1ECF1;
+        color: #0C5460;
+    }
+    
+    .status-completada {
+        background-color: #D4EDDA;
+        color: #155724;
+    }
+    
+    .status-rechazada {
+        background-color: #F8D7DA;
+        color: #721C24;
+    }
+    
+    .status-cancelada {
+        background-color: #E2E3E5;
+        color: #383D41;
+    }
+    
+    /* Acciones */
+    .action-btn {
+        background: none;
+        border: none;
+        color: var(--primary-color);
+        cursor: pointer;
+        margin-right: 5px;
+        font-size: 1rem;
+    }
+    
+    .action-btn:hover {
+        color: var(--primary-dark);
+    }
+    
+    /* Paginación */
+    .pagination-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 20px;
+        gap: 15px;
+    }
+    
+    #page-info {
+        font-size: 0.9rem;
+        color: #666;
+    }
+    
+    /* Modal */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.7);
+    }
+    
+    .modal-content {
+        position: relative;
+        background-color: white;
+        margin: 5% auto;
+        padding: 25px;
+        width: 80%;
+        max-width: 800px;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+    
+    .close-modal {
+        position: absolute;
+        top: 15px;
+        right: 20px;
+        font-size: 28px;
+        font-weight: bold;
+        color: #aaa;
+        cursor: pointer;
+    }
+    
+    .close-modal:hover {
+        color: #333;
+    }
+    
+    #modal-title {
+        margin-top: 0;
+        margin-bottom: 20px;
+        color: var(--primary-color);
+    }
+    
+    .modal-body {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+    }
+    
+    .detail-group {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+    }
+    
+    .detail-group h4 {
+        margin-top: 0;
+        margin-bottom: 15px;
+        color: #0288d1;
+        font-size: 1rem;
+    }
+    
+    .detail-item {
+        margin-bottom: 10px;
+    }
+    
+    .detail-label {
+        font-size: 0.85rem;
+        color: #666;
+        margin-bottom: 2px;
+    }
+    
+    .detail-value {
+        font-weight: 500;
+    }
+    
+    .label-propio {
+        background-color: #0288d1;
+        color: white;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        margin-left: 5px;
+    }
+    
+    /* Comentarios */
+    .comentarios-container {
+        background-color: #f9f9f9;
+        border-left: 4px solid #0288d1;
+        padding: 10px 15px;
+        margin-top: 10px;
+        border-radius: 0 4px 4px 0;
+    }
+    
+    .comentarios-title {
+        font-size: 0.9rem;
+        color: #666;
+        margin-bottom: 5px;
+    }
+    
+    .comentarios-content {
+        font-style: italic;
+    }
+</style>
+
+<script>
+    // Elementos del DOM
+    const loadingElement = document.getElementById('solicitudes-loading');
+    const errorElement = document.getElementById('solicitudes-error');
+    const errorMessageElement = document.getElementById('error-message');
+    const solicitudesContainer = document.getElementById('solicitudes-container');
+    const solicitudesTbody = document.getElementById('solicitudes-tbody');
+    const emptyState = document.getElementById('empty-state');
+    const emptyMessage = document.getElementById('empty-message');
+    const estadisticasContainer = document.getElementById('estadisticas-container');
+    
+    // Elementos de estadísticas
+    const statTotal = document.getElementById('stat-total');
+    const statPendientes = document.getElementById('stat-pendientes');
+    const statProcesando = document.getElementById('stat-procesando');
+    const statCompletadas = document.getElementById('stat-completadas');
+    const statRechazadas = document.getElementById('stat-rechazadas');
+    const statCanceladas = document.getElementById('stat-canceladas');
+    
+    // Elementos de filtro
+    const filtroEstado = document.getElementById('filtro-estado');
+    const filtroOrigen = document.getElementById('filtro-origen');
+    const busquedaInput = document.getElementById('busqueda');
+    const btnRefresh = document.getElementById('btn-refresh');
+    
+    // Elementos de paginación
+    const prevPageBtn = document.getElementById('prev-page');
+    const nextPageBtn = document.getElementById('next-page');
+    const currentPageElement = document.getElementById('current-page');
+    const totalPagesElement = document.getElementById('total-pages');
+    
+    // Modal
+    const modal = document.getElementById('modal-detalles');
+    const modalTitle = document.getElementById('modal-title');
+    const modalContent = document.getElementById('modal-content');
+    const closeModal = document.querySelector('.close-modal');
+    
+    // Obtener datos del usuario
+    const userUID = sessionStorage.getItem('userUID') || '';
+    const userRole = sessionStorage.getItem('userRole') || 'subdistribuidor';
+    
+    // Variables para almacenar datos
+    let allSolicitudes = [];
+    let filteredSolicitudes = [];
+    
+    // Variables para paginación
+    let currentPage = 1;
+    const itemsPerPage = 5; // Mostrar 5 solicitudes por página
+    let totalPages = 1;
+    
+    // Event listeners
+    filtroEstado.addEventListener('change', () => {
+        currentPage = 1; // Reiniciar a la primera página al filtrar
+        aplicarFiltros();
+    });
+    
+    filtroOrigen.addEventListener('change', () => {
+        currentPage = 1;
+        aplicarFiltros();
+    });
+    
+    busquedaInput.addEventListener('keyup', (e) => {
+        if (e.key === 'Enter') {
+            currentPage = 1;
+            aplicarFiltros();
+        }
+    });
+    
+    btnRefresh.addEventListener('click', loadSolicitudesPagoservicios);
+    
+    // Event listeners de paginación
+    prevPageBtn.addEventListener('click', () => {
+        if (currentPage > 1) {
+            currentPage--;
+            renderizarPagina();
+        }
+    });
+    
+    nextPageBtn.addEventListener('click', () => {
+        if (currentPage < totalPages) {
+            currentPage++;
+            renderizarPagina();
+        }
+    });
+    
+    // Event listeners del modal
+    closeModal.addEventListener('click', () => modal.style.display = 'none');
+    window.addEventListener('click', (e) => {
+        if (e.target === modal) modal.style.display = 'none';
+    });
+    
+    // Función para normalizar estados según los valores de la base de datos
+    function normalizarEstado(estadoOriginal) {
+        if (!estadoOriginal) return 'pendiente';
+        
+        // Convertir a string y minúsculas
+        const estado = String(estadoOriginal).trim().toLowerCase();
+        
+        switch(estado) {
+            case 'pendiente': return 'pendiente';
+            case 'procesando': return 'procesando';
+            case 'en proceso': return 'procesando';
+            case 'completada': return 'completada';
+            case 'hecho': return 'completada';
+            case 'rechazada': return 'rechazada';
+            case 'revision': return 'rechazada';
+            case 'cancelada': return 'cancelada';
+            default: return 'pendiente';
+        }
+    }
+    
+    // Inicialización - Esta llamada inmediata es crucial
+    loadSolicitudesPagoservicios();
+    
+    // Función para cargar solicitudes desde la API
+    async function loadSolicitudesPagoservicios() {
+        try {
+            // Mostrar spinner de carga
+            showLoading();
+            
+            console.log('Iniciando carga de solicitudes de pagos para UID:', userUID, 'Role:', userRole);
+            
+            // Hacer solicitud a la API incluyendo role para mayor seguridad
+            const response = await fetch(`../api/get_solicitudes_pagoservicios.php?uid=${encodeURIComponent(userUID)}&role=${encodeURIComponent(userRole)}`);
+            
+            // Obtener el texto para depuración
+            const responseText = await response.text();
+            
+            let data;
+            try {
+                // Intentar parsear como JSON
+                data = JSON.parse(responseText);
+                console.log('Respuesta completa de la API:', data);
+            } catch (jsonError) {
+                console.error("Error al parsear JSON:", responseText);
+                throw new Error(`Error de formato en la respuesta: ${responseText.substring(0, 100)}...`);
+            }
+            
+            // Verificar si hay un mensaje de error
+            if (!data.success) {
+                throw new Error(data.error || "Error desconocido en la respuesta");
+            }
+            
+            // Guardar todas las solicitudes y estadísticas
+            allSolicitudes = data.solicitudes || [];
+            
+            // Actualizar estadísticas en la interfaz
+            updateEstadisticas(data.estadisticas);
+            
+            console.log('Solicitudes recibidas:', allSolicitudes.length);
+            
+            // Normalizar estados
+            allSolicitudes.forEach(solicitud => {
+                solicitud.estado_solicitud = normalizarEstado(solicitud.estado_solicitud);
+            });
+            
+            // Aplicar filtros iniciales
+            aplicarFiltros();
+            
+        } catch (error) {
+            console.error('Error completo:', error);
+            showError(`Error al cargar las solicitudes: ${error.message}`);
+        }
+    }
+    
+    // Función para actualizar las estadísticas
+    function updateEstadisticas(estadisticas) {
+        if (estadisticas) {
+            statTotal.textContent = estadisticas.total || 0;
+            statPendientes.textContent = estadisticas.pendientes || 0;
+            statProcesando.textContent = estadisticas.procesando || 0;
+            statCompletadas.textContent = estadisticas.completadas || 0;
+            statRechazadas.textContent = estadisticas.rechazadas || 0;
+            statCanceladas.textContent = estadisticas.canceladas || 0;
+        }
+    }
+    
+    // Función para aplicar filtros
+    function aplicarFiltros() {
+        const estado = filtroEstado.value;
+        const origen = filtroOrigen.value;
+        const termino = busquedaInput.value.trim().toLowerCase();
+        
+        // Filtrar solicitudes
+        filteredSolicitudes = allSolicitudes.filter(solicitud => {
+            // Filtro por estado
+            if (estado && solicitud.estado_solicitud !== estado) {
+                return false;
+            }
+            
+            // Filtro por origen (propias o de vendedores)
+            if (origen !== '') {
+                const esPropia = parseInt(solicitud.es_propia) === 1;
+                if ((origen === '1' && !esPropia) || (origen === '0' && esPropia)) {
+                    return false;
+                }
+            }
+            
+            // Filtro por término de búsqueda
+            if (termino) {
+                const coincideNombre = solicitud.user_name && 
+                                     solicitud.user_name.toLowerCase().includes(termino);
+                const coincideCuenta = solicitud.cuenta && 
+                                     solicitud.cuenta.toLowerCase().includes(termino);
+                const coincideNumero = solicitud.numero_contacto && 
+                                     solicitud.numero_contacto.includes(termino);
+                const coincideProveedor = solicitud.proveedor && 
+                                     solicitud.proveedor.toLowerCase().includes(termino);
+                const coincideTipoServicio = solicitud.tipo_servicio && 
+                                           solicitud.tipo_servicio.toLowerCase().includes(termino);
+                
+                if (!coincideNombre && !coincideCuenta && !coincideNumero && !coincideProveedor && !coincideTipoServicio) {
+                    return false;
+                }
+            }
+            
+            return true;
+        });
+        
+        // Calcular número total de páginas
+        totalPages = Math.max(1, Math.ceil(filteredSolicitudes.length / itemsPerPage));
+        
+        // Ajustar página actual si es necesario
+        if (currentPage > totalPages) {
+            currentPage = totalPages;
+        }
+        
+        // Actualizar elementos de paginación
+        currentPageElement.textContent = currentPage;
+        totalPagesElement.textContent = totalPages;
+        
+        // Renderizar resultados
+        renderizarPagina();
+    }
+    
+    // Función para renderizar la página actual
+    function renderizarPagina() {
+        // Habilitar/deshabilitar botones de paginación
+        prevPageBtn.disabled = currentPage <= 1;
+        nextPageBtn.disabled = currentPage >= totalPages;
+        
+        // Actualizar info de página
+        currentPageElement.textContent = currentPage;
+        totalPagesElement.textContent = totalPages;
+        
+        // Si no hay resultados, mostrar estado vacío
+        if (filteredSolicitudes.length === 0) {
+            showEmptyState('No se encontraron solicitudes con los filtros seleccionados');
+            return;
+        }
+        
+        // Calcular índices para paginación
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = Math.min(startIndex + itemsPerPage, filteredSolicitudes.length);
+        
+        // Obtener las solicitudes para esta página
+        const solicitudesPagina = filteredSolicitudes.slice(startIndex, endIndex);
+        
+        // Renderizar solicitudes de esta página
+        renderSolicitudes(solicitudesPagina);
+        showContent();
+    }
+    
+    // Función para renderizar solicitudes
+    function renderSolicitudes(solicitudes) {
+        // Limpiar el contenedor
+        solicitudesTbody.innerHTML = '';
+        
+        // Crear filas para cada solicitud
+        solicitudes.forEach(solicitud => {
+            // Determinar clase para el estado
+            let estadoClass = '';
+            let estado = solicitud.estado_solicitud || 'pendiente';
+            
+            switch(estado) {
+                case 'pendiente': estadoClass = 'status-pendiente'; break;
+                case 'procesando': estadoClass = 'status-procesando'; break;
+                case 'completada': estadoClass = 'status-completada'; break;
+                case 'rechazada': estadoClass = 'status-rechazada'; break;
+                case 'cancelada': estadoClass = 'status-cancelada'; break;
+            }
+            
+            // Formatear fecha
+            let fechaFormateada = 'No disponible';
+            if (solicitud.fecha_creacion) {
+                try {
+                    const fecha = new Date(solicitud.fecha_creacion);
+                    fechaFormateada = fecha.toLocaleDateString('es-MX', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric'
+                    });
+                } catch (e) {
+                    console.error('Error al formatear fecha:', e);
+                }
+            }
+            
+            // Formatear monto con separador de miles
+            let montoFormateado = 'No disponible';
+            if (solicitud.monto) {
+                try {
+                    montoFormateado = '$' + parseFloat(solicitud.monto).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+                } catch (e) {
+                    console.error('Error al formatear monto:', e);
+                }
+            }
+            
+            // Crear fila de la tabla
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${solicitud.id}</td>
+                <td>${solicitud.user_name || 'No disponible'}</td>
+                <td>${solicitud.proveedor || 'No disponible'}</td>
+                <td>${solicitud.tipo_servicio || 'No disponible'}</td>
+                <td>${solicitud.cuenta || 'No disponible'}</td>
+                <td>${montoFormateado}</td>
+                <td>${solicitud.numero_contacto || 'No disponible'}</td>
+                <td>${fechaFormateada}</td>
+                <td><span class="status-badge ${estadoClass}">${estado}</span></td>
+                <td>
+                    <button class="action-btn" title="Ver detalles" onclick="verDetalles('${solicitud.id}')">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </td>
+            `;
+            
+            solicitudesTbody.appendChild(row);
+        });
+    }
+    
+    // Función para ver detalles (debe ser global)
+    window.verDetalles = function(id) {
+        console.log('Buscando solicitud con ID:', id);
+        
+        // Buscar la solicitud
+        const solicitud = allSolicitudes.find(s => String(s.id) === String(id));
+        
+        if (!solicitud) {
+            console.error('No se encontró la solicitud con ID:', id);
+            alert(`No se encontró la solicitud con ID: ${id}`);
+            return;
+        }
+        
+        // Normalizar el estado
+        const estado = solicitud.estado_solicitud;
+        
+        // Formatear fecha
+        let fechaFormateada = 'No disponible';
+        if (solicitud.fecha_creacion) {
+            try {
+                const fecha = new Date(solicitud.fecha_creacion);
+                fechaFormateada = fecha.toLocaleString('es-MX');
+            } catch (e) {
+                console.error('Error al formatear fecha:', e);
+            }
+        }
+        
+        // Formatear monto
+        let montoFormateado = 'No disponible';
+        if (solicitud.monto) {
+            try {
+                montoFormateado = '$' + parseFloat(solicitud.monto).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+            } catch (e) {
+                console.error('Error al formatear monto:', e);
+            }
+        }
+        
+        // Título del modal con estado
+        modalTitle.textContent = `Pago de Servicio #${solicitud.id} (${estado})`;
+        
+        // Preparar sección de comentarios
+        let comentariosHtml = '';
+        if (solicitud.comentarios && solicitud.comentarios.trim() !== '') {
+            comentariosHtml = `
+                <div class="detail-item">
+                    <div class="comentarios-container">
+                        <div class="comentarios-title">Comentarios:</div>
+                        <div class="comentarios-content">${solicitud.comentarios}</div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Contenido del modal
+        modalContent.innerHTML = `
+            <div class="detail-group">
+                <h4>Información del Cliente</h4>
+                <div class="detail-item">
+                    <div class="detail-label">Nombre/Tienda:</div>
+                    <div class="detail-value">
+                        ${solicitud.user_name || 'No disponible'}
+                        ${parseInt(solicitud.es_propia) === 1 ? '<span class="label-propio">Tú</span>' : ''}
+                    </div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Número de contacto:</div>
+                    <div class="detail-value">${solicitud.numero_contacto || 'No disponible'}</div>
+                </div>
+            </div>
+            
+            <div class="detail-group">
+                <h4>Información del Servicio</h4>
+                <div class="detail-item">
+                    <div class="detail-label">Proveedor:</div>
+                    <div class="detail-value">${solicitud.proveedor || 'No disponible'}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Tipo de servicio:</div>
+                    <div class="detail-value">${solicitud.tipo_servicio || 'No disponible'}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Cuenta/Número:</div>
+                    <div class="detail-value">${solicitud.cuenta || 'No disponible'}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Monto a pagar:</div>
+                    <div class="detail-value">${montoFormateado}</div>
+                </div>
+            </div>
+            
+            <div class="detail-group">
+                <h4>Información de la Solicitud</h4>
+                <div class="detail-item">
+                    <div class="detail-label">Estado:</div>
+                    <div class="detail-value">
+                        <span class="status-badge ${getEstadoClass(estado)}">
+                            ${estado}
+                        </span>
+                    </div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Fecha de creación:</div>
+                    <div class="detail-value">${fechaFormateada}</div>
+                </div>
+                ${comentariosHtml}
+            </div>
+        `;
+        
+        // Mostrar modal
+        modal.style.display = 'block';
+    };
+    
+    // Función para obtener clase CSS según estado
+    function getEstadoClass(estado) {
+        switch(estado) {
+            case 'pendiente': return 'status-pendiente';
+            case 'procesando': return 'status-procesando';
+            case 'completada': return 'status-completada';
+            case 'rechazada': return 'status-rechazada';
+            case 'cancelada': return 'status-cancelada';
+            default: return 'status-pendiente';
+        }
+    }
+    
+    // Funciones de utilidad para mostrar/ocultar elementos
+    function showLoading() {
+        loadingElement.style.display = 'flex';
+        errorElement.style.display = 'none';
+        solicitudesContainer.style.display = 'none';
+        emptyState.style.display = 'none';
+        estadisticasContainer.style.display = 'none';
+    }
+    
+    function showError(message) {
+        loadingElement.style.display = 'none';
+        errorElement.style.display = 'block';
+        solicitudesContainer.style.display = 'none';
+        emptyState.style.display = 'none';
+        estadisticasContainer.style.display = 'none';
+        errorMessageElement.textContent = message;
+    }
+    
+    function showContent() {
+        loadingElement.style.display = 'none';
+        errorElement.style.display = 'none';
+        solicitudesContainer.style.display = 'block';
+        emptyState.style.display = 'none';
+        estadisticasContainer.style.display = 'flex';
+    }
+    
+    function showEmptyState(message) {
+        loadingElement.style.display = 'none';
+        errorElement.style.display = 'none';
+        solicitudesContainer.style.display = 'none';
+        emptyState.style.display = 'block';
+        estadisticasContainer.style.display = 'flex';
+        emptyMessage.textContent = message;
+    }
+</script>
