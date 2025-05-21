@@ -1115,35 +1115,75 @@
 }
 
     // Función para imprimir el ticket
-    window.imprimirTicket = function(folio) {
-    const ticketContainer = document.querySelector('.ticket-container');
-    const originalContents = document.body.innerHTML;
+window.imprimirTicket = function(folio, ticketContent) {
+    // Crear un iframe invisible para imprimir
+    const printFrame = document.createElement('iframe');
+    printFrame.style.position = 'fixed';
+    printFrame.style.right = '0';
+    printFrame.style.bottom = '0';
+    printFrame.style.width = '0';
+    printFrame.style.height = '0';
+    printFrame.style.border = '0';
+    document.body.appendChild(printFrame);
     
-    // Preparar contenido para impresión
-    const printContents = ticketContainer.innerHTML;
-    document.body.innerHTML = `
-        <div style="font-family: monospace; padding: 20px; text-align: center; font-size: 16px;">
-            ${printContents}
-        </div>
-    `;
+    // Formatear el ticket para HTML si es necesario
+    const ticketHtml = typeof ticketContent === 'string' 
+        ? ticketContent.replace(/\n/g, '<br>') 
+        : document.querySelector('.ticket-container pre').innerHTML;
     
-    // Imprimir
-    window.print();
+    // Escribir el contenido HTML en el iframe
+    const frameDoc = printFrame.contentDocument || printFrame.contentWindow.document;
     
-    // Restaurar contenido original
-    document.body.innerHTML = originalContents;
+    frameDoc.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Ticket de Pago</title>
+            <style>
+                body {
+                    font-family: 'Courier New', monospace;
+                    font-weight: bold;
+                    font-size: 16px;
+                    text-align: center;
+                    color: #000;
+                    line-height: 1.6;
+                    padding: 20px;
+                }
+                pre {
+                    font-family: 'Courier New', monospace;
+                    font-weight: bold;
+                    font-size: 16px;
+                    margin: 0;
+                    white-space: pre-wrap;
+                    text-align: center;
+                }
+                @media print {
+                    @page {
+                        margin: 0.5cm;
+                    }
+                }
+            </style>
+        </head>
+        <body>
+            <pre>${ticketHtml}</pre>
+        </body>
+        </html>
+    `);
     
-    // Volver a mostrar el modal de ticket después de imprimir
-    setTimeout(() => {
-        // Buscamos ticket anteriores y los eliminamos
-        const oldTicket = document.getElementById('modal-ticket');
-        if (oldTicket) {
-            document.body.removeChild(oldTicket);
-        }
+    frameDoc.close();
+    
+    // Esperar un poco para que los estilos se apliquen
+    setTimeout(function() {
+        printFrame.contentWindow.focus();
+        printFrame.contentWindow.print();
         
-        const ticketText = document.querySelector('#modal-ticket pre')?.innerHTML.replace(/<br>/g, '\n') || '';
-        mostrarTicketModal(ticketText, folio);
-    }, 500);
+        // Eliminar el iframe después de la impresión
+        setTimeout(function() {
+            document.body.removeChild(printFrame);
+            // Mostrar un mensaje de éxito en lugar de volver a abrir el modal
+            alert("El ticket se ha enviado a la impresora");
+        }, 500);
+    }, 250);
 };
     
     // Función para obtener clase CSS según estado
