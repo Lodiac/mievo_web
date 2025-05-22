@@ -237,7 +237,8 @@ try {
         $query_completar = "UPDATE sol_pagoservicios 
                            SET estado_solicitud = 'completada',
                                comentarios = ?,
-                               procesada_por = ?
+                               procesada_por = ?,
+                               fecha_actualizacion = CURRENT_TIMESTAMP
                            WHERE id = ?";
         $stmt_completar = mysqli_prepare($con, $query_completar);
         mysqli_stmt_bind_param($stmt_completar, "ssi", $comentarios, $uid, $idSolicitud);
@@ -256,7 +257,8 @@ try {
             "nuevo_estado" => "completada",
             "detalles" => [
                 "comentarios_agregados" => strlen($comentarios) . " caracteres",
-                "procesada_por" => $uid
+                "procesada_por" => $uid,
+                "fecha_actualizacion" => date('Y-m-d H:i:s')
             ]
         ]);
     }
