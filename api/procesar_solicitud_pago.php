@@ -1,5 +1,5 @@
 <?php
-// api/procesar_solicitud_pago.php
+// api/procesar_solicitud_pago.php - VERSIÓN FINAL MEJORADA
 header('Content-Type: application/json; charset=UTF-8');
 require_once 'db_connect.php';
 
@@ -22,6 +22,9 @@ try {
     $uid = $input['uid'];
     $role = $input['role'];
     $accion = $input['accion']; // 'iniciar' o 'completar'
+    
+    // Log inicial
+    error_log("Procesando solicitud: ID=$idSolicitud, UID=$uid, Role=$role, Accion=$accion");
     
     // Verificar permisos - solo admin y vendedores internos
     if ($role !== 'admin') {
@@ -63,6 +66,8 @@ try {
     $solicitud = mysqli_fetch_assoc($result_solicitud);
     mysqli_stmt_close($stmt_solicitud);
     
+    error_log("Solicitud encontrada: user_id={$solicitud['user_id']}, estado={$solicitud['estado_solicitud']}, monto={$solicitud['monto']}");
+    
     // Verificar que la solicitud esté en el estado correcto según la acción
     if ($accion === 'iniciar') {
         if ($solicitud['estado_solicitud'] !== 'pendiente') {
@@ -86,22 +91,72 @@ try {
         // Verificar si es solicitud propia
         $esSolicitudPropia = ($solicitud['user_id'] === $uid);
         
+        // Variables para tracking
+        $tiendaId = null;
+        $metodo_tienda = null;
+        $saldoActual = null;
+        $nuevoSaldo = null;
+        $montoSolicitud = (float) $solicitud['monto'];
+        
+        error_log("Solicitud propia: " . ($esSolicitudPropia ? 'SI' : 'NO'));
+        
         if (!$esSolicitudPropia) {
-            // Obtener la tienda del usuario que hizo la solicitud
-            $query_tienda = "SELECT tienda_id FROM vendedor_tienda_relacion 
-                            WHERE vendedor_id = ? COLLATE utf8mb4_general_ci";
-            $stmt_tienda = mysqli_prepare($con, $query_tienda);
-            mysqli_stmt_bind_param($stmt_tienda, "s", $solicitud['user_id']);
-            mysqli_stmt_execute($stmt_tienda);
-            $result_tienda = mysqli_stmt_get_result($stmt_tienda);
+            // BÚSQUEDA OPTIMIZADA DE TIENDA usando múltiples métodos
             
-            if (mysqli_num_rows($result_tienda) === 0) {
-                throw new Exception("No se pudo determinar la tienda de la solicitud");
+            // Método 1: Buscar en pdv_supervendedor_relacion (subdistribuidores)
+            $query_pdv = "SELECT pdv_id FROM pdv_supervendedor_relacion 
+                         WHERE supervendedor_id = ? COLLATE utf8mb4_general_ci";
+            $stmt_pdv = mysqli_prepare($con, $query_pdv);
+            mysqli_stmt_bind_param($stmt_pdv, "s", $solicitud['user_id']);
+            mysqli_stmt_execute($stmt_pdv);
+            $result_pdv = mysqli_stmt_get_result($stmt_pdv);
+            
+            if (mysqli_num_rows($result_pdv) > 0) {
+                $row_pdv = mysqli_fetch_assoc($result_pdv);
+                $tiendaId = $row_pdv['pdv_id'];
+                $metodo_tienda = 'pdv_supervendedor_relacion';
+                error_log("Tienda encontrada via PDV: $tiendaId");
+            }
+            mysqli_stmt_close($stmt_pdv);
+            
+            // Método 2: Si no se encontró, buscar en vendedor_tienda_relacion (vendedores normales)
+            if (!$tiendaId) {
+                $query_vendedor = "SELECT tienda_id FROM vendedor_tienda_relacion 
+                                  WHERE vendedor_id = ? COLLATE utf8mb4_general_ci";
+                $stmt_vendedor = mysqli_prepare($con, $query_vendedor);
+                mysqli_stmt_bind_param($stmt_vendedor, "s", $solicitud['user_id']);
+                mysqli_stmt_execute($stmt_vendedor);
+                $result_vendedor = mysqli_stmt_get_result($stmt_vendedor);
+                
+                if (mysqli_num_rows($result_vendedor) > 0) {
+                    $row_vendedor = mysqli_fetch_assoc($result_vendedor);
+                    $tiendaId = $row_vendedor['tienda_id'];
+                    $metodo_tienda = 'vendedor_tienda_relacion';
+                    error_log("Tienda encontrada via vendedor_tienda_relacion: $tiendaId");
+                }
+                mysqli_stmt_close($stmt_vendedor);
             }
             
-            $row_tienda = mysqli_fetch_assoc($result_tienda);
-            $tiendaId = $row_tienda['tienda_id'];
-            mysqli_stmt_close($stmt_tienda);
+            // Método 3: Como último recurso, verificar si el user_id es un ID de sucursal válido
+            if (!$tiendaId && is_numeric($solicitud['user_id'])) {
+                $query_sucursal_directa = "SELECT id FROM sucursales WHERE id = ? AND estado = 1";
+                $stmt_sucursal = mysqli_prepare($con, $query_sucursal_directa);
+                $user_id_as_int = intval($solicitud['user_id']);
+                mysqli_stmt_bind_param($stmt_sucursal, "i", $user_id_as_int);
+                mysqli_stmt_execute($stmt_sucursal);
+                $result_sucursal = mysqli_stmt_get_result($stmt_sucursal);
+                
+                if (mysqli_num_rows($result_sucursal) > 0) {
+                    $tiendaId = $user_id_as_int;
+                    $metodo_tienda = 'sucursal_directa';
+                    error_log("Tienda encontrada via sucursal directa: $tiendaId");
+                }
+                mysqli_stmt_close($stmt_sucursal);
+            }
+            
+            if (!$tiendaId) {
+                throw new Exception("No se pudo determinar la tienda de la solicitud. Usuario: " . $solicitud['user_id']);
+            }
             
             // Verificar saldo en la tabla bolsas
             $query_saldo = "SELECT saldo_actual FROM bolsas WHERE id_sucursal = ?";
@@ -111,13 +166,14 @@ try {
             $result_saldo = mysqli_stmt_get_result($stmt_saldo);
             
             if (mysqli_num_rows($result_saldo) === 0) {
-                throw new Exception("No se encontró información de saldo para la tienda");
+                throw new Exception("No se encontró información de saldo para la tienda ID: " . $tiendaId);
             }
             
             $row_saldo = mysqli_fetch_assoc($result_saldo);
             $saldoActual = (float) $row_saldo['saldo_actual'];
-            $montoSolicitud = (float) $solicitud['monto'];
             mysqli_stmt_close($stmt_saldo);
+            
+            error_log("Saldo actual: $saldoActual, Monto requerido: $montoSolicitud");
             
             // Validar que el saldo sea suficiente
             if ($saldoActual < $montoSolicitud) {
@@ -135,6 +191,11 @@ try {
                 throw new Exception("Error al actualizar el saldo: " . mysqli_stmt_error($stmt_update_saldo));
             }
             mysqli_stmt_close($stmt_update_saldo);
+            
+            error_log("Saldo actualizado: $saldoActual -> $nuevoSaldo");
+        } else {
+            $metodo_tienda = 'solicitud_propia';
+            error_log("Solicitud propia, no se requiere descuento de saldo");
         }
         
         // Actualizar solicitud a "procesando"
@@ -156,11 +217,21 @@ try {
                 "Solicitud propia iniciada correctamente" : 
                 "Solicitud iniciada y saldo descontado correctamente",
             "nuevo_estado" => "procesando",
-            "saldo_descontado" => !$esSolicitudPropia
+            "saldo_descontado" => !$esSolicitudPropia,
+            "detalles" => [
+                "tienda_id" => $tiendaId,
+                "metodo_tienda" => $metodo_tienda,
+                "saldo_anterior" => $saldoActual,
+                "saldo_actual" => $nuevoSaldo,
+                "monto_descontado" => $esSolicitudPropia ? 0 : $montoSolicitud,
+                "es_solicitud_propia" => $esSolicitudPropia
+            ]
         ]);
         
     } elseif ($accion === 'completar') {
         $comentarios = trim($input['comentarios']);
+        
+        error_log("Completando solicitud con comentarios: " . substr($comentarios, 0, 100));
         
         // Actualizar solicitud a "completada" con comentarios y procesada_por
         $query_completar = "UPDATE sol_pagoservicios 
@@ -176,11 +247,17 @@ try {
         }
         mysqli_stmt_close($stmt_completar);
         
+        error_log("Solicitud completada exitosamente");
+        
         // Respuesta exitosa
         echo json_encode([
             "success" => true,
             "message" => "Solicitud completada exitosamente",
-            "nuevo_estado" => "completada"
+            "nuevo_estado" => "completada",
+            "detalles" => [
+                "comentarios_agregados" => strlen($comentarios) . " caracteres",
+                "procesada_por" => $uid
+            ]
         ]);
     }
     
@@ -188,6 +265,9 @@ try {
     mysqli_close($con);
     
 } catch (Exception $e) {
+    // Log del error
+    error_log("Error en procesar_solicitud_pago: " . $e->getMessage());
+    
     // En caso de error, revertir cambios si es necesario
     if (isset($con)) {
         mysqli_rollback($con);
@@ -197,7 +277,16 @@ try {
     http_response_code(500);
     echo json_encode([
         "success" => false,
-        "error" => $e->getMessage()
+        "error" => $e->getMessage(),
+        "debug_info" => [
+            "solicitud_id" => $idSolicitud ?? null,
+            "user_id_solicitud" => isset($solicitud) ? $solicitud['user_id'] : null,
+            "accion" => $accion ?? null,
+            "es_solicitud_propia" => isset($esSolicitudPropia) ? $esSolicitudPropia : null,
+            "tienda_encontrada" => isset($tiendaId) ? $tiendaId : null,
+            "metodo_tienda" => isset($metodo_tienda) ? $metodo_tienda : null,
+            "timestamp" => date('Y-m-d H:i:s')
+        ]
     ]);
 }
 ?>
