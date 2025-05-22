@@ -1,17 +1,9 @@
 <div class="card">
-    <h2 class="content-title header-admin-indicator" id="module-title">
+    <h2 class="content-title" id="module-title">
         <i class="fas fa-exchange-alt"></i> Gestión de Portabilidades
-        <span id="admin-badge" class="admin-badge">ADMIN</span>
+        <span id="vendedor-tipo-badge" class="vendedor-interno-badge" style="display: none;">INTERNO</span>
     </h2>
-    <p>Vista completa de solicitudes de portabilidad de todos los vendedores internos y sus tiendas externas asignadas.</p>
-    
-    <!-- Información del admin -->
-    <div id="admin-info" class="admin-info-card">
-        <div class="info-content">
-            <i class="fas fa-shield-alt"></i>
-            <span id="admin-info-text">Acceso administrativo - Supervisando múltiples fuentes de datos</span>
-        </div>
-    </div>
+    <p>Gestiona las solicitudes de portabilidad realizadas por ti y tus vendedores.</p>
     
     <!-- Filtros -->
     <div class="filter-controls">
@@ -35,7 +27,7 @@
                     <select id="filtro-origen" class="form-control">
                         <option value="">Todos</option>
                         <option value="1">Mis solicitudes</option>
-                        <option value="0">Red de vendedores</option>
+                        <option value="0">Otras tiendas</option>
                     </select>
                 </div>
             </div>
@@ -49,9 +41,6 @@
                 <button id="btn-refresh" class="btn btn-primary">
                     <i class="fas fa-sync-alt"></i> Actualizar
                 </button>
-                <button id="btn-debug" class="btn btn-outline" title="Ver información de debug">
-                    <i class="fas fa-bug"></i>
-                </button>
             </div>
         </div>
     </div>
@@ -59,76 +48,12 @@
     <!-- Estados de la interfaz -->
     <div id="solicitudes-loading" class="loading-spinner-container">
         <div class="loading-spinner"></div>
-        <p>Cargando solicitudes de la red...</p>
+        <p>Cargando solicitudes...</p>
     </div>
     
     <div id="solicitudes-error" class="alert alert-danger" style="display: none;">
         <i class="fas fa-exclamation-triangle"></i>
         <span id="error-message">Error al cargar las solicitudes</span>
-    </div>
-    
-    <!-- Estadísticas -->
-    <div id="estadisticas-container" class="statistics-container" style="display: none;">
-        <div class="stat-card">
-            <div class="stat-icon"><i class="fas fa-tasks"></i></div>
-            <div class="stat-info">
-                <span class="stat-value" id="stat-total">0</span>
-                <span class="stat-label">Total</span>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon"><i class="fas fa-clock"></i></div>
-            <div class="stat-info">
-                <span class="stat-value" id="stat-pendientes">0</span>
-                <span class="stat-label">Pendientes</span>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon"><i class="fas fa-spinner"></i></div>
-            <div class="stat-info">
-                <span class="stat-value" id="stat-procesando">0</span>
-                <span class="stat-label">Procesando</span>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
-            <div class="stat-info">
-                <span class="stat-value" id="stat-completadas">0</span>
-                <span class="stat-label">Completadas</span>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon"><i class="fas fa-times-circle"></i></div>
-            <div class="stat-info">
-                <span class="stat-value" id="stat-rechazadas">0</span>
-                <span class="stat-label">Rechazadas</span>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon"><i class="fas fa-ban"></i></div>
-            <div class="stat-info">
-                <span class="stat-value" id="stat-canceladas">0</span>
-                <span class="stat-label">Canceladas</span>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Panel de información de red -->
-    <div id="network-info" class="network-info-panel" style="display: none;">
-        <div class="network-stats">
-            <div class="network-stat">
-                <i class="fas fa-users"></i>
-                <span>Fuentes: <strong id="total-sources">0</strong></span>
-            </div>
-            <div class="network-stat">
-                <i class="fas fa-store"></i>
-                <span>Tiendas Internas: <strong id="tiendas-internas">0</strong></span>
-            </div>
-            <div class="network-stat">
-                <i class="fas fa-external-link-alt"></i>
-                <span>Tiendas Externas: <strong id="tiendas-externas">0</strong></span>
-            </div>
-        </div>
     </div>
     
     <!-- Contenedor para solicitudes -->
@@ -143,7 +68,7 @@
                         <th>NIP</th>
                         <th>Operador</th>
                         <th>Fecha</th>
-                        <th>Tienda/Red</th>
+                        <th>Tienda</th>
                         <th>Estado</th>
                         <th>Acciones</th>
                     </tr>
@@ -166,8 +91,8 @@
     
     <!-- Estado vacío -->
     <div id="empty-state" class="empty-state" style="display: none;">
-        <i class="fas fa-network-wired"></i>
-        <h3 id="empty-message">No se encontraron solicitudes en la red</h3>
+        <i class="fas fa-file-alt"></i>
+        <h3 id="empty-message">No se encontraron solicitudes</h3>
     </div>
     
     <!-- Modal de detalles -->
@@ -180,667 +105,461 @@
             </div>
         </div>
     </div>
-    
-    <!-- Modal de debug -->
-    <div id="modal-debug" class="modal">
-        <div class="modal-content">
-            <span class="close-debug">&times;</span>
-            <h3>Información de Debug - Red Administrativa</h3>
-            <div id="debug-content" class="debug-content">
-                <!-- Contenido dinámico -->
-            </div>
-        </div>
-    </div>
 </div>
 
-<!-- ESTILOS INTEGRADOS -->
 <style>
-/* Badge para admin */
-.admin-badge {
-    background: linear-gradient(135deg, #ff5722, #d84315);
-    color: white;
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    margin-left: 8px;
-    display: inline-block;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    box-shadow: 0 2px 4px rgba(255, 87, 34, 0.3);
-    animation: fadeInScale 0.3s ease-out;
-}
-
-@keyframes fadeInScale {
-    from {
-        opacity: 0;
-        transform: scale(0.8);
+    /* Badge para vendedor interno */
+    .vendedor-interno-badge {
+        background: linear-gradient(135deg, #2196F3, #1976D2);
+        color: white;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-left: 8px;
+        display: inline-block;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        box-shadow: 0 2px 4px rgba(33, 150, 243, 0.3);
+        animation: fadeInScale 0.3s ease-out;
     }
-    to {
-        opacity: 1;
-        transform: scale(1);
+
+    @keyframes fadeInScale {
+        from {
+            opacity: 0;
+            transform: scale(0.8);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
     }
-}
 
-/* Indicador sutil en el header para admin */
-.header-admin-indicator {
-    position: relative;
-}
-
-.header-admin-indicator::before {
-    content: '';
-    position: absolute;
-    top: -2px;
-    right: -2px;
-    width: 8px;
-    height: 8px;
-    background: #ff5722;
-    border-radius: 50%;
-    box-shadow: 0 0 0 2px white, 0 0 8px rgba(255, 87, 34, 0.5);
-    animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-    0%, 100% {
-        opacity: 1;
-        transform: scale(1);
-    }
-    50% {
-        opacity: 0.7;
-        transform: scale(1.1);
-    }
-}
-
-/* Card de información del admin */
-.admin-info-card {
-    background: linear-gradient(135deg, #fff3e0, #ffcc80);
-    border-left: 4px solid #ff5722;
-    padding: 12px 16px;
-    margin-bottom: 20px;
-    border-radius: 8px;
-    animation: slideInDown 0.5s ease-out;
-}
-
-@keyframes slideInDown {
-    from {
-        transform: translateY(-20px);
-        opacity: 0;
-    }
-    to {
-        transform: translateY(0);
-        opacity: 1;
-    }
-}
-
-.admin-info-card .info-content {
-    display: flex;
-    align-items: center;
-    font-size: 0.9rem;
-    color: #bf360c;
-    font-weight: 500;
-}
-
-.admin-info-card .info-content i {
-    margin-right: 8px;
-    font-size: 1rem;
-}
-
-/* Panel de información de red */
-.network-info-panel {
-    background: linear-gradient(135deg, #f3e5f5, #ce93d8);
-    border: 1px solid #9c27b0;
-    border-radius: 8px;
-    padding: 15px;
-    margin-bottom: 20px;
-}
-
-.network-stats {
-    display: flex;
-    justify-content: space-around;
-    flex-wrap: wrap;
-    gap: 15px;
-}
-
-.network-stat {
-    display: flex;
-    align-items: center;
-    color: #4a148c;
-    font-size: 0.9rem;
-}
-
-.network-stat i {
-    margin-right: 8px;
-    font-size: 1.1rem;
-}
-
-/* Estadísticas */
-.statistics-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 15px;
-    margin-bottom: 20px;
-}
-
-.stat-card {
-    background-color: #f8f9fa;
-    border-radius: 8px;
-    padding: 15px;
-    display: flex;
-    align-items: center;
-    flex: 1;
-    min-width: 150px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    transition: transform 0.2s ease;
-}
-
-.stat-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-}
-
-.stat-icon {
-    font-size: 1.5rem;
-    color: var(--primary-color);
-    margin-right: 15px;
-}
-
-.stat-info {
-    display: flex;
-    flex-direction: column;
-}
-
-.stat-value {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: #333;
-}
-
-.stat-label {
-    font-size: 0.9rem;
-    color: #666;
-}
-
-/* Filtros */
-.filter-controls {
-    background-color: #f8f9fa;
-    padding: 15px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-}
-
-.filter-controls .row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 15px;
-}
-
-.filter-controls .col {
-    flex: 1;
-    min-width: 200px;
-}
-
-.filter-controls .actions {
-    display: flex;
-    align-items: flex-end;
-    gap: 10px;
-}
-
-.form-group {
-    margin-bottom: 0;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 5px;
-    font-size: 0.9rem;
-    color: #666;
-}
-
-.form-control {
-    width: 100%;
-    padding: 8px 12px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 0.95rem;
-}
-
-.search-input-container {
-    position: relative;
-}
-
-.search-icon {
-    position: absolute;
-    left: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #6c757d;
-}
-
-.search-input {
-    width: 100%;
-    padding: 8px 15px 8px 35px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 0.95rem;
-}
-
-.btn {
-    padding: 8px 16px;
-    border-radius: 4px;
-    font-size: 0.95rem;
-    cursor: pointer;
-    border: none;
-}
-
-.btn-primary {
-    background-color: var(--primary-color);
-    color: white;
-}
-
-.btn-outline {
-    background-color: transparent;
-    border: 1px solid #ddd;
-    color: #333;
-}
-
-.btn-outline:hover {
-    background-color: #f5f5f5;
-}
-
-.btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-/* Loader y estados */
-.loading-spinner-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 50px 0;
-}
-
-.loading-spinner {
-    width: 40px;
-    height: 40px;
-    border: 4px solid rgba(0,0,0,0.1);
-    border-radius: 50%;
-    border-top-color: var(--primary-color);
-    animation: spin 1s linear infinite;
-    margin-bottom: 15px;
-}
-
-@keyframes spin {
-    to { transform: rotate(360deg); }
-}
-
-.alert {
-    padding: 15px 20px;
-    border-radius: 8px;
-    margin: 20px 0;
-}
-
-.alert-danger {
-    background-color: #fdecea;
-    color: #ea4335;
-    border: 1px solid #fadad7;
-}
-
-.empty-state {
-    text-align: center;
-    padding: 40px 20px;
-    color: #666;
-}
-
-.empty-state i {
-    font-size: 3rem;
-    color: #ddd;
-    margin-bottom: 15px;
-}
-
-.empty-state h3 {
-    font-size: 1.2rem;
-    margin-bottom: 10px;
-}
-
-/* Tabla de datos */
-.table-responsive {
-    overflow-x: auto;
-}
-
-.data-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-}
-
-.data-table th, .data-table td {
-    padding: 12px 15px;
-    text-align: left;
-    border-bottom: 1px solid #ddd;
-}
-
-.data-table th {
-    background-color: #f2f2f2;
-    font-weight: 600;
-}
-
-.data-table tbody tr:hover {
-    background-color: #f5f5f5;
-}
-
-/* Badges de estado */
-.status-badge {
-    display: inline-block;
-    padding: 5px 10px;
-    border-radius: 12px;
-    font-size: 0.8rem;
-    font-weight: 500;
-}
-
-.status-pendiente {
-    background-color: #FFF3CD;
-    color: #856404;
-}
-
-.status-procesando {
-    background-color: #D1ECF1;
-    color: #0C5460;
-}
-
-.status-completada {
-    background-color: #D4EDDA;
-    color: #155724;
-}
-
-.status-rechazada {
-    background-color: #F8D7DA;
-    color: #721C24;
-}
-
-.status-cancelada {
-    background-color: #E2E3E5;
-    color: #383D41;
-}
-
-/* Badge para tiendas externas */
-.tienda-externa-badge {
-    background-color: #ff9800;
-    color: white;
-    padding: 2px 6px;
-    border-radius: 8px;
-    font-size: 0.7rem;
-    font-weight: 500;
-    margin-left: 5px;
-}
-
-/* Badge para red administrativa */
-.red-admin-badge {
-    background-color: #9c27b0;
-    color: white;
-    padding: 2px 6px;
-    border-radius: 8px;
-    font-size: 0.7rem;
-    font-weight: 500;
-    margin-left: 5px;
-}
-
-/* Acciones */
-.action-btn {
-    background: none;
-    border: none;
-    color: var(--primary-color);
-    cursor: pointer;
-    margin-right: 5px;
-    font-size: 1rem;
-}
-
-.action-btn:hover {
-    color: var(--primary-dark);
-}
-
-/* Paginación */
-.pagination-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-top: 20px;
-    gap: 15px;
-}
-
-#page-info {
-    font-size: 0.9rem;
-    color: #666;
-}
-
-/* Modal */
-.modal {
-    display: none;
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0,0,0,0.7);
-}
-
-.modal-content {
-    position: relative;
-    background-color: white;
-    margin: 5% auto;
-    padding: 25px;
-    width: 80%;
-    max-width: 800px;
-    border-radius: 10px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-    max-height: 80vh;
-    overflow-y: auto;
-}
-
-.close-modal, .close-debug {
-    position: absolute;
-    top: 15px;
-    right: 20px;
-    font-size: 28px;
-    font-weight: bold;
-    color: #aaa;
-    cursor: pointer;
-}
-
-.close-modal:hover, .close-debug:hover {
-    color: #333;
-}
-
-#modal-title {
-    margin-top: 0;
-    margin-bottom: 20px;
-    color: var(--primary-color);
-}
-
-.modal-body {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 20px;
-}
-
-.detail-group {
-    background-color: #f8f9fa;
-    padding: 15px;
-    border-radius: 8px;
-}
-
-.detail-group h4 {
-    margin-top: 0;
-    margin-bottom: 15px;
-    color: #0288d1;
-    font-size: 1rem;
-}
-
-.detail-item {
-    margin-bottom: 10px;
-}
-
-.detail-label {
-    font-size: 0.85rem;
-    color: #666;
-    margin-bottom: 2px;
-}
-
-.detail-value {
-    font-weight: 500;
-}
-
-.label-propio {
-    background-color: #0288d1;
-    color: white;
-    padding: 3px 8px;
-    border-radius: 4px;
-    font-size: 0.75rem;
-    margin-left: 5px;
-}
-
-/* Estilos para imágenes de INE */
-.ine-container {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 15px;
-    margin-top: 15px;
-}
-
-.ine-image {
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    overflow: hidden;
-    width: 100%;
-    min-height: 200px;
-    background-color: #f5f5f5;
-    display: flex;
-    flex-direction: column;
-}
-
-.ine-image h5 {
-    background-color: #0288d1;
-    color: white;
-    margin: 0;
-    padding: 8px;
-    font-size: 0.9rem;
-    text-align: center;
-}
-
-.ine-image img {
-    width: 100%;
-    height: auto;
-    object-fit: contain;
-    max-height: 250px;
-}
-
-.ine-image .no-image {
-    height: 200px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #777;
-    font-size: 0.9rem;
-}
-
-/* Comentarios */
-.comentarios-container {
-    background-color: #f9f9f9;
-    border-left: 4px solid #0288d1;
-    padding: 10px 15px;
-    margin-top: 10px;
-    border-radius: 0 4px 4px 0;
-}
-
-.comentarios-title {
-    font-size: 0.9rem;
-    color: #666;
-    margin-bottom: 5px;
-}
-
-.comentarios-content {
-    font-style: italic;
-}
-
-/* Debug content */
-.debug-content {
-    background-color: #263238;
-    color: #a7ffeb;
-    padding: 20px;
-    border-radius: 8px;
-    font-family: 'Courier New', monospace;
-    font-size: 0.9rem;
-    max-height: 60vh;
-    overflow-y: auto;
-}
-
-.debug-content pre {
-    margin: 0;
-    white-space: pre-wrap;
-    word-wrap: break-word;
-}
-
-/* Responsividad */
-@media (max-width: 768px) {
-    .admin-badge {
-        font-size: 0.7rem;
-        padding: 3px 8px;
-        margin-left: 5px;
+    /* Filtros */
+    .filter-controls {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
     }
     
     .filter-controls .row {
-        flex-direction: column;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
     }
     
     .filter-controls .col {
-        min-width: auto;
+        flex: 1;
+        min-width: 200px;
     }
     
     .filter-controls .actions {
-        flex-direction: row;
+        display: flex;
+        align-items: flex-end;
+    }
+    
+    .form-group {
+        margin-bottom: 0;
+    }
+    
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-size: 0.9rem;
+        color: #666;
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 0.95rem;
+    }
+    
+    .search-input-container {
+        position: relative;
+    }
+    
+    .search-icon {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+    }
+    
+    .search-input {
+        width: 100%;
+        padding: 8px 15px 8px 35px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 0.95rem;
+    }
+    
+    .btn {
+        padding: 8px 16px;
+        border-radius: 4px;
+        font-size: 0.95rem;
+        cursor: pointer;
+        border: none;
+    }
+    
+    .btn-primary {
+        background-color: var(--primary-color);
+        color: white;
+    }
+    
+    .btn-outline {
+        background-color: transparent;
+        border: 1px solid #ddd;
+        color: #333;
+    }
+    
+    .btn-outline:hover {
+        background-color: #f5f5f5;
+    }
+    
+    .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    
+    /* Loader y estados */
+    .loading-spinner-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
         justify-content: center;
+        padding: 50px 0;
+    }
+    
+    .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid rgba(0,0,0,0.1);
+        border-radius: 50%;
+        border-top-color: var(--primary-color);
+        animation: spin 1s linear infinite;
+        margin-bottom: 15px;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    
+    .alert {
+        padding: 15px 20px;
+        border-radius: 8px;
+        margin: 20px 0;
+    }
+    
+    .alert-danger {
+        background-color: #fdecea;
+        color: #ea4335;
+        border: 1px solid #fadad7;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        color: #666;
+    }
+    
+    .empty-state i {
+        font-size: 3rem;
+        color: #ddd;
+        margin-bottom: 15px;
+    }
+    
+    .empty-state h3 {
+        font-size: 1.2rem;
+        margin-bottom: 10px;
+    }
+    
+    /* Tabla de datos */
+    .table-responsive {
+        overflow-x: auto;
     }
     
     .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+    
+    .data-table th, .data-table td {
+        padding: 12px 15px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }
+    
+    .data-table th {
+        background-color: #f2f2f2;
+        font-weight: 600;
+    }
+    
+    .data-table tbody tr:hover {
+        background-color: #f5f5f5;
+    }
+    
+    /* Badges de estado */
+    .status-badge {
+        display: inline-block;
+        padding: 5px 10px;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+    
+    .status-pendiente {
+        background-color: #FFF3CD;
+        color: #856404;
+    }
+    
+    .status-procesando {
+        background-color: #D1ECF1;
+        color: #0C5460;
+    }
+    
+    .status-completada {
+        background-color: #D4EDDA;
+        color: #155724;
+    }
+    
+    .status-rechazada {
+        background-color: #F8D7DA;
+        color: #721C24;
+    }
+    
+    .status-cancelada {
+        background-color: #E2E3E5;
+        color: #383D41;
+    }
+    
+    /* Badge para tiendas externas */
+    .tienda-externa-badge {
+        background-color: #ff9800;
+        color: white;
+        padding: 2px 6px;
+        border-radius: 8px;
+        font-size: 0.7rem;
+        font-weight: 500;
+        margin-left: 5px;
+    }
+    
+    /* Acciones */
+    .action-btn {
+        background: none;
+        border: none;
+        color: var(--primary-color);
+        cursor: pointer;
+        margin-right: 5px;
+        font-size: 1rem;
+    }
+    
+    .action-btn:hover {
+        color: var(--primary-dark);
+    }
+    
+    /* Paginación */
+    .pagination-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 20px;
+        gap: 15px;
+    }
+    
+    #page-info {
         font-size: 0.9rem;
+        color: #666;
+    }
+    
+    /* Modal */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.7);
     }
     
     .modal-content {
-        width: 95%;
-        margin: 2% auto;
-        padding: 15px;
+        position: relative;
+        background-color: white;
+        margin: 5% auto;
+        padding: 25px;
+        width: 80%;
+        max-width: 800px;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+    
+    .close-modal {
+        position: absolute;
+        top: 15px;
+        right: 20px;
+        font-size: 28px;
+        font-weight: bold;
+        color: #aaa;
+        cursor: pointer;
+    }
+    
+    .close-modal:hover {
+        color: #333;
+    }
+    
+    #modal-title {
+        margin-top: 0;
+        margin-bottom: 20px;
+        color: var(--primary-color);
     }
     
     .modal-body {
-        grid-template-columns: 1fr;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
     }
     
-    .statistics-container {
+    .detail-group {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+    }
+    
+    .detail-group h4 {
+        margin-top: 0;
+        margin-bottom: 15px;
+        color: #0288d1;
+        font-size: 1rem;
+    }
+    
+    .detail-item {
+        margin-bottom: 10px;
+    }
+    
+    .detail-label {
+        font-size: 0.85rem;
+        color: #666;
+        margin-bottom: 2px;
+    }
+    
+    .detail-value {
+        font-weight: 500;
+    }
+    
+    .label-propio {
+        background-color: #0288d1;
+        color: white;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        margin-left: 5px;
+    }
+    
+    /* Estilos para imágenes de INE */
+    .ine-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+        margin-top: 15px;
+    }
+    
+    .ine-image {
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        overflow: hidden;
+        width: 100%;
+        min-height: 200px;
+        background-color: #f5f5f5;
+        display: flex;
         flex-direction: column;
     }
     
-    .stat-card {
-        min-width: auto;
-    }
-    
-    .network-stats {
-        flex-direction: column;
+    .ine-image h5 {
+        background-color: #0288d1;
+        color: white;
+        margin: 0;
+        padding: 8px;
+        font-size: 0.9rem;
         text-align: center;
     }
-}
+    
+    .ine-image img {
+        width: 100%;
+        height: auto;
+        object-fit: contain;
+        max-height: 250px;
+    }
+    
+    .ine-image .no-image {
+        height: 200px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #777;
+        font-size: 0.9rem;
+    }
+
+    /* Comentarios */
+    .comentarios-container {
+        background-color: #f9f9f9;
+        border-left: 4px solid #0288d1;
+        padding: 10px 15px;
+        margin-top: 10px;
+        border-radius: 0 4px 4px 0;
+    }
+    
+    .comentarios-title {
+        font-size: 0.9rem;
+        color: #666;
+        margin-bottom: 5px;
+    }
+    
+    .comentarios-content {
+        font-style: italic;
+    }
+
+    /* Responsividad */
+    @media (max-width: 768px) {
+        .vendedor-interno-badge {
+            font-size: 0.7rem;
+            padding: 3px 8px;
+            margin-left: 5px;
+        }
+        
+        .filter-controls .row {
+            flex-direction: column;
+        }
+        
+        .filter-controls .col {
+            min-width: auto;
+        }
+        
+        .data-table {
+            font-size: 0.9rem;
+        }
+        
+        .modal-content {
+            width: 95%;
+            margin: 2% auto;
+            padding: 15px;
+        }
+        
+        .modal-body {
+            grid-template-columns: 1fr;
+        }
+    }
 </style>
 
 <script>
-    // Variables globales específicas para admin
-    let debugInfo = null;
-    let networkInfo = {
-        totalSources: 0,
-        tiendasInternas: 0,
-        tiendasExternas: 0
-    };
-    
     // Elementos del DOM
     const loadingElement = document.getElementById('solicitudes-loading');
     const errorElement = document.getElementById('solicitudes-error');
@@ -849,30 +568,13 @@
     const solicitudesTbody = document.getElementById('solicitudes-tbody');
     const emptyState = document.getElementById('empty-state');
     const emptyMessage = document.getElementById('empty-message');
-    const adminInfo = document.getElementById('admin-info');
-    const adminInfoText = document.getElementById('admin-info-text');
-    const estadisticasContainer = document.getElementById('estadisticas-container');
-    const networkInfoPanel = document.getElementById('network-info');
-    
-    // Elementos de estadísticas
-    const statTotal = document.getElementById('stat-total');
-    const statPendientes = document.getElementById('stat-pendientes');
-    const statProcesando = document.getElementById('stat-procesando');
-    const statCompletadas = document.getElementById('stat-completadas');
-    const statRechazadas = document.getElementById('stat-rechazadas');
-    const statCanceladas = document.getElementById('stat-canceladas');
-    
-    // Elementos de network info
-    const totalSources = document.getElementById('total-sources');
-    const tiendasInternas = document.getElementById('tiendas-internas');
-    const tiendasExternas = document.getElementById('tiendas-externas');
+    const vendedorTipoBadge = document.getElementById('vendedor-tipo-badge');
     
     // Elementos de filtro
     const filtroEstado = document.getElementById('filtro-estado');
     const filtroOrigen = document.getElementById('filtro-origen');
     const busquedaInput = document.getElementById('busqueda');
     const btnRefresh = document.getElementById('btn-refresh');
-    const btnDebug = document.getElementById('btn-debug');
     
     // Elementos de paginación
     const prevPageBtn = document.getElementById('prev-page');
@@ -880,20 +582,15 @@
     const currentPageElement = document.getElementById('current-page');
     const totalPagesElement = document.getElementById('total-pages');
     
-    // Modal principal
+    // Modal
     const modal = document.getElementById('modal-detalles');
     const modalTitle = document.getElementById('modal-title');
     const modalContent = document.getElementById('modal-content');
     const closeModal = document.querySelector('.close-modal');
     
-    // Modal de debug
-    const modalDebug = document.getElementById('modal-debug');
-    const debugContent = document.getElementById('debug-content');
-    const closeDebug = document.querySelector('.close-debug');
-    
-    // Obtener datos del usuario (forzar admin)
+    // Obtener datos del usuario
     const userUID = sessionStorage.getItem('userUID') || '';
-    const userRole = 'admin'; // Forzar rol admin para este módulo
+    const userRole = sessionStorage.getItem('userRole') || 'admin';
     
     // Variables para almacenar datos
     let allSolicitudes = [];
@@ -901,40 +598,17 @@
     
     // Variables para paginación
     let currentPage = 1;
-    const itemsPerPage = 10; // Más items por página para admin
+    const itemsPerPage = 5;
     let totalPages = 1;
     
-    // Función para actualizar información de red
-    function updateNetworkInfo(debug) {
-        if (debug) {
-            networkInfo.totalSources = debug.total_usuarios_incluidos || 0;
-            networkInfo.tiendasInternas = debug.tiendas_procesadas ? debug.tiendas_procesadas.length : 0;
-            networkInfo.tiendasExternas = debug.tiendas_externas_encontradas ? debug.tiendas_externas_encontradas.length : 0;
-            
-            // Actualizar elementos
-            totalSources.textContent = networkInfo.totalSources;
-            tiendasInternas.textContent = networkInfo.tiendasInternas;
-            tiendasExternas.textContent = networkInfo.tiendasExternas;
-            
-            // Actualizar mensaje de admin
-            adminInfoText.textContent = `Supervisando ${networkInfo.totalSources} fuentes de datos en tu red administrativa`;
-            
-            // Mostrar panel de red si hay datos significativos
-            if (networkInfo.totalSources > 1) {
-                networkInfoPanel.style.display = 'block';
-            }
-        }
-    }
-    
-    // Función para actualizar las estadísticas
-    function updateEstadisticas(estadisticas) {
-        if (estadisticas) {
-            statTotal.textContent = estadisticas.total || 0;
-            statPendientes.textContent = estadisticas.pendientes || 0;
-            statProcesando.textContent = estadisticas.procesando || 0;
-            statCompletadas.textContent = estadisticas.completadas || 0;
-            statRechazadas.textContent = estadisticas.rechazadas || 0;
-            statCanceladas.textContent = estadisticas.canceladas || 0;
+    // Función para actualizar la UI según el tipo de vendedor
+    function updateVendedorTypeUI(tipo) {
+        if (tipo === 'interno') {
+            vendedorTipoBadge.style.display = 'inline-block';
+            console.log('Mostrando badge de vendedor interno');
+        } else {
+            vendedorTipoBadge.style.display = 'none';
+            console.log('Ocultando badge - vendedor externo');
         }
     }
     
@@ -958,16 +632,6 @@
     
     btnRefresh.addEventListener('click', loadSolicitudesPortabilidad);
     
-    // Event listener para debug
-    btnDebug.addEventListener('click', () => {
-        if (debugInfo) {
-            debugContent.innerHTML = `<pre>${JSON.stringify(debugInfo, null, 2)}</pre>`;
-            modalDebug.style.display = 'block';
-        } else {
-            alert('No hay información de debug disponible. Actualiza los datos primero.');
-        }
-    });
-    
     // Event listeners de paginación
     prevPageBtn.addEventListener('click', () => {
         if (currentPage > 1) {
@@ -985,10 +649,8 @@
     
     // Event listeners del modal
     closeModal.addEventListener('click', () => modal.style.display = 'none');
-    closeDebug.addEventListener('click', () => modalDebug.style.display = 'none');
     window.addEventListener('click', (e) => {
         if (e.target === modal) modal.style.display = 'none';
-        if (e.target === modalDebug) modalDebug.style.display = 'none';
     });
     
     // Función para normalizar estados
@@ -1018,19 +680,18 @@
         try {
             showLoading();
             
-            console.log('🔥 ADMIN: Iniciando carga para UID:', userUID, 'Role:', userRole);
+            console.log('Iniciando carga de solicitudes para UID:', userUID, 'Role:', userRole);
             
-            // Forzar role=admin en la llamada a la API
-            const response = await fetch(`../api/get_solicitudes_portabilidad.php?uid=${encodeURIComponent(userUID)}&role=admin`);
+            const response = await fetch(`../api/get_solicitudes_portabilidad.php?uid=${encodeURIComponent(userUID)}&role=${encodeURIComponent(userRole)}`);
             
             const responseText = await response.text();
             
             let data;
             try {
                 data = JSON.parse(responseText);
-                console.log('🔥 ADMIN: Respuesta completa de la API:', data);
+                console.log('Respuesta completa de la API:', data);
             } catch (jsonError) {
-                console.error("❌ Error al parsear JSON:", responseText);
+                console.error("Error al parsear JSON:", responseText);
                 throw new Error(`Error de formato en la respuesta: ${responseText.substring(0, 100)}...`);
             }
             
@@ -1038,19 +699,17 @@
                 throw new Error(data.error || "Error desconocido en la respuesta");
             }
             
-            // Guardar debug info
-            debugInfo = data.debug_info;
-            
-            // Actualizar información de red
-            updateNetworkInfo(data.debug_info);
-            
-            // Actualizar estadísticas
-            updateEstadisticas(data.estadisticas);
+            // Actualizar UI según el tipo de vendedor (si viene en la respuesta)
+            if (data.tipo_vendedor) {
+                updateVendedorTypeUI(data.tipo_vendedor);
+            }
             
             allSolicitudes = data.solicitudes || [];
             
-            console.log('🔥 ADMIN: Solicitudes recibidas:', allSolicitudes.length);
-            console.log('🔥 ADMIN: Debug info:', data.debug_info);
+            console.log('Solicitudes recibidas:', allSolicitudes.length);
+            if (data.tipo_vendedor) {
+                console.log('Tipo de vendedor:', data.tipo_vendedor);
+            }
             
             // Normalizar estados
             allSolicitudes.forEach(solicitud => {
@@ -1060,7 +719,7 @@
             aplicarFiltros();
             
         } catch (error) {
-            console.error('❌ ADMIN: Error completo:', error);
+            console.error('Error completo:', error);
             showError(`Error al cargar las solicitudes: ${error.message}`);
         }
     }
@@ -1124,7 +783,7 @@
         totalPagesElement.textContent = totalPages;
         
         if (filteredSolicitudes.length === 0) {
-            showEmptyState('No se encontraron solicitudes en la red administrativa');
+            showEmptyState('No se encontraron solicitudes con los filtros seleccionados');
             return;
         }
         
@@ -1139,7 +798,7 @@
     
     // Función para renderizar solicitudes
     function renderSolicitudes(solicitudes) {
-        console.log("🔥 ADMIN: Renderizando solicitudes con IDs:", solicitudes.map(s => s.id));
+        console.log("Renderizando solicitudes con IDs:", solicitudes.map(s => s.id));
         
         solicitudesTbody.innerHTML = '';
         
@@ -1171,16 +830,17 @@
             
             const idOriginal = String(solicitud.id);
             
-            // Procesar nombre de tienda con badges específicos para admin
+            // Procesar nombre de tienda con badges apropiados
             let tiendaDisplay = solicitud.nombre_tienda || 'Sin tienda';
             
-            // Identificar tipo de fuente para admin
-            if (parseInt(solicitud.es_propia) === 1) {
-                tiendaDisplay += ' <span class="label-propio">ADMIN</span>';
-            } else if (tiendaDisplay.includes('(Externa)')) {
+            // Agregar badge para tiendas externas
+            if (tiendaDisplay.includes('(Externa)')) {
                 tiendaDisplay = tiendaDisplay.replace('(Externa)', '<span class="tienda-externa-badge">EXTERNA</span>');
-            } else {
-                tiendaDisplay += ' <span class="red-admin-badge">RED</span>';
+            }
+            
+            // Agregar badge para solicitudes propias
+            if (parseInt(solicitud.es_propia) === 1) {
+                tiendaDisplay = 'Solicitud propia <span class="label-propio">Tú</span>';
             }
             
             const row = document.createElement('tr');
@@ -1206,17 +866,17 @@
     
     // Función para ver detalles (global)
     window.verDetalles = function(id) {
-        console.log('🔥 ADMIN: Buscando solicitud con ID:', id, 'Tipo:', typeof id);
+        console.log('Buscando solicitud con ID:', id, 'Tipo:', typeof id);
         
         const solicitud = allSolicitudes.find(s => String(s.id) == String(id));
         
         if (!solicitud) {
-            console.error('❌ No se encontró la solicitud con ID:', id);
+            console.error('No se encontró la solicitud con ID:', id);
             alert(`No se encontró la solicitud con ID: ${id}`);
             return;
         }
         
-        console.log('✅ ADMIN: Solicitud encontrada:', solicitud);
+        console.log('Solicitud encontrada:', solicitud);
         
         const estado = solicitud.estado_solicitud;
         
@@ -1230,7 +890,7 @@
             }
         }
         
-        modalTitle.textContent = `[ADMIN] Solicitud de Portabilidad #${solicitud.id} (${estado})`;
+        modalTitle.textContent = `Solicitud de Portabilidad #${solicitud.id} (${estado})`;
         
         let comentariosHtml = '';
         if (solicitud.comentarios && solicitud.comentarios.trim() !== '') {
@@ -1244,17 +904,19 @@
             `;
         }
         
-        // Procesar nombre de tienda para el modal (admin context)
+        // Procesar nombre de tienda para el modal
         let tiendaDisplayModal = solicitud.nombre_tienda || 'Sin tienda asignada';
         let etiquetasEspeciales = '';
         
         if (parseInt(solicitud.es_propia) === 1) {
-            etiquetasEspeciales = '<span class="label-propio">ADMIN</span>';
-        } else if (tiendaDisplayModal.includes('(Externa)')) {
+            tiendaDisplayModal = 'Solicitud propia';
+            etiquetasEspeciales = '<span class="label-propio">Tú</span>';
+        }
+        
+        // Agregar badge para tiendas externas
+        if (tiendaDisplayModal.includes('(Externa)')) {
             tiendaDisplayModal = tiendaDisplayModal.replace('(Externa)', '');
             etiquetasEspeciales += ' <span class="tienda-externa-badge">EXTERNA</span>';
-        } else {
-            etiquetasEspeciales += ' <span class="red-admin-badge">RED</span>';
         }
         
         modalContent.innerHTML = `
@@ -1313,7 +975,7 @@
                     <div class="detail-value">${fechaFormateada}</div>
                 </div>
                 <div class="detail-item">
-                    <div class="detail-label">Fuente de datos:</div>
+                    <div class="detail-label">Tienda:</div>
                     <div class="detail-value">
                         ${tiendaDisplayModal}
                         ${etiquetasEspeciales}
@@ -1362,8 +1024,6 @@
         errorElement.style.display = 'none';
         solicitudesContainer.style.display = 'none';
         emptyState.style.display = 'none';
-        estadisticasContainer.style.display = 'none';
-        networkInfoPanel.style.display = 'none';
     }
     
     function showError(message) {
@@ -1371,8 +1031,6 @@
         errorElement.style.display = 'block';
         solicitudesContainer.style.display = 'none';
         emptyState.style.display = 'none';
-        estadisticasContainer.style.display = 'none';
-        networkInfoPanel.style.display = 'none';
         errorMessageElement.textContent = message;
     }
     
@@ -1381,8 +1039,6 @@
         errorElement.style.display = 'none';
         solicitudesContainer.style.display = 'block';
         emptyState.style.display = 'none';
-        estadisticasContainer.style.display = 'flex';
-        // networkInfoPanel se maneja en updateNetworkInfo()
     }
     
     function showEmptyState(message) {
@@ -1390,8 +1046,6 @@
         errorElement.style.display = 'none';
         solicitudesContainer.style.display = 'none';
         emptyState.style.display = 'block';
-        estadisticasContainer.style.display = 'flex';
-        networkInfoPanel.style.display = 'none';
         emptyMessage.textContent = message;
     }
 </script>

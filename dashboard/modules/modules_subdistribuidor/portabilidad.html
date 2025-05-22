@@ -1,6 +1,7 @@
 <div class="card">
-    <h2 class="content-title">
+    <h2 class="content-title" id="module-title">
         <i class="fas fa-exchange-alt"></i> Gestión de Portabilidades
+        <span id="vendedor-tipo-badge" class="vendedor-interno-badge" style="display: none;">INTERNO</span>
     </h2>
     <p>Gestiona las solicitudes de portabilidad realizadas por ti y tus vendedores.</p>
     
@@ -26,7 +27,7 @@
                     <select id="filtro-origen" class="form-control">
                         <option value="">Todos</option>
                         <option value="1">Mis solicitudes</option>
-                        <option value="0">De vendedores</option>
+                        <option value="0">Otras tiendas</option>
                     </select>
                 </div>
             </div>
@@ -43,7 +44,6 @@
             </div>
         </div>
     </div>
-    
     
     <!-- Estados de la interfaz -->
     <div id="solicitudes-loading" class="loading-spinner-container">
@@ -108,6 +108,33 @@
 </div>
 
 <style>
+    /* Badge para vendedor interno */
+    .vendedor-interno-badge {
+        background: linear-gradient(135deg, #2196F3, #1976D2);
+        color: white;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-left: 8px;
+        display: inline-block;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        box-shadow: 0 2px 4px rgba(33, 150, 243, 0.3);
+        animation: fadeInScale 0.3s ease-out;
+    }
+
+    @keyframes fadeInScale {
+        from {
+            opacity: 0;
+            transform: scale(0.8);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+
     /* Filtros */
     .filter-controls {
         background-color: #f8f9fa;
@@ -311,6 +338,17 @@
         color: #383D41;
     }
     
+    /* Badge para tiendas externas */
+    .tienda-externa-badge {
+        background-color: #ff9800;
+        color: white;
+        padding: 2px 6px;
+        border-radius: 8px;
+        font-size: 0.7rem;
+        font-weight: 500;
+        margin-left: 5px;
+    }
+    
     /* Acciones */
     .action-btn {
         background: none;
@@ -489,11 +527,35 @@
         font-style: italic;
     }
 
-    /* Dispositivo */
-    .device-info {
-        margin-top: 5px;
-        font-size: 0.9rem;
-        color: #666;
+    /* Responsividad */
+    @media (max-width: 768px) {
+        .vendedor-interno-badge {
+            font-size: 0.7rem;
+            padding: 3px 8px;
+            margin-left: 5px;
+        }
+        
+        .filter-controls .row {
+            flex-direction: column;
+        }
+        
+        .filter-controls .col {
+            min-width: auto;
+        }
+        
+        .data-table {
+            font-size: 0.9rem;
+        }
+        
+        .modal-content {
+            width: 95%;
+            margin: 2% auto;
+            padding: 15px;
+        }
+        
+        .modal-body {
+            grid-template-columns: 1fr;
+        }
     }
 </style>
 
@@ -506,6 +568,7 @@
     const solicitudesTbody = document.getElementById('solicitudes-tbody');
     const emptyState = document.getElementById('empty-state');
     const emptyMessage = document.getElementById('empty-message');
+    const vendedorTipoBadge = document.getElementById('vendedor-tipo-badge');
     
     // Elementos de filtro
     const filtroEstado = document.getElementById('filtro-estado');
@@ -535,12 +598,23 @@
     
     // Variables para paginación
     let currentPage = 1;
-    const itemsPerPage = 5; // Mostrar 5 solicitudes por página
+    const itemsPerPage = 5;
     let totalPages = 1;
+    
+    // Función para actualizar la UI según el tipo de vendedor
+    function updateVendedorTypeUI(tipo) {
+        if (tipo === 'interno') {
+            vendedorTipoBadge.style.display = 'inline-block';
+            console.log('Mostrando badge de vendedor interno');
+        } else {
+            vendedorTipoBadge.style.display = 'none';
+            console.log('Ocultando badge - vendedor externo');
+        }
+    }
     
     // Event listeners
     filtroEstado.addEventListener('change', () => {
-        currentPage = 1; // Reiniciar a la primera página al filtrar
+        currentPage = 1;
         aplicarFiltros();
     });
     
@@ -579,11 +653,10 @@
         if (e.target === modal) modal.style.display = 'none';
     });
     
-    // Función para normalizar estados según los valores de la base de datos
+    // Función para normalizar estados
     function normalizarEstado(estadoOriginal) {
         if (!estadoOriginal) return 'pendiente';
         
-        // Convertir a string y minúsculas
         const estado = String(estadoOriginal).trim().toLowerCase();
         
         switch(estado) {
@@ -599,26 +672,22 @@
         }
     }
     
-    // Inicialización - Esta llamada inmediata es crucial
+    // Inicialización
     loadSolicitudesPortabilidad();
     
-    // Función para cargar solicitudes desde la API
+    // Función principal para cargar solicitudes
     async function loadSolicitudesPortabilidad() {
         try {
-            // Mostrar spinner de carga
             showLoading();
             
             console.log('Iniciando carga de solicitudes para UID:', userUID, 'Role:', userRole);
             
-            // Hacer solicitud a la API incluyendo role para mayor seguridad
             const response = await fetch(`../api/get_solicitudes_portabilidad.php?uid=${encodeURIComponent(userUID)}&role=${encodeURIComponent(userRole)}`);
             
-            // Obtener el texto para depuración
             const responseText = await response.text();
             
             let data;
             try {
-                // Intentar parsear como JSON
                 data = JSON.parse(responseText);
                 console.log('Respuesta completa de la API:', data);
             } catch (jsonError) {
@@ -626,29 +695,27 @@
                 throw new Error(`Error de formato en la respuesta: ${responseText.substring(0, 100)}...`);
             }
             
-            // Verificar si hay un mensaje de error
             if (!data.success) {
                 throw new Error(data.error || "Error desconocido en la respuesta");
             }
             
-            // Guardar todas las solicitudes exactamente como vienen de la API
-            // NO modificamos los IDs ni los convertimos a enteros
+            // Actualizar UI según el tipo de vendedor (si viene en la respuesta)
+            if (data.tipo_vendedor) {
+                updateVendedorTypeUI(data.tipo_vendedor);
+            }
+            
             allSolicitudes = data.solicitudes || [];
             
             console.log('Solicitudes recibidas:', allSolicitudes.length);
-            if (allSolicitudes.length > 0) {
-                console.log('Primera solicitud:', allSolicitudes[0]);
-                console.log('IDs recibidos:', allSolicitudes.map(s => s.id));
-                console.log('Tipos de IDs:', allSolicitudes.map(s => typeof s.id));
-                console.log('Estados disponibles:', [...new Set(allSolicitudes.map(s => s.estado_solicitud))]);
+            if (data.tipo_vendedor) {
+                console.log('Tipo de vendedor:', data.tipo_vendedor);
             }
             
-            // Normalizar estados pero SIN modificar los IDs
+            // Normalizar estados
             allSolicitudes.forEach(solicitud => {
                 solicitud.estado_solicitud = normalizarEstado(solicitud.estado_solicitud);
             });
             
-            // Aplicar filtros iniciales
             aplicarFiltros();
             
         } catch (error) {
@@ -663,14 +730,11 @@
         const origen = filtroOrigen.value;
         const termino = busquedaInput.value.trim().toLowerCase();
         
-        // Filtrar solicitudes
         filteredSolicitudes = allSolicitudes.filter(solicitud => {
-            // Filtro por estado
             if (estado && solicitud.estado_solicitud !== estado) {
                 return false;
             }
             
-            // Filtro por origen (propias o de vendedores)
             if (origen !== '') {
                 const esPropia = parseInt(solicitud.es_propia) === 1;
                 if ((origen === '1' && !esPropia) || (origen === '0' && esPropia)) {
@@ -678,7 +742,6 @@
                 }
             }
             
-            // Filtro por término de búsqueda
             if (termino) {
                 const coincideNombre = solicitud.nombre_completo && 
                                      solicitud.nombre_completo.toLowerCase().includes(termino);
@@ -699,61 +762,47 @@
             return true;
         });
         
-        // Calcular número total de páginas
         totalPages = Math.max(1, Math.ceil(filteredSolicitudes.length / itemsPerPage));
         
-        // Ajustar página actual si es necesario
         if (currentPage > totalPages) {
             currentPage = totalPages;
         }
         
-        // Actualizar elementos de paginación
         currentPageElement.textContent = currentPage;
         totalPagesElement.textContent = totalPages;
         
-        // Renderizar resultados
         renderizarPagina();
     }
     
     // Función para renderizar la página actual
     function renderizarPagina() {
-        // Habilitar/deshabilitar botones de paginación
         prevPageBtn.disabled = currentPage <= 1;
         nextPageBtn.disabled = currentPage >= totalPages;
         
-        // Actualizar info de página
         currentPageElement.textContent = currentPage;
         totalPagesElement.textContent = totalPages;
         
-        // Si no hay resultados, mostrar estado vacío
         if (filteredSolicitudes.length === 0) {
             showEmptyState('No se encontraron solicitudes con los filtros seleccionados');
             return;
         }
         
-        // Calcular índices para paginación
         const startIndex = (currentPage - 1) * itemsPerPage;
         const endIndex = Math.min(startIndex + itemsPerPage, filteredSolicitudes.length);
         
-        // Obtener las solicitudes para esta página
         const solicitudesPagina = filteredSolicitudes.slice(startIndex, endIndex);
         
-        // Renderizar solicitudes de esta página
         renderSolicitudes(solicitudesPagina);
         showContent();
     }
     
     // Función para renderizar solicitudes
     function renderSolicitudes(solicitudes) {
-        // Depuración crítica
         console.log("Renderizando solicitudes con IDs:", solicitudes.map(s => s.id));
         
-        // Limpiar el contenedor
         solicitudesTbody.innerHTML = '';
         
-        // Crear filas para cada solicitud
         solicitudes.forEach(solicitud => {
-            // Determinar clase para el estado
             let estadoClass = '';
             let estado = solicitud.estado_solicitud || 'pendiente';
             
@@ -765,7 +814,6 @@
                 case 'cancelada': estadoClass = 'status-cancelada'; break;
             }
             
-            // Formatear fecha
             let fechaFormateada = 'No disponible';
             if (solicitud.fecha_creacion) {
                 try {
@@ -780,11 +828,21 @@
                 }
             }
             
-            // CRÍTICO: Usar ID original sin manipulación, estrictamente como string
             const idOriginal = String(solicitud.id);
-            console.log(`Renderizando solicitud con ID: ${idOriginal} (tipo: ${typeof solicitud.id})`);
             
-            // Crear fila de la tabla con el ID original pasado como string
+            // Procesar nombre de tienda con badges apropiados
+            let tiendaDisplay = solicitud.nombre_tienda || 'Sin tienda';
+            
+            // Agregar badge para tiendas externas
+            if (tiendaDisplay.includes('(Externa)')) {
+                tiendaDisplay = tiendaDisplay.replace('(Externa)', '<span class="tienda-externa-badge">EXTERNA</span>');
+            }
+            
+            // Agregar badge para solicitudes propias
+            if (parseInt(solicitud.es_propia) === 1) {
+                tiendaDisplay = 'Solicitud propia <span class="label-propio">Tú</span>';
+            }
+            
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${idOriginal}</td>
@@ -793,7 +851,7 @@
                 <td>${solicitud.nip_portabilidad || 'No disponible'}</td>
                 <td>${solicitud.operador_destino || 'No disponible'}</td>
                 <td>${fechaFormateada}</td>
-                <td>${solicitud.nombre_tienda || (parseInt(solicitud.es_propia) === 1 ? 'Solicitud propia' : 'No asignada')}</td>
+                <td>${tiendaDisplay}</td>
                 <td><span class="status-badge ${estadoClass}">${estado}</span></td>
                 <td>
                     <button class="action-btn" title="Ver detalles" onclick="verDetalles('${idOriginal}')">
@@ -806,11 +864,10 @@
         });
     }
     
-    // Función para ver detalles (debe ser global)
+    // Función para ver detalles (global)
     window.verDetalles = function(id) {
         console.log('Buscando solicitud con ID:', id, 'Tipo:', typeof id);
         
-        // Buscar la solicitud usando comparación flexible
         const solicitud = allSolicitudes.find(s => String(s.id) == String(id));
         
         if (!solicitud) {
@@ -821,10 +878,8 @@
         
         console.log('Solicitud encontrada:', solicitud);
         
-        // Normalizar el estado
         const estado = solicitud.estado_solicitud;
         
-        // Formatear fecha
         let fechaFormateada = 'No disponible';
         if (solicitud.fecha_creacion) {
             try {
@@ -835,10 +890,8 @@
             }
         }
         
-        // Título del modal con estado
         modalTitle.textContent = `Solicitud de Portabilidad #${solicitud.id} (${estado})`;
         
-        // Preparar sección de comentarios
         let comentariosHtml = '';
         if (solicitud.comentarios && solicitud.comentarios.trim() !== '') {
             comentariosHtml = `
@@ -851,7 +904,21 @@
             `;
         }
         
-        // Contenido del modal
+        // Procesar nombre de tienda para el modal
+        let tiendaDisplayModal = solicitud.nombre_tienda || 'Sin tienda asignada';
+        let etiquetasEspeciales = '';
+        
+        if (parseInt(solicitud.es_propia) === 1) {
+            tiendaDisplayModal = 'Solicitud propia';
+            etiquetasEspeciales = '<span class="label-propio">Tú</span>';
+        }
+        
+        // Agregar badge para tiendas externas
+        if (tiendaDisplayModal.includes('(Externa)')) {
+            tiendaDisplayModal = tiendaDisplayModal.replace('(Externa)', '');
+            etiquetasEspeciales += ' <span class="tienda-externa-badge">EXTERNA</span>';
+        }
+        
         modalContent.innerHTML = `
             <div class="detail-group">
                 <h4>Información del Cliente</h4>
@@ -910,8 +977,8 @@
                 <div class="detail-item">
                     <div class="detail-label">Tienda:</div>
                     <div class="detail-value">
-                        ${solicitud.nombre_tienda || (parseInt(solicitud.es_propia) === 1 ? 'Solicitud propia' : 'No asignada')}
-                        ${parseInt(solicitud.es_propia) === 1 ? '<span class="label-propio">Tú</span>' : ''}
+                        ${tiendaDisplayModal}
+                        ${etiquetasEspeciales}
                     </div>
                 </div>
                 ${comentariosHtml}
@@ -936,7 +1003,6 @@
             </div>
         `;
         
-        // Mostrar modal
         modal.style.display = 'block';
     };
     

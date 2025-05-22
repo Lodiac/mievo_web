@@ -1,15 +1,15 @@
 <div class="card">
-    <h2 class="content-title header-interno-indicator" id="module-title">
-        <i class="fas fa-exchange-alt"></i> Gestión de Portabilidades
+    <h2 class="content-title" id="module-title">
+        <i class="fas fa-exchange-alt"></i> Mis Portabilidades
         <span id="vendedor-tipo-badge" class="vendedor-interno-badge" style="display: none;">INTERNO</span>
     </h2>
-    <p>Gestiona las solicitudes de portabilidad realizadas por ti y tus vendedores.</p>
+    <p id="module-description">Gestiona tus solicitudes de portabilidad.</p>
     
-    <!-- Información del vendedor -->
+    <!-- Información del vendedor interno -->
     <div id="vendor-info" class="vendor-info-card" style="display: none;">
         <div class="info-content">
             <i class="fas fa-info-circle"></i>
-            <span id="vendor-info-text">Mostrando solicitudes adicionales por acceso interno</span>
+            <span id="vendor-info-text">Acceso interno activo - Puedes ver solicitudes adicionales</span>
         </div>
     </div>
     
@@ -29,7 +29,7 @@
                     </select>
                 </div>
             </div>
-            <div class="col">
+            <div class="col" id="filtro-origen-container" style="display: none;">
                 <div class="form-group">
                     <label for="filtro-origen">Origen:</label>
                     <select id="filtro-origen" class="form-control">
@@ -64,52 +64,6 @@
         <span id="error-message">Error al cargar las solicitudes</span>
     </div>
     
-    <!-- Estadísticas -->
-    <div id="estadisticas-container" class="statistics-container" style="display: none;">
-        <div class="stat-card">
-            <div class="stat-icon"><i class="fas fa-tasks"></i></div>
-            <div class="stat-info">
-                <span class="stat-value" id="stat-total">0</span>
-                <span class="stat-label">Total</span>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon"><i class="fas fa-clock"></i></div>
-            <div class="stat-info">
-                <span class="stat-value" id="stat-pendientes">0</span>
-                <span class="stat-label">Pendientes</span>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon"><i class="fas fa-spinner"></i></div>
-            <div class="stat-info">
-                <span class="stat-value" id="stat-procesando">0</span>
-                <span class="stat-label">Procesando</span>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
-            <div class="stat-info">
-                <span class="stat-value" id="stat-completadas">0</span>
-                <span class="stat-label">Completadas</span>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon"><i class="fas fa-times-circle"></i></div>
-            <div class="stat-info">
-                <span class="stat-value" id="stat-rechazadas">0</span>
-                <span class="stat-label">Rechazadas</span>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon"><i class="fas fa-ban"></i></div>
-            <div class="stat-info">
-                <span class="stat-value" id="stat-canceladas">0</span>
-                <span class="stat-label">Canceladas</span>
-            </div>
-        </div>
-    </div>
-    
     <!-- Contenedor para solicitudes -->
     <div id="solicitudes-container" style="display: none;">
         <div class="table-responsive">
@@ -122,7 +76,7 @@
                         <th>NIP</th>
                         <th>Operador</th>
                         <th>Fecha</th>
-                        <th>Tienda</th>
+                        <th class="tienda-column" style="display: none;">Tienda</th>
                         <th>Estado</th>
                         <th>Acciones</th>
                     </tr>
@@ -147,6 +101,7 @@
     <div id="empty-state" class="empty-state" style="display: none;">
         <i class="fas fa-file-alt"></i>
         <h3 id="empty-message">No se encontraron solicitudes</h3>
+        <p id="empty-subtitle">Aún no tienes solicitudes de portabilidad.</p>
     </div>
     
     <!-- Modal de detalles -->
@@ -161,581 +116,500 @@
     </div>
 </div>
 
-<!-- ESTILOS INTEGRADOS -->
 <style>
-/* Badge para vendedor interno */
-.vendedor-interno-badge {
-    background: linear-gradient(135deg, #2196F3, #1976D2);
-    color: white;
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    margin-left: 8px;
-    display: inline-block;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    box-shadow: 0 2px 4px rgba(33, 150, 243, 0.3);
-    animation: fadeInScale 0.3s ease-out;
-}
-
-@keyframes fadeInScale {
-    from {
-        opacity: 0;
-        transform: scale(0.8);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1);
-    }
-}
-
-/* Indicador sutil en el header para vendedores internos */
-.header-interno-indicator {
-    position: relative;
-}
-
-.header-interno-indicator::before {
-    content: '';
-    position: absolute;
-    top: -2px;
-    right: -2px;
-    width: 8px;
-    height: 8px;
-    background: #2196F3;
-    border-radius: 50%;
-    box-shadow: 0 0 0 2px white, 0 0 8px rgba(33, 150, 243, 0.5);
-    animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-    0%, 100% {
-        opacity: 1;
-        transform: scale(1);
-    }
-    50% {
-        opacity: 0.7;
-        transform: scale(1.1);
-    }
-}
-
-/* Card de información del vendedor */
-.vendor-info-card {
-    background: linear-gradient(135deg, #e3f2fd, #bbdefb);
-    border-left: 4px solid #2196F3;
-    padding: 12px 16px;
-    margin-bottom: 20px;
-    border-radius: 8px;
-    animation: slideInDown 0.5s ease-out;
-}
-
-@keyframes slideInDown {
-    from {
-        transform: translateY(-20px);
-        opacity: 0;
-    }
-    to {
-        transform: translateY(0);
-        opacity: 1;
-    }
-}
-
-.vendor-info-card .info-content {
-    display: flex;
-    align-items: center;
-    font-size: 0.9rem;
-    color: #1565c0;
-    font-weight: 500;
-}
-
-.vendor-info-card .info-content i {
-    margin-right: 8px;
-    font-size: 1rem;
-}
-
-/* Estadísticas */
-.statistics-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 15px;
-    margin-bottom: 20px;
-}
-
-.stat-card {
-    background-color: #f8f9fa;
-    border-radius: 8px;
-    padding: 15px;
-    display: flex;
-    align-items: center;
-    flex: 1;
-    min-width: 150px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    transition: transform 0.2s ease;
-}
-
-.stat-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-}
-
-.stat-icon {
-    font-size: 1.5rem;
-    color: var(--primary-color);
-    margin-right: 15px;
-}
-
-.stat-info {
-    display: flex;
-    flex-direction: column;
-}
-
-.stat-value {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: #333;
-}
-
-.stat-label {
-    font-size: 0.9rem;
-    color: #666;
-}
-
-/* Filtros */
-.filter-controls {
-    background-color: #f8f9fa;
-    padding: 15px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-}
-
-.filter-controls .row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 15px;
-}
-
-.filter-controls .col {
-    flex: 1;
-    min-width: 200px;
-}
-
-.filter-controls .actions {
-    display: flex;
-    align-items: flex-end;
-}
-
-.form-group {
-    margin-bottom: 0;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 5px;
-    font-size: 0.9rem;
-    color: #666;
-}
-
-.form-control {
-    width: 100%;
-    padding: 8px 12px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 0.95rem;
-}
-
-.search-input-container {
-    position: relative;
-}
-
-.search-icon {
-    position: absolute;
-    left: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #6c757d;
-}
-
-.search-input {
-    width: 100%;
-    padding: 8px 15px 8px 35px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 0.95rem;
-}
-
-.btn {
-    padding: 8px 16px;
-    border-radius: 4px;
-    font-size: 0.95rem;
-    cursor: pointer;
-    border: none;
-}
-
-.btn-primary {
-    background-color: var(--primary-color);
-    color: white;
-}
-
-.btn-outline {
-    background-color: transparent;
-    border: 1px solid #ddd;
-    color: #333;
-}
-
-.btn-outline:hover {
-    background-color: #f5f5f5;
-}
-
-.btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-/* Loader y estados */
-.loading-spinner-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 50px 0;
-}
-
-.loading-spinner {
-    width: 40px;
-    height: 40px;
-    border: 4px solid rgba(0,0,0,0.1);
-    border-radius: 50%;
-    border-top-color: var(--primary-color);
-    animation: spin 1s linear infinite;
-    margin-bottom: 15px;
-}
-
-@keyframes spin {
-    to { transform: rotate(360deg); }
-}
-
-.alert {
-    padding: 15px 20px;
-    border-radius: 8px;
-    margin: 20px 0;
-}
-
-.alert-danger {
-    background-color: #fdecea;
-    color: #ea4335;
-    border: 1px solid #fadad7;
-}
-
-.empty-state {
-    text-align: center;
-    padding: 40px 20px;
-    color: #666;
-}
-
-.empty-state i {
-    font-size: 3rem;
-    color: #ddd;
-    margin-bottom: 15px;
-}
-
-.empty-state h3 {
-    font-size: 1.2rem;
-    margin-bottom: 10px;
-}
-
-/* Tabla de datos */
-.table-responsive {
-    overflow-x: auto;
-}
-
-.data-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-}
-
-.data-table th, .data-table td {
-    padding: 12px 15px;
-    text-align: left;
-    border-bottom: 1px solid #ddd;
-}
-
-.data-table th {
-    background-color: #f2f2f2;
-    font-weight: 600;
-}
-
-.data-table tbody tr:hover {
-    background-color: #f5f5f5;
-}
-
-/* Badges de estado */
-.status-badge {
-    display: inline-block;
-    padding: 5px 10px;
-    border-radius: 12px;
-    font-size: 0.8rem;
-    font-weight: 500;
-}
-
-.status-pendiente {
-    background-color: #FFF3CD;
-    color: #856404;
-}
-
-.status-procesando {
-    background-color: #D1ECF1;
-    color: #0C5460;
-}
-
-.status-completada {
-    background-color: #D4EDDA;
-    color: #155724;
-}
-
-.status-rechazada {
-    background-color: #F8D7DA;
-    color: #721C24;
-}
-
-.status-cancelada {
-    background-color: #E2E3E5;
-    color: #383D41;
-}
-
-/* Badge para tiendas externas */
-.tienda-externa-badge {
-    background-color: #ff9800;
-    color: white;
-    padding: 2px 6px;
-    border-radius: 8px;
-    font-size: 0.7rem;
-    font-weight: 500;
-    margin-left: 5px;
-}
-
-/* Acciones */
-.action-btn {
-    background: none;
-    border: none;
-    color: var(--primary-color);
-    cursor: pointer;
-    margin-right: 5px;
-    font-size: 1rem;
-}
-
-.action-btn:hover {
-    color: var(--primary-dark);
-}
-
-/* Paginación */
-.pagination-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-top: 20px;
-    gap: 15px;
-}
-
-#page-info {
-    font-size: 0.9rem;
-    color: #666;
-}
-
-/* Modal */
-.modal {
-    display: none;
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0,0,0,0.7);
-}
-
-.modal-content {
-    position: relative;
-    background-color: white;
-    margin: 5% auto;
-    padding: 25px;
-    width: 80%;
-    max-width: 800px;
-    border-radius: 10px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-    max-height: 80vh;
-    overflow-y: auto;
-}
-
-.close-modal {
-    position: absolute;
-    top: 15px;
-    right: 20px;
-    font-size: 28px;
-    font-weight: bold;
-    color: #aaa;
-    cursor: pointer;
-}
-
-.close-modal:hover {
-    color: #333;
-}
-
-#modal-title {
-    margin-top: 0;
-    margin-bottom: 20px;
-    color: var(--primary-color);
-}
-
-.modal-body {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 20px;
-}
-
-.detail-group {
-    background-color: #f8f9fa;
-    padding: 15px;
-    border-radius: 8px;
-}
-
-.detail-group h4 {
-    margin-top: 0;
-    margin-bottom: 15px;
-    color: #0288d1;
-    font-size: 1rem;
-}
-
-.detail-item {
-    margin-bottom: 10px;
-}
-
-.detail-label {
-    font-size: 0.85rem;
-    color: #666;
-    margin-bottom: 2px;
-}
-
-.detail-value {
-    font-weight: 500;
-}
-
-.label-propio {
-    background-color: #0288d1;
-    color: white;
-    padding: 3px 8px;
-    border-radius: 4px;
-    font-size: 0.75rem;
-    margin-left: 5px;
-}
-
-/* Estilos para imágenes de INE */
-.ine-container {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 15px;
-    margin-top: 15px;
-}
-
-.ine-image {
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    overflow: hidden;
-    width: 100%;
-    min-height: 200px;
-    background-color: #f5f5f5;
-    display: flex;
-    flex-direction: column;
-}
-
-.ine-image h5 {
-    background-color: #0288d1;
-    color: white;
-    margin: 0;
-    padding: 8px;
-    font-size: 0.9rem;
-    text-align: center;
-}
-
-.ine-image img {
-    width: 100%;
-    height: auto;
-    object-fit: contain;
-    max-height: 250px;
-}
-
-.ine-image .no-image {
-    height: 200px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #777;
-    font-size: 0.9rem;
-}
-
-/* Comentarios */
-.comentarios-container {
-    background-color: #f9f9f9;
-    border-left: 4px solid #0288d1;
-    padding: 10px 15px;
-    margin-top: 10px;
-    border-radius: 0 4px 4px 0;
-}
-
-.comentarios-title {
-    font-size: 0.9rem;
-    color: #666;
-    margin-bottom: 5px;
-}
-
-.comentarios-content {
-    font-style: italic;
-}
-
-/* Responsividad */
-@media (max-width: 768px) {
+    /* Badge para vendedor interno */
     .vendedor-interno-badge {
-        font-size: 0.7rem;
-        padding: 3px 8px;
-        margin-left: 5px;
+        background: linear-gradient(135deg, #2196F3, #1976D2);
+        color: white;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-left: 8px;
+        display: inline-block;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        box-shadow: 0 2px 4px rgba(33, 150, 243, 0.3);
+        animation: fadeInScale 0.3s ease-out;
+    }
+
+    @keyframes fadeInScale {
+        from {
+            opacity: 0;
+            transform: scale(0.8);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+
+    /* Card de información del vendedor */
+    .vendor-info-card {
+        background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+        border-left: 4px solid #2196F3;
+        padding: 12px 16px;
+        margin-bottom: 20px;
+        border-radius: 8px;
+        animation: slideInDown 0.5s ease-out;
+    }
+
+    @keyframes slideInDown {
+        from {
+            transform: translateY(-20px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    .vendor-info-card .info-content {
+        display: flex;
+        align-items: center;
+        font-size: 0.9rem;
+        color: #1565c0;
+        font-weight: 500;
+    }
+
+    .vendor-info-card .info-content i {
+        margin-right: 8px;
+        font-size: 1rem;
+    }
+
+    /* Filtros */
+    .filter-controls {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
     }
     
     .filter-controls .row {
-        flex-direction: column;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
     }
     
     .filter-controls .col {
-        min-width: auto;
+        flex: 1;
+        min-width: 200px;
+    }
+    
+    .filter-controls .actions {
+        display: flex;
+        align-items: flex-end;
+    }
+    
+    .form-group {
+        margin-bottom: 0;
+    }
+    
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-size: 0.9rem;
+        color: #666;
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 0.95rem;
+    }
+    
+    .search-input-container {
+        position: relative;
+    }
+    
+    .search-icon {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+    }
+    
+    .search-input {
+        width: 100%;
+        padding: 8px 15px 8px 35px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 0.95rem;
+    }
+    
+    .btn {
+        padding: 8px 16px;
+        border-radius: 4px;
+        font-size: 0.95rem;
+        cursor: pointer;
+        border: none;
+    }
+    
+    .btn-primary {
+        background-color: var(--primary-color);
+        color: white;
+    }
+    
+    .btn-outline {
+        background-color: transparent;
+        border: 1px solid #ddd;
+        color: #333;
+    }
+    
+    .btn-outline:hover {
+        background-color: #f5f5f5;
+    }
+    
+    .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    
+    /* Loader y estados */
+    .loading-spinner-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 50px 0;
+    }
+    
+    .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid rgba(0,0,0,0.1);
+        border-radius: 50%;
+        border-top-color: var(--primary-color);
+        animation: spin 1s linear infinite;
+        margin-bottom: 15px;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    
+    .alert {
+        padding: 15px 20px;
+        border-radius: 8px;
+        margin: 20px 0;
+    }
+    
+    .alert-danger {
+        background-color: #fdecea;
+        color: #ea4335;
+        border: 1px solid #fadad7;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        color: #666;
+    }
+    
+    .empty-state i {
+        font-size: 3rem;
+        color: #ddd;
+        margin-bottom: 15px;
+    }
+    
+    .empty-state h3 {
+        font-size: 1.2rem;
+        margin-bottom: 10px;
+    }
+
+    .empty-state p {
+        font-size: 0.9rem;
+        color: #888;
+    }
+    
+    /* Tabla de datos */
+    .table-responsive {
+        overflow-x: auto;
     }
     
     .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+    
+    .data-table th, .data-table td {
+        padding: 12px 15px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }
+    
+    .data-table th {
+        background-color: #f2f2f2;
+        font-weight: 600;
+    }
+    
+    .data-table tbody tr:hover {
+        background-color: #f5f5f5;
+    }
+    
+    /* Badges de estado */
+    .status-badge {
+        display: inline-block;
+        padding: 5px 10px;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+    
+    .status-pendiente {
+        background-color: #FFF3CD;
+        color: #856404;
+    }
+    
+    .status-procesando {
+        background-color: #D1ECF1;
+        color: #0C5460;
+    }
+    
+    .status-completada {
+        background-color: #D4EDDA;
+        color: #155724;
+    }
+    
+    .status-rechazada {
+        background-color: #F8D7DA;
+        color: #721C24;
+    }
+    
+    .status-cancelada {
+        background-color: #E2E3E5;
+        color: #383D41;
+    }
+    
+    /* Badge para tiendas externas */
+    .tienda-externa-badge {
+        background-color: #ff9800;
+        color: white;
+        padding: 2px 6px;
+        border-radius: 8px;
+        font-size: 0.7rem;
+        font-weight: 500;
+        margin-left: 5px;
+    }
+    
+    /* Acciones */
+    .action-btn {
+        background: none;
+        border: none;
+        color: var(--primary-color);
+        cursor: pointer;
+        margin-right: 5px;
+        font-size: 1rem;
+    }
+    
+    .action-btn:hover {
+        color: var(--primary-dark);
+    }
+    
+    /* Paginación */
+    .pagination-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 20px;
+        gap: 15px;
+    }
+    
+    #page-info {
         font-size: 0.9rem;
+        color: #666;
+    }
+    
+    /* Modal */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.7);
     }
     
     .modal-content {
-        width: 95%;
-        margin: 2% auto;
-        padding: 15px;
+        position: relative;
+        background-color: white;
+        margin: 5% auto;
+        padding: 25px;
+        width: 80%;
+        max-width: 800px;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+    
+    .close-modal {
+        position: absolute;
+        top: 15px;
+        right: 20px;
+        font-size: 28px;
+        font-weight: bold;
+        color: #aaa;
+        cursor: pointer;
+    }
+    
+    .close-modal:hover {
+        color: #333;
+    }
+    
+    #modal-title {
+        margin-top: 0;
+        margin-bottom: 20px;
+        color: var(--primary-color);
     }
     
     .modal-body {
-        grid-template-columns: 1fr;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
     }
     
-    .statistics-container {
+    .detail-group {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+    }
+    
+    .detail-group h4 {
+        margin-top: 0;
+        margin-bottom: 15px;
+        color: #0288d1;
+        font-size: 1rem;
+    }
+    
+    .detail-item {
+        margin-bottom: 10px;
+    }
+    
+    .detail-label {
+        font-size: 0.85rem;
+        color: #666;
+        margin-bottom: 2px;
+    }
+    
+    .detail-value {
+        font-weight: 500;
+    }
+    
+    .label-propio {
+        background-color: #0288d1;
+        color: white;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        margin-left: 5px;
+    }
+    
+    /* Estilos para imágenes de INE */
+    .ine-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+        margin-top: 15px;
+    }
+    
+    .ine-image {
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        overflow: hidden;
+        width: 100%;
+        min-height: 200px;
+        background-color: #f5f5f5;
+        display: flex;
         flex-direction: column;
     }
     
-    .stat-card {
-        min-width: auto;
+    .ine-image h5 {
+        background-color: #0288d1;
+        color: white;
+        margin: 0;
+        padding: 8px;
+        font-size: 0.9rem;
+        text-align: center;
     }
-}
+    
+    .ine-image img {
+        width: 100%;
+        height: auto;
+        object-fit: contain;
+        max-height: 250px;
+    }
+    
+    .ine-image .no-image {
+        height: 200px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #777;
+        font-size: 0.9rem;
+    }
+
+    /* Comentarios */
+    .comentarios-container {
+        background-color: #f9f9f9;
+        border-left: 4px solid #0288d1;
+        padding: 10px 15px;
+        margin-top: 10px;
+        border-radius: 0 4px 4px 0;
+    }
+    
+    .comentarios-title {
+        font-size: 0.9rem;
+        color: #666;
+        margin-bottom: 5px;
+    }
+    
+    .comentarios-content {
+        font-style: italic;
+    }
+
+    /* Responsividad */
+    @media (max-width: 768px) {
+        .vendedor-interno-badge {
+            font-size: 0.7rem;
+            padding: 3px 8px;
+            margin-left: 5px;
+        }
+        
+        .filter-controls .row {
+            flex-direction: column;
+        }
+        
+        .filter-controls .col {
+            min-width: auto;
+        }
+        
+        .data-table {
+            font-size: 0.9rem;
+        }
+        
+        .modal-content {
+            width: 95%;
+            margin: 2% auto;
+            padding: 15px;
+        }
+        
+        .modal-body {
+            grid-template-columns: 1fr;
+        }
+    }
 </style>
 
 <script>
     // Variables globales
     let tipoVendedor = 'externo'; // Default
-    let debugInfo = null;
     
     // Elementos del DOM
     const loadingElement = document.getElementById('solicitudes-loading');
@@ -745,19 +619,14 @@
     const solicitudesTbody = document.getElementById('solicitudes-tbody');
     const emptyState = document.getElementById('empty-state');
     const emptyMessage = document.getElementById('empty-message');
+    const emptySubtitle = document.getElementById('empty-subtitle');
     const vendedorTipoBadge = document.getElementById('vendedor-tipo-badge');
     const moduleTitle = document.getElementById('module-title');
+    const moduleDescription = document.getElementById('module-description');
     const vendorInfo = document.getElementById('vendor-info');
     const vendorInfoText = document.getElementById('vendor-info-text');
-    const estadisticasContainer = document.getElementById('estadisticas-container');
-    
-    // Elementos de estadísticas
-    const statTotal = document.getElementById('stat-total');
-    const statPendientes = document.getElementById('stat-pendientes');
-    const statProcesando = document.getElementById('stat-procesando');
-    const statCompletadas = document.getElementById('stat-completadas');
-    const statRechazadas = document.getElementById('stat-rechazadas');
-    const statCanceladas = document.getElementById('stat-canceladas');
+    const filtroOrigenContainer = document.getElementById('filtro-origen-container');
+    const tiendaColumns = document.querySelectorAll('.tienda-column');
     
     // Elementos de filtro
     const filtroEstado = document.getElementById('filtro-estado');
@@ -793,43 +662,46 @@
     // Función para actualizar la UI según el tipo de vendedor
     function updateVendedorTypeUI(tipo, debug = null) {
         tipoVendedor = tipo;
-        debugInfo = debug;
         
         if (tipo === 'interno') {
             // Mostrar badge de vendedor interno
             vendedorTipoBadge.style.display = 'inline-block';
             
-            // Agregar clase para el indicador del header
-            moduleTitle.classList.add('header-interno-indicator');
+            // Actualizar título y descripción
+            moduleTitle.innerHTML = '<i class="fas fa-exchange-alt"></i> Mis Portabilidades <span class="vendedor-interno-badge">INTERNO</span>';
+            moduleDescription.textContent = 'Gestiona tus solicitudes de portabilidad. Como vendedor interno, puedes ver solicitudes adicionales.';
             
             // Mostrar información adicional
             if (debug && debug.total_usuarios_incluidos > 1) {
                 vendorInfo.style.display = 'block';
                 vendorInfoText.textContent = `Acceso interno activo - Viendo ${debug.total_usuarios_incluidos} fuentes de datos`;
+            } else {
+                vendorInfo.style.display = 'block';
             }
+            
+            // Mostrar filtro de origen para vendedores internos
+            filtroOrigenContainer.style.display = 'block';
+            
+            // Mostrar columna de tienda para vendedores internos
+            tiendaColumns.forEach(col => col.style.display = 'table-cell');
             
             console.log('UI actualizada para vendedor interno', debug);
         } else {
-            // Ocultar badge para vendedor externo
+            // Vendedor externo
             vendedorTipoBadge.style.display = 'none';
             vendorInfo.style.display = 'none';
             
-            // Remover clase del indicador
-            moduleTitle.classList.remove('header-interno-indicator');
+            // Mantener título simple
+            moduleTitle.innerHTML = '<i class="fas fa-exchange-alt"></i> Mis Portabilidades';
+            moduleDescription.textContent = 'Gestiona tus solicitudes de portabilidad.';
+            
+            // Ocultar filtro de origen para vendedores externos
+            filtroOrigenContainer.style.display = 'none';
+            
+            // Ocultar columna de tienda para vendedores externos
+            tiendaColumns.forEach(col => col.style.display = 'none');
             
             console.log('UI actualizada para vendedor externo');
-        }
-    }
-    
-    // Función para actualizar las estadísticas
-    function updateEstadisticas(estadisticas) {
-        if (estadisticas) {
-            statTotal.textContent = estadisticas.total || 0;
-            statPendientes.textContent = estadisticas.pendientes || 0;
-            statProcesando.textContent = estadisticas.procesando || 0;
-            statCompletadas.textContent = estadisticas.completadas || 0;
-            statRechazadas.textContent = estadisticas.rechazadas || 0;
-            statCanceladas.textContent = estadisticas.canceladas || 0;
         }
     }
     
@@ -925,14 +797,10 @@
                 updateVendedorTypeUI(data.tipo_vendedor, data.debug_info);
             }
             
-            // Actualizar estadísticas
-            updateEstadisticas(data.estadisticas);
-            
             allSolicitudes = data.solicitudes || [];
             
             console.log('Solicitudes recibidas:', allSolicitudes.length);
             console.log('Tipo de vendedor:', data.tipo_vendedor);
-            console.log('Debug info:', data.debug_info);
             
             // Normalizar estados
             allSolicitudes.forEach(solicitud => {
@@ -958,7 +826,8 @@
                 return false;
             }
             
-            if (origen !== '') {
+            // Solo aplicar filtro de origen si el vendedor es interno
+            if (tipoVendedor === 'interno' && origen !== '') {
                 const esPropia = parseInt(solicitud.es_propia) === 1;
                 if ((origen === '1' && !esPropia) || (origen === '0' && esPropia)) {
                     return false;
@@ -1006,7 +875,11 @@
         totalPagesElement.textContent = totalPages;
         
         if (filteredSolicitudes.length === 0) {
-            showEmptyState('No se encontraron solicitudes con los filtros seleccionados');
+            if (tipoVendedor === 'interno') {
+                showEmptyState('No se encontraron solicitudes con los filtros seleccionados');
+            } else {
+                showEmptyState('Aún no tienes solicitudes de portabilidad');
+            }
             return;
         }
         
@@ -1053,12 +926,24 @@
             
             const idOriginal = String(solicitud.id);
             
-            // Procesar nombre de tienda con badges apropiados
-            let tiendaDisplay = solicitud.nombre_tienda || 'Sin tienda';
-            
-            // Agregar badge para tiendas externas
-            if (tiendaDisplay.includes('(Externa)')) {
-                tiendaDisplay = tiendaDisplay.replace('(Externa)', '<span class="tienda-externa-badge">EXTERNA</span>');
+            // Preparar celda de tienda (solo para vendedores internos)
+            let tiendaCell = '';
+            if (tipoVendedor === 'interno') {
+                let tiendaDisplay = solicitud.nombre_tienda || 'Sin tienda';
+                
+                // Agregar badge para tiendas externas
+                if (tiendaDisplay.includes('(Externa)')) {
+                    tiendaDisplay = tiendaDisplay.replace('(Externa)', '<span class="tienda-externa-badge">EXTERNA</span>');
+                }
+                
+                // Agregar badge para solicitudes propias
+                if (parseInt(solicitud.es_propia) === 1) {
+                    tiendaDisplay = 'Mi solicitud <span class="label-propio">Tú</span>';
+                }
+                
+                tiendaCell = `<td class="tienda-column">${tiendaDisplay}</td>`;
+            } else {
+                tiendaCell = `<td class="tienda-column" style="display: none;"></td>`;
             }
             
             const row = document.createElement('tr');
@@ -1069,7 +954,7 @@
                 <td>${solicitud.nip_portabilidad || 'No disponible'}</td>
                 <td>${solicitud.operador_destino || 'No disponible'}</td>
                 <td>${fechaFormateada}</td>
-                <td>${tiendaDisplay}</td>
+                ${tiendaCell}
                 <td><span class="status-badge ${estadoClass}">${estado}</span></td>
                 <td>
                     <button class="action-btn" title="Ver detalles" onclick="verDetalles('${idOriginal}')">
@@ -1122,18 +1007,32 @@
             `;
         }
         
-        // Procesar nombre de tienda para el modal
-        let tiendaDisplayModal = solicitud.nombre_tienda || 'Sin tienda asignada';
-        let etiquetasEspeciales = '';
-        
-        if (parseInt(solicitud.es_propia) === 1) {
-            etiquetasEspeciales = '<span class="label-propio">Tú</span>';
-        }
-        
-        // Agregar badge para tiendas externas
-        if (tiendaDisplayModal.includes('(Externa)')) {
-            tiendaDisplayModal = tiendaDisplayModal.replace('(Externa)', '');
-            etiquetasEspeciales += ' <span class="tienda-externa-badge">EXTERNA</span>';
+        // Sección de tienda solo para vendedores internos
+        let tiendaSection = '';
+        if (tipoVendedor === 'interno') {
+            let tiendaDisplayModal = solicitud.nombre_tienda || 'Sin tienda asignada';
+            let etiquetasEspeciales = '';
+            
+            if (parseInt(solicitud.es_propia) === 1) {
+                tiendaDisplayModal = 'Mi solicitud';
+                etiquetasEspeciales = '<span class="label-propio">Tú</span>';
+            }
+            
+            // Agregar badge para tiendas externas
+            if (tiendaDisplayModal.includes('(Externa)')) {
+                tiendaDisplayModal = tiendaDisplayModal.replace('(Externa)', '');
+                etiquetasEspeciales += ' <span class="tienda-externa-badge">EXTERNA</span>';
+            }
+            
+            tiendaSection = `
+                <div class="detail-item">
+                    <div class="detail-label">Tienda:</div>
+                    <div class="detail-value">
+                        ${tiendaDisplayModal}
+                        ${etiquetasEspeciales}
+                    </div>
+                </div>
+            `;
         }
         
         modalContent.innerHTML = `
@@ -1191,13 +1090,7 @@
                     <div class="detail-label">Fecha de creación:</div>
                     <div class="detail-value">${fechaFormateada}</div>
                 </div>
-                <div class="detail-item">
-                    <div class="detail-label">Tienda:</div>
-                    <div class="detail-value">
-                        ${tiendaDisplayModal}
-                        ${etiquetasEspeciales}
-                    </div>
-                </div>
+                ${tiendaSection}
                 ${comentariosHtml}
             </div>
             
@@ -1241,7 +1134,6 @@
         errorElement.style.display = 'none';
         solicitudesContainer.style.display = 'none';
         emptyState.style.display = 'none';
-        estadisticasContainer.style.display = 'none';
     }
     
     function showError(message) {
@@ -1249,7 +1141,6 @@
         errorElement.style.display = 'block';
         solicitudesContainer.style.display = 'none';
         emptyState.style.display = 'none';
-        estadisticasContainer.style.display = 'none';
         errorMessageElement.textContent = message;
     }
     
@@ -1258,7 +1149,6 @@
         errorElement.style.display = 'none';
         solicitudesContainer.style.display = 'block';
         emptyState.style.display = 'none';
-        estadisticasContainer.style.display = 'flex';
     }
     
     function showEmptyState(message) {
@@ -1266,7 +1156,13 @@
         errorElement.style.display = 'none';
         solicitudesContainer.style.display = 'none';
         emptyState.style.display = 'block';
-        estadisticasContainer.style.display = 'flex';
         emptyMessage.textContent = message;
+        
+        // Ajustar subtítulo según el tipo de vendedor
+        if (tipoVendedor === 'externo') {
+            emptySubtitle.textContent = 'Aún no tienes solicitudes de portabilidad.';
+        } else {
+            emptySubtitle.textContent = 'Prueba ajustando los filtros para ver más resultados.';
+        }
     }
 </script>
