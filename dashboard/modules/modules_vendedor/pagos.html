@@ -1,8 +1,17 @@
 <div class="card">
-    <h2 class="content-title">
-        <i class="fas fa-money-bill-wave"></i> Gestión de Pagos de Servicios
+    <h2 class="content-title" id="module-title">
+        <i class="fas fa-money-bill-wave"></i> Mis Pagos de Servicios
+        <span id="vendedor-tipo-badge" class="vendedor-interno-badge" style="display: none;">INTERNO</span>
     </h2>
-    <p>Gestiona las solicitudes de pago de servicios realizadas por ti y tus vendedores.</p>
+    <p id="module-description">Gestiona tus solicitudes de pago de servicios.</p>
+    
+    <!-- Información del vendedor interno -->
+    <div id="vendor-info" class="vendor-info-card" style="display: none;">
+        <div class="info-content">
+            <i class="fas fa-info-circle"></i>
+            <span id="vendor-info-text">Acceso interno activo - Puedes ver solicitudes adicionales</span>
+        </div>
+    </div>
     
     <!-- Filtros -->
     <div class="filter-controls">
@@ -20,13 +29,13 @@
                     </select>
                 </div>
             </div>
-            <div class="col">
+            <div class="col" id="filtro-origen-container" style="display: none;">
                 <div class="form-group">
                     <label for="filtro-origen">Origen:</label>
                     <select id="filtro-origen" class="form-control">
                         <option value="">Todos</option>
                         <option value="1">Mis solicitudes</option>
-                        <option value="0">De vendedores</option>
+                        <option value="0">Otras tiendas</option>
                     </select>
                 </div>
             </div>
@@ -115,6 +124,7 @@
                         <th>Monto</th>
                         <th>Contacto</th>
                         <th>Fecha</th>
+                        <th class="tienda-column" style="display: none;">Tienda</th>
                         <th>Estado</th>
                         <th>Acciones</th>
                     </tr>
@@ -139,6 +149,7 @@
     <div id="empty-state" class="empty-state" style="display: none;">
         <i class="fas fa-file-invoice-dollar"></i>
         <h3 id="empty-message">No se encontraron solicitudes</h3>
+        <p id="empty-subtitle">Aún no tienes solicitudes de pago de servicios.</p>
     </div>
     
     <!-- Modal de detalles -->
@@ -154,6 +165,67 @@
 </div>
 
 <style>
+    /* Badge para vendedor interno */
+    .vendedor-interno-badge {
+        background: linear-gradient(135deg, #2196F3, #1976D2);
+        color: white;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-left: 8px;
+        display: inline-block;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        box-shadow: 0 2px 4px rgba(33, 150, 243, 0.3);
+        animation: fadeInScale 0.3s ease-out;
+    }
+
+    @keyframes fadeInScale {
+        from {
+            opacity: 0;
+            transform: scale(0.8);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+
+    /* Card de información del vendedor */
+    .vendor-info-card {
+        background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+        border-left: 4px solid #2196F3;
+        padding: 12px 16px;
+        margin-bottom: 20px;
+        border-radius: 8px;
+        animation: slideInDown 0.5s ease-out;
+    }
+
+    @keyframes slideInDown {
+        from {
+            transform: translateY(-20px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    .vendor-info-card .info-content {
+        display: flex;
+        align-items: center;
+        font-size: 0.9rem;
+        color: #1565c0;
+        font-weight: 500;
+    }
+
+    .vendor-info-card .info-content i {
+        margin-right: 8px;
+        font-size: 1rem;
+    }
+
     /* Estadísticas */
     .statistics-container {
         display: flex;
@@ -343,6 +415,11 @@
         font-size: 1.2rem;
         margin-bottom: 10px;
     }
+
+    .empty-state p {
+        font-size: 0.9rem;
+        color: #888;
+    }
     
     /* Tabla de datos */
     .table-responsive {
@@ -402,6 +479,17 @@
     .status-cancelada {
         background-color: #E2E3E5;
         color: #383D41;
+    }
+    
+    /* Badge para tiendas externas */
+    .tienda-externa-badge {
+        background-color: #ff9800;
+        color: white;
+        padding: 2px 6px;
+        border-radius: 8px;
+        font-size: 0.7rem;
+        font-weight: 500;
+        margin-left: 5px;
     }
     
     /* Acciones */
@@ -540,50 +628,83 @@
     
     /* Estilos para el ticket */
     .ticket-modal {
-    max-width: 400px; /* Reducir el ancho para mejor apariencia */
-}
-
-.ticket-container {
-    background-color: white;
-    padding: 20px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    margin: 20px 0;
-    font-family: monospace;
-    white-space: pre-wrap;
-    font-size: 16px; /* Aumentado de 14px */
-    line-height: 1.6; /* Aumentado de 1.4 */
-    text-align: center; /* Centrar todo el texto */
-}
-
-.ticket-actions {
-    display: flex;
-    justify-content: center;
-    margin-top: 15px;
-}
-
-/* Estilo para impresión */
-@media print {
-    body * {
-        visibility: hidden;
+        max-width: 400px;
     }
-    .ticket-container, .ticket-container * {
-        visibility: visible;
-    }
+
     .ticket-container {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        padding: 15px;
-        text-align: center;
+        background-color: white;
+        padding: 20px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        margin: 20px 0;
+        font-family: monospace;
+        white-space: pre-wrap;
         font-size: 16px;
+        line-height: 1.6;
+        text-align: center;
     }
 
+    .ticket-actions {
+        display: flex;
+        justify-content: center;
+        margin-top: 15px;
+    }
+
+    /* Estilo para impresión */
+    @media print {
+        body * {
+            visibility: hidden;
+        }
+        .ticket-container, .ticket-container * {
+            visibility: visible;
+        }
+        .ticket-container {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            padding: 15px;
+            text-align: center;
+            font-size: 16px;
+        }
+    }
+
+    /* Responsividad */
+    @media (max-width: 768px) {
+        .vendedor-interno-badge {
+            font-size: 0.7rem;
+            padding: 3px 8px;
+            margin-left: 5px;
+        }
+        
+        .filter-controls .row {
+            flex-direction: column;
+        }
+        
+        .filter-controls .col {
+            min-width: auto;
+        }
+        
+        .data-table {
+            font-size: 0.9rem;
+        }
+        
+        .modal-content {
+            width: 95%;
+            margin: 2% auto;
+            padding: 15px;
+        }
+        
+        .modal-body {
+            grid-template-columns: 1fr;
+        }
     }
 </style>
 
 <script>
+    // Variables globales
+    let tipoVendedor = 'externo'; // Default
+    
     // Elementos del DOM
     const loadingElement = document.getElementById('solicitudes-loading');
     const errorElement = document.getElementById('solicitudes-error');
@@ -592,7 +713,15 @@
     const solicitudesTbody = document.getElementById('solicitudes-tbody');
     const emptyState = document.getElementById('empty-state');
     const emptyMessage = document.getElementById('empty-message');
+    const emptySubtitle = document.getElementById('empty-subtitle');
     const estadisticasContainer = document.getElementById('estadisticas-container');
+    const vendedorTipoBadge = document.getElementById('vendedor-tipo-badge');
+    const moduleTitle = document.getElementById('module-title');
+    const moduleDescription = document.getElementById('module-description');
+    const vendorInfo = document.getElementById('vendor-info');
+    const vendorInfoText = document.getElementById('vendor-info-text');
+    const filtroOrigenContainer = document.getElementById('filtro-origen-container');
+    const tiendaColumns = document.querySelectorAll('.tienda-column');
     
     // Elementos de estadísticas
     const statTotal = document.getElementById('stat-total');
@@ -622,7 +751,7 @@
     
     // Obtener datos del usuario
     const userUID = sessionStorage.getItem('userUID') || '';
-    const userRole = sessionStorage.getItem('userRole') || 'subdistribuidor';
+    const userRole = sessionStorage.getItem('userRole') || 'vendedor';
     
     // Variables para almacenar datos
     let allSolicitudes = [];
@@ -630,12 +759,58 @@
     
     // Variables para paginación
     let currentPage = 1;
-    const itemsPerPage = 5; // Mostrar 5 solicitudes por página
+    const itemsPerPage = 5;
     let totalPages = 1;
+    
+    // Función para actualizar la UI según el tipo de vendedor
+    function updateVendedorTypeUI(tipo, debug = null) {
+        tipoVendedor = tipo;
+        
+        if (tipo === 'interno') {
+            // Mostrar badge de vendedor interno
+            vendedorTipoBadge.style.display = 'inline-block';
+            
+            // Actualizar título y descripción
+            moduleTitle.innerHTML = '<i class="fas fa-money-bill-wave"></i> Mis Pagos de Servicios <span class="vendedor-interno-badge">INTERNO</span>';
+            moduleDescription.textContent = 'Gestiona tus solicitudes de pago de servicios. Como vendedor interno, puedes ver solicitudes adicionales.';
+            
+            // Mostrar información adicional
+            if (debug && debug.total_usuarios_incluidos > 1) {
+                vendorInfo.style.display = 'block';
+                vendorInfoText.textContent = `Acceso interno activo - Viendo ${debug.total_usuarios_incluidos} fuentes de datos`;
+            } else {
+                vendorInfo.style.display = 'block';
+            }
+            
+            // Mostrar filtro de origen para vendedores internos
+            filtroOrigenContainer.style.display = 'block';
+            
+            // Mostrar columna de tienda para vendedores internos
+            tiendaColumns.forEach(col => col.style.display = 'table-cell');
+            
+            console.log('UI actualizada para vendedor interno', debug);
+        } else {
+            // Vendedor externo
+            vendedorTipoBadge.style.display = 'none';
+            vendorInfo.style.display = 'none';
+            
+            // Mantener título simple
+            moduleTitle.innerHTML = '<i class="fas fa-money-bill-wave"></i> Mis Pagos de Servicios';
+            moduleDescription.textContent = 'Gestiona tus solicitudes de pago de servicios.';
+            
+            // Ocultar filtro de origen para vendedores externos
+            filtroOrigenContainer.style.display = 'none';
+            
+            // Ocultar columna de tienda para vendedores externos
+            tiendaColumns.forEach(col => col.style.display = 'none');
+            
+            console.log('UI actualizada para vendedor externo');
+        }
+    }
     
     // Event listeners
     filtroEstado.addEventListener('change', () => {
-        currentPage = 1; // Reiniciar a la primera página al filtrar
+        currentPage = 1;
         aplicarFiltros();
     });
     
@@ -678,7 +853,6 @@
     function normalizarEstado(estadoOriginal) {
         if (!estadoOriginal) return 'pendiente';
         
-        // Convertir a string y minúsculas
         const estado = String(estadoOriginal).trim().toLowerCase();
         
         switch(estado) {
@@ -694,26 +868,22 @@
         }
     }
     
-    // Inicialización - Esta llamada inmediata es crucial
+    // Inicialización
     loadSolicitudesPagoservicios();
     
     // Función para cargar solicitudes desde la API
     async function loadSolicitudesPagoservicios() {
         try {
-            // Mostrar spinner de carga
             showLoading();
             
             console.log('Iniciando carga de solicitudes de pagos para UID:', userUID, 'Role:', userRole);
             
-            // Hacer solicitud a la API incluyendo role para mayor seguridad
             const response = await fetch(`../api/get_solicitudes_pagoservicios.php?uid=${encodeURIComponent(userUID)}&role=${encodeURIComponent(userRole)}`);
             
-            // Obtener el texto para depuración
             const responseText = await response.text();
             
             let data;
             try {
-                // Intentar parsear como JSON
                 data = JSON.parse(responseText);
                 console.log('Respuesta completa de la API:', data);
             } catch (jsonError) {
@@ -721,25 +891,27 @@
                 throw new Error(`Error de formato en la respuesta: ${responseText.substring(0, 100)}...`);
             }
             
-            // Verificar si hay un mensaje de error
             if (!data.success) {
                 throw new Error(data.error || "Error desconocido en la respuesta");
             }
             
-            // Guardar todas las solicitudes y estadísticas
+            // Actualizar UI según el tipo de vendedor
+            if (data.tipo_vendedor) {
+                updateVendedorTypeUI(data.tipo_vendedor, data.debug_info);
+            }
+            
             allSolicitudes = data.solicitudes || [];
             
-            // Actualizar estadísticas en la interfaz
             updateEstadisticas(data.estadisticas);
             
             console.log('Solicitudes recibidas:', allSolicitudes.length);
+            console.log('Tipo de vendedor:', data.tipo_vendedor);
             
             // Normalizar estados
             allSolicitudes.forEach(solicitud => {
                 solicitud.estado_solicitud = normalizarEstado(solicitud.estado_solicitud);
             });
             
-            // Aplicar filtros iniciales
             aplicarFiltros();
             
         } catch (error) {
@@ -766,22 +938,19 @@
         const origen = filtroOrigen.value;
         const termino = busquedaInput.value.trim().toLowerCase();
         
-        // Filtrar solicitudes
         filteredSolicitudes = allSolicitudes.filter(solicitud => {
-            // Filtro por estado
             if (estado && solicitud.estado_solicitud !== estado) {
                 return false;
             }
             
-            // Filtro por origen (propias o de vendedores)
-            if (origen !== '') {
+            // Solo aplicar filtro de origen si el vendedor es interno
+            if (tipoVendedor === 'interno' && origen !== '') {
                 const esPropia = parseInt(solicitud.es_propia) === 1;
                 if ((origen === '1' && !esPropia) || (origen === '0' && esPropia)) {
                     return false;
                 }
             }
             
-            // Filtro por término de búsqueda
             if (termino) {
                 const coincideNombre = solicitud.user_name && 
                                      solicitud.user_name.toLowerCase().includes(termino);
@@ -793,8 +962,10 @@
                                      solicitud.proveedor.toLowerCase().includes(termino);
                 const coincideTipoServicio = solicitud.tipo_servicio && 
                                            solicitud.tipo_servicio.toLowerCase().includes(termino);
+                const coincideTienda = solicitud.nombre_tienda && 
+                                     solicitud.nombre_tienda.toLowerCase().includes(termino);
                 
-                if (!coincideNombre && !coincideCuenta && !coincideNumero && !coincideProveedor && !coincideTipoServicio) {
+                if (!coincideNombre && !coincideCuenta && !coincideNumero && !coincideProveedor && !coincideTipoServicio && !coincideTienda) {
                     return false;
                 }
             }
@@ -802,58 +973,49 @@
             return true;
         });
         
-        // Calcular número total de páginas
         totalPages = Math.max(1, Math.ceil(filteredSolicitudes.length / itemsPerPage));
         
-        // Ajustar página actual si es necesario
         if (currentPage > totalPages) {
             currentPage = totalPages;
         }
         
-        // Actualizar elementos de paginación
         currentPageElement.textContent = currentPage;
         totalPagesElement.textContent = totalPages;
         
-        // Renderizar resultados
         renderizarPagina();
     }
     
     // Función para renderizar la página actual
     function renderizarPagina() {
-        // Habilitar/deshabilitar botones de paginación
         prevPageBtn.disabled = currentPage <= 1;
         nextPageBtn.disabled = currentPage >= totalPages;
         
-        // Actualizar info de página
         currentPageElement.textContent = currentPage;
         totalPagesElement.textContent = totalPages;
         
-        // Si no hay resultados, mostrar estado vacío
         if (filteredSolicitudes.length === 0) {
-            showEmptyState('No se encontraron solicitudes con los filtros seleccionados');
+            if (tipoVendedor === 'interno') {
+                showEmptyState('No se encontraron solicitudes con los filtros seleccionados');
+            } else {
+                showEmptyState('Aún no tienes solicitudes de pago de servicios');
+            }
             return;
         }
         
-        // Calcular índices para paginación
         const startIndex = (currentPage - 1) * itemsPerPage;
         const endIndex = Math.min(startIndex + itemsPerPage, filteredSolicitudes.length);
         
-        // Obtener las solicitudes para esta página
         const solicitudesPagina = filteredSolicitudes.slice(startIndex, endIndex);
         
-        // Renderizar solicitudes de esta página
         renderSolicitudes(solicitudesPagina);
         showContent();
     }
     
     // Función para renderizar solicitudes
     function renderSolicitudes(solicitudes) {
-        // Limpiar el contenedor
         solicitudesTbody.innerHTML = '';
         
-        // Crear filas para cada solicitud
         solicitudes.forEach(solicitud => {
-            // Determinar clase para el estado
             let estadoClass = '';
             let estado = solicitud.estado_solicitud || 'pendiente';
             
@@ -865,7 +1027,6 @@
                 case 'cancelada': estadoClass = 'status-cancelada'; break;
             }
             
-            // Formatear fecha
             let fechaFormateada = 'No disponible';
             if (solicitud.fecha_creacion) {
                 try {
@@ -880,7 +1041,6 @@
                 }
             }
             
-            // Formatear monto con separador de miles
             let montoFormateado = 'No disponible';
             if (solicitud.monto) {
                 try {
@@ -890,7 +1050,26 @@
                 }
             }
             
-            // Crear fila de la tabla
+            // Preparar celda de tienda (solo para vendedores internos)
+            let tiendaCell = '';
+            if (tipoVendedor === 'interno') {
+                let tiendaDisplay = solicitud.nombre_tienda || 'Sin tienda';
+                
+                // Agregar badge para tiendas externas
+                if (tiendaDisplay.includes('(Externa)')) {
+                    tiendaDisplay = tiendaDisplay.replace('(Externa)', '<span class="tienda-externa-badge">EXTERNA</span>');
+                }
+                
+                // Agregar badge para solicitudes propias
+                if (parseInt(solicitud.es_propia) === 1) {
+                    tiendaDisplay = 'Mi solicitud <span class="label-propio">Tú</span>';
+                }
+                
+                tiendaCell = `<td class="tienda-column">${tiendaDisplay}</td>`;
+            } else {
+                tiendaCell = `<td class="tienda-column" style="display: none;"></td>`;
+            }
+            
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${solicitud.id}</td>
@@ -901,6 +1080,7 @@
                 <td>${montoFormateado}</td>
                 <td>${solicitud.numero_contacto || 'No disponible'}</td>
                 <td>${fechaFormateada}</td>
+                ${tiendaCell}
                 <td><span class="status-badge ${estadoClass}">${estado}</span></td>
                 <td>
                     <button class="action-btn" title="Ver detalles" onclick="verDetalles('${solicitud.id}')">
@@ -920,7 +1100,6 @@
     window.verDetalles = function(id) {
         console.log('Buscando solicitud con ID:', id);
         
-        // Buscar la solicitud
         const solicitud = allSolicitudes.find(s => String(s.id) === String(id));
         
         if (!solicitud) {
@@ -929,10 +1108,8 @@
             return;
         }
         
-        // Normalizar el estado
         const estado = solicitud.estado_solicitud;
         
-        // Formatear fecha
         let fechaFormateada = 'No disponible';
         if (solicitud.fecha_creacion) {
             try {
@@ -943,7 +1120,6 @@
             }
         }
         
-        // Formatear monto
         let montoFormateado = 'No disponible';
         if (solicitud.monto) {
             try {
@@ -953,10 +1129,8 @@
             }
         }
         
-        // Título del modal con estado
         modalTitle.textContent = `Pago de Servicio #${solicitud.id} (${estado})`;
         
-        // Preparar sección de comentarios
         let comentariosHtml = '';
         if (solicitud.comentarios && solicitud.comentarios.trim() !== '') {
             comentariosHtml = `
@@ -969,16 +1143,40 @@
             `;
         }
         
-        // Contenido del modal
+        // Sección de tienda solo para vendedores internos
+        let tiendaSection = '';
+        if (tipoVendedor === 'interno') {
+            let tiendaDisplayModal = solicitud.nombre_tienda || 'Sin tienda asignada';
+            let etiquetasEspeciales = '';
+            
+            if (parseInt(solicitud.es_propia) === 1) {
+                tiendaDisplayModal = 'Mi solicitud';
+                etiquetasEspeciales = '<span class="label-propio">Tú</span>';
+            }
+            
+            // Agregar badge para tiendas externas
+            if (tiendaDisplayModal.includes('(Externa)')) {
+                tiendaDisplayModal = tiendaDisplayModal.replace('(Externa)', '');
+                etiquetasEspeciales += ' <span class="tienda-externa-badge">EXTERNA</span>';
+            }
+            
+            tiendaSection = `
+                <div class="detail-item">
+                    <div class="detail-label">Tienda:</div>
+                    <div class="detail-value">
+                        ${tiendaDisplayModal}
+                        ${etiquetasEspeciales}
+                    </div>
+                </div>
+            `;
+        }
+        
         modalContent.innerHTML = `
             <div class="detail-group">
                 <h4>Información del Cliente</h4>
                 <div class="detail-item">
                     <div class="detail-label">Nombre/Tienda:</div>
-                    <div class="detail-value">
-                        ${solicitud.user_name || 'No disponible'}
-                        ${parseInt(solicitud.es_propia) === 1 ? '<span class="label-propio">Tú</span>' : ''}
-                    </div>
+                    <div class="detail-value">${solicitud.user_name || 'No disponible'}</div>
                 </div>
                 <div class="detail-item">
                     <div class="detail-label">Número de contacto:</div>
@@ -1020,30 +1218,27 @@
                     <div class="detail-label">Fecha de creación:</div>
                     <div class="detail-value">${fechaFormateada}</div>
                 </div>
+                ${tiendaSection}
                 ${comentariosHtml}
             </div>
         `;
         
-        // Mostrar modal
         modal.style.display = 'block';
     };
     
     // Función para generar ticket (debe ser global)
     window.generarTicket = async function(id) {
         try {
-            // Mostrar spinner o indicador de carga
             showLoading();
             
             console.log('Generando ticket para solicitud ID:', id);
             
-            // Preparar datos para la solicitud
             const data = {
                 id: id,
                 uid: userUID,
                 role: userRole
             };
             
-            // Hacer solicitud a la API
             const response = await fetch('../api/generar_ticket.php', {
                 method: 'POST',
                 headers: {
@@ -1052,14 +1247,12 @@
                 body: JSON.stringify(data)
             });
             
-            // Obtener respuesta
             const result = await response.json();
             
             if (!result.success) {
                 throw new Error(result.error || 'Error desconocido al generar el ticket');
             }
             
-            // Mostrar el ticket en un modal
             mostrarTicketModal(result.ticket, result.folio);
             
         } catch (error) {
@@ -1072,119 +1265,107 @@
 
     // Función para mostrar el ticket en un modal
     function mostrarTicketModal(ticket, folio) {
-    // Crear modal específico para el ticket
-    const ticketModal = document.createElement('div');
-    ticketModal.className = 'modal';
-    ticketModal.id = 'modal-ticket';
-    ticketModal.style.display = 'block';
-    
-    // Formatear el ticket para HTML (reemplazar saltos de línea)
-    const ticketHtml = ticket.replace(/\n/g, '<br>');
-    
-    // Contenido del modal
-    ticketModal.innerHTML = `
-        <div class="modal-content ticket-modal">
-            <span class="close-modal">&times;</span>
-            <h3>Ticket Generado</h3>
-            <div class="ticket-container">
-                <pre>${ticketHtml}</pre>
+        const ticketModal = document.createElement('div');
+        ticketModal.className = 'modal';
+        ticketModal.id = 'modal-ticket';
+        ticketModal.style.display = 'block';
+        
+        const ticketHtml = ticket.replace(/\n/g, '<br>');
+        
+        ticketModal.innerHTML = `
+            <div class="modal-content ticket-modal">
+                <span class="close-modal">&times;</span>
+                <h3>Ticket Generado</h3>
+                <div class="ticket-container">
+                    <pre>${ticketHtml}</pre>
+                </div>
+                <div class="ticket-actions">
+                    <button class="btn btn-primary" onclick="imprimirTicket('${folio}')">
+                        <i class="fas fa-print"></i> Imprimir
+                    </button>
+                </div>
             </div>
-            <div class="ticket-actions">
-                <button class="btn btn-primary" onclick="imprimirTicket('${folio}')">
-                    <i class="fas fa-print"></i> Imprimir
-                </button>
-            </div>
-        </div>
-    `;
-    
-    // Añadir el modal al DOM
-    document.body.appendChild(ticketModal);
-    
-    // Configurar el botón para cerrar
-    const closeButton = ticketModal.querySelector('.close-modal');
-    closeButton.addEventListener('click', function() {
-        document.body.removeChild(ticketModal);
-    });
-    
-    // Cerrar el modal si se hace clic fuera del contenido
-    window.addEventListener('click', function(event) {
-        if (event.target === ticketModal) {
+        `;
+        
+        document.body.appendChild(ticketModal);
+        
+        const closeButton = ticketModal.querySelector('.close-modal');
+        closeButton.addEventListener('click', function() {
             document.body.removeChild(ticketModal);
-        }
-    });
-}
+        });
+        
+        window.addEventListener('click', function(event) {
+            if (event.target === ticketModal) {
+                document.body.removeChild(ticketModal);
+            }
+        });
+    }
 
     // Función para imprimir el ticket
-window.imprimirTicket = function(folio, ticketContent) {
-    // Crear un iframe invisible para imprimir
-    const printFrame = document.createElement('iframe');
-    printFrame.style.position = 'fixed';
-    printFrame.style.right = '0';
-    printFrame.style.bottom = '0';
-    printFrame.style.width = '0';
-    printFrame.style.height = '0';
-    printFrame.style.border = '0';
-    document.body.appendChild(printFrame);
-    
-    // Formatear el ticket para HTML si es necesario
-    const ticketHtml = typeof ticketContent === 'string' 
-        ? ticketContent.replace(/\n/g, '<br>') 
-        : document.querySelector('.ticket-container pre').innerHTML;
-    
-    // Escribir el contenido HTML en el iframe
-    const frameDoc = printFrame.contentDocument || printFrame.contentWindow.document;
-    
-    frameDoc.write(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Ticket de Pago</title>
-            <style>
-                body {
-                    font-family: 'Courier New', monospace;
-                    font-weight: bold;
-                    font-size: 16px;
-                    text-align: center;
-                    color: #000;
-                    line-height: 1.6;
-                    padding: 20px;
-                }
-                pre {
-                    font-family: 'Courier New', monospace;
-                    font-weight: bold;
-                    font-size: 16px;
-                    margin: 0;
-                    white-space: pre-wrap;
-                    text-align: center;
-                }
-                @media print {
-                    @page {
-                        margin: 0.5cm;
-                    }
-                }
-            </style>
-        </head>
-        <body>
-            <pre>${ticketHtml}</pre>
-        </body>
-        </html>
-    `);
-    
-    frameDoc.close();
-    
-    // Esperar un poco para que los estilos se apliquen
-    setTimeout(function() {
-        printFrame.contentWindow.focus();
-        printFrame.contentWindow.print();
+    window.imprimirTicket = function(folio, ticketContent) {
+        const printFrame = document.createElement('iframe');
+        printFrame.style.position = 'fixed';
+        printFrame.style.right = '0';
+        printFrame.style.bottom = '0';
+        printFrame.style.width = '0';
+        printFrame.style.height = '0';
+        printFrame.style.border = '0';
+        document.body.appendChild(printFrame);
         
-        // Eliminar el iframe después de la impresión
+        const ticketHtml = typeof ticketContent === 'string' 
+            ? ticketContent.replace(/\n/g, '<br>') 
+            : document.querySelector('.ticket-container pre').innerHTML;
+        
+        const frameDoc = printFrame.contentDocument || printFrame.contentWindow.document;
+        
+        frameDoc.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Ticket de Pago</title>
+                <style>
+                    body {
+                        font-family: 'Courier New', monospace;
+                        font-weight: bold;
+                        font-size: 16px;
+                        text-align: center;
+                        color: #000;
+                        line-height: 1.6;
+                        padding: 20px;
+                    }
+                    pre {
+                        font-family: 'Courier New', monospace;
+                        font-weight: bold;
+                        font-size: 16px;
+                        margin: 0;
+                        white-space: pre-wrap;
+                        text-align: center;
+                    }
+                    @media print {
+                        @page {
+                            margin: 0.5cm;
+                        }
+                    }
+                </style>
+            </head>
+            <body>
+                <pre>${ticketHtml}</pre>
+            </body>
+            </html>
+        `);
+        
+        frameDoc.close();
+        
         setTimeout(function() {
-            document.body.removeChild(printFrame);
-            // Mostrar un mensaje de éxito en lugar de volver a abrir el modal
-            alert("El ticket se ha enviado a la impresora");
-        }, 500);
-    }, 250);
-};
+            printFrame.contentWindow.focus();
+            printFrame.contentWindow.print();
+            
+            setTimeout(function() {
+                document.body.removeChild(printFrame);
+                alert("El ticket se ha enviado a la impresora");
+            }, 500);
+        }, 250);
+    };
     
     // Función para obtener clase CSS según estado
     function getEstadoClass(estado) {
@@ -1231,6 +1412,13 @@ window.imprimirTicket = function(folio, ticketContent) {
         emptyState.style.display = 'block';
         estadisticasContainer.style.display = 'flex';
         emptyMessage.textContent = message;
+        
+        // Ajustar subtítulo según el tipo de vendedor
+        if (tipoVendedor === 'externo') {
+            emptySubtitle.textContent = 'Aún no tienes solicitudes de pago de servicios.';
+        } else {
+            emptySubtitle.textContent = 'Prueba ajustando los filtros para ver más resultados.';
+        }
     }
     
     function hideLoading() {

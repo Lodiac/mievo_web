@@ -12,9 +12,9 @@ try {
     $uid = $_GET['uid'];
     $role = $_GET['role'];
     
-    // Permitir tanto a subdistribuidores como vendedores usar esta API
-    if ($role !== 'subdistribuidor' && $role !== 'vendedor') {
-        throw new Exception("Esta API solo está disponible para subdistribuidores y vendedores");
+    // Permitir a admin, subdistribuidores y vendedores usar esta API
+    if ($role !== 'admin' && $role !== 'subdistribuidor' && $role !== 'vendedor') {
+        throw new Exception("Esta API solo está disponible para admins, subdistribuidores y vendedores");
     }
     
     $con = conexiondb();
@@ -75,6 +75,122 @@ try {
             }
         }
         mysqli_stmt_close($stmt_vendedores);
+        
+    } elseif ($role === 'admin') {
+        // ADMIN: QUERY INVERSA SIMPLIFICADA (copiada de portabilidad)
+        
+        // Paso 1: Obtener vendedores internos directos
+        $query_internos = "SELECT vtr.vendedor_id, vtr.tienda_id, s.nombre_tienda, vtr.tipo_relacion
+                          FROM vendedor_tienda_relacion vtr
+                          LEFT JOIN sucursales s ON vtr.tienda_id = s.id
+                          WHERE vtr.asignado_por = ? COLLATE utf8mb4_general_ci 
+                          AND vtr.tipo_relacion = 'interno'";
+        
+        $stmt_internos = mysqli_prepare($con, $query_internos);
+        mysqli_stmt_bind_param($stmt_internos, "s", $uid);
+        mysqli_stmt_execute($stmt_internos);
+        $result_internos = mysqli_stmt_get_result($stmt_internos);
+        
+        $tiendas_internas = [];
+        while ($row = mysqli_fetch_assoc($result_internos)) {
+            if (!in_array($row['vendedor_id'], $lista_uids)) {
+                $lista_uids[] = $row['vendedor_id'];
+                $usuarios_con_tiendas[$row['vendedor_id']] = [
+                    'es_propio' => false,
+                    'nombre_tienda' => $row['nombre_tienda'],
+                    'tipo_relacion' => $row['tipo_relacion']
+                ];
+            }
+            if ($row['tienda_id']) {
+                $tiendas_internas[] = $row['tienda_id'];
+            }
+        }
+        mysqli_stmt_close($stmt_internos);
+        
+        // Paso 2: Query inversa - De tiendas internas → tiendas externas → usuarios
+        if (!empty($tiendas_internas)) {
+            $tiendas_internas_str = implode(',', array_map('intval', $tiendas_internas));
+            
+            // Obtener tiendas externas
+            $query_externas = "SELECT DISTINCT tienda_externa_id 
+                              FROM atencion_clientes 
+                              WHERE tienda_interna_id IN ($tiendas_internas_str) 
+                              AND estado = 1";
+            
+            $result_externas = mysqli_query($con, $query_externas);
+            $tiendas_externas = [];
+            
+            if ($result_externas) {
+                while ($row = mysqli_fetch_assoc($result_externas)) {
+                    $tiendas_externas[] = $row['tienda_externa_id'];
+                }
+            }
+            
+            // Paso 3: QUERY INVERSA - Obtener TODOS los usuarios de tiendas externas
+            if (!empty($tiendas_externas)) {
+                $tiendas_externas_str = implode(',', array_map('intval', $tiendas_externas));
+                
+                $query_usuarios_externas = "SELECT DISTINCT 
+                                           vtr.vendedor_id, 
+                                           vtr.asignado_por, 
+                                           vtr.tienda_id,
+                                           s.nombre_tienda,
+                                           vtr.tipo_relacion
+                                           FROM vendedor_tienda_relacion vtr
+                                           LEFT JOIN sucursales s ON vtr.tienda_id = s.id
+                                           WHERE vtr.tienda_id IN ($tiendas_externas_str)";
+                
+                $result_usuarios_externas = mysqli_query($con, $query_usuarios_externas);
+                
+                if ($result_usuarios_externas) {
+                    while ($row = mysqli_fetch_assoc($result_usuarios_externas)) {
+                        // Agregar vendedor_id
+                        if (!in_array($row['vendedor_id'], $lista_uids)) {
+                            $lista_uids[] = $row['vendedor_id'];
+                            $usuarios_con_tiendas[$row['vendedor_id']] = [
+                                'es_propio' => false,
+                                'nombre_tienda' => $row['nombre_tienda'] . ' (Externa)',
+                                'tipo_relacion' => $row['tipo_relacion']
+                            ];
+                        }
+                        
+                        // Agregar asignado_por (subdistribuidor)
+                        if ($row['asignado_por'] && !in_array($row['asignado_por'], $lista_uids)) {
+                            $lista_uids[] = $row['asignado_por'];
+                            $usuarios_con_tiendas[$row['asignado_por']] = [
+                                'es_propio' => false,
+                                'nombre_tienda' => 'Subdistribuidor de ' . $row['nombre_tienda'],
+                                'tipo_relacion' => 'externo'
+                            ];
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Paso 4: Obtener subdistribuidores directos del admin
+        $query_subs_directos = "SELECT vtr.vendedor_id, vtr.tienda_id, s.nombre_tienda, vtr.tipo_relacion
+                               FROM vendedor_tienda_relacion vtr
+                               LEFT JOIN sucursales s ON vtr.tienda_id = s.id
+                               WHERE vtr.asignado_por = ? COLLATE utf8mb4_general_ci 
+                               AND (vtr.tipo_relacion = 'externo' OR vtr.tipo_relacion IS NULL OR vtr.tipo_relacion = '')";
+        
+        $stmt_subs_directos = mysqli_prepare($con, $query_subs_directos);
+        mysqli_stmt_bind_param($stmt_subs_directos, "s", $uid);
+        mysqli_stmt_execute($stmt_subs_directos);
+        $result_subs_directos = mysqli_stmt_get_result($stmt_subs_directos);
+        
+        while ($row = mysqli_fetch_assoc($result_subs_directos)) {
+            if (!in_array($row['vendedor_id'], $lista_uids)) {
+                $lista_uids[] = $row['vendedor_id'];
+                $usuarios_con_tiendas[$row['vendedor_id']] = [
+                    'es_propio' => false,
+                    'nombre_tienda' => $row['nombre_tienda'] . ' (Subdistribuidor)',
+                    'tipo_relacion' => $row['tipo_relacion']
+                ];
+            }
+        }
+        mysqli_stmt_close($stmt_subs_directos);
         
     } elseif ($tipo_vendedor === 'interno') {
         // VENDEDOR INTERNO: Query inversa desde su tienda
@@ -227,7 +343,8 @@ try {
         'tienda_usuario_actual' => $tienda_usuario,
         'role' => $role,
         'metodo' => 'QUERY_INVERSA_PAGOS',
-        'tiendas_externas_procesadas' => isset($tiendas_externas_vendedor) ? count($tiendas_externas_vendedor) : 0
+        'tiendas_internas_procesadas' => isset($tiendas_internas) ? count($tiendas_internas) : 0,
+        'tiendas_externas_procesadas' => isset($tiendas_externas) ? count($tiendas_externas) : 0
     ];
     
     mysqli_close($con);
