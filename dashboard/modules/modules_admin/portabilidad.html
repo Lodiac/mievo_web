@@ -1,15 +1,15 @@
 <div class="card">
-    <h2 class="content-title header-interno-indicator" id="module-title">
+    <h2 class="content-title header-admin-indicator" id="module-title">
         <i class="fas fa-exchange-alt"></i> Gestión de Portabilidades
-        <span id="vendedor-tipo-badge" class="vendedor-interno-badge" style="display: none;">INTERNO</span>
+        <span id="admin-badge" class="admin-badge">ADMIN</span>
     </h2>
-    <p>Gestiona las solicitudes de portabilidad realizadas por ti y tus vendedores.</p>
+    <p>Vista completa de solicitudes de portabilidad de todos los vendedores internos y sus tiendas externas asignadas.</p>
     
-    <!-- Información del vendedor -->
-    <div id="vendor-info" class="vendor-info-card" style="display: none;">
+    <!-- Información del admin -->
+    <div id="admin-info" class="admin-info-card">
         <div class="info-content">
-            <i class="fas fa-info-circle"></i>
-            <span id="vendor-info-text">Mostrando solicitudes adicionales por acceso interno</span>
+            <i class="fas fa-shield-alt"></i>
+            <span id="admin-info-text">Acceso administrativo - Supervisando múltiples fuentes de datos</span>
         </div>
     </div>
     
@@ -35,7 +35,7 @@
                     <select id="filtro-origen" class="form-control">
                         <option value="">Todos</option>
                         <option value="1">Mis solicitudes</option>
-                        <option value="0">Otras tiendas</option>
+                        <option value="0">Red de vendedores</option>
                     </select>
                 </div>
             </div>
@@ -49,6 +49,9 @@
                 <button id="btn-refresh" class="btn btn-primary">
                     <i class="fas fa-sync-alt"></i> Actualizar
                 </button>
+                <button id="btn-debug" class="btn btn-outline" title="Ver información de debug">
+                    <i class="fas fa-bug"></i>
+                </button>
             </div>
         </div>
     </div>
@@ -56,7 +59,7 @@
     <!-- Estados de la interfaz -->
     <div id="solicitudes-loading" class="loading-spinner-container">
         <div class="loading-spinner"></div>
-        <p>Cargando solicitudes...</p>
+        <p>Cargando solicitudes de la red...</p>
     </div>
     
     <div id="solicitudes-error" class="alert alert-danger" style="display: none;">
@@ -110,6 +113,24 @@
         </div>
     </div>
     
+    <!-- Panel de información de red -->
+    <div id="network-info" class="network-info-panel" style="display: none;">
+        <div class="network-stats">
+            <div class="network-stat">
+                <i class="fas fa-users"></i>
+                <span>Fuentes: <strong id="total-sources">0</strong></span>
+            </div>
+            <div class="network-stat">
+                <i class="fas fa-store"></i>
+                <span>Tiendas Internas: <strong id="tiendas-internas">0</strong></span>
+            </div>
+            <div class="network-stat">
+                <i class="fas fa-external-link-alt"></i>
+                <span>Tiendas Externas: <strong id="tiendas-externas">0</strong></span>
+            </div>
+        </div>
+    </div>
+    
     <!-- Contenedor para solicitudes -->
     <div id="solicitudes-container" style="display: none;">
         <div class="table-responsive">
@@ -122,7 +143,7 @@
                         <th>NIP</th>
                         <th>Operador</th>
                         <th>Fecha</th>
-                        <th>Tienda</th>
+                        <th>Tienda/Red</th>
                         <th>Estado</th>
                         <th>Acciones</th>
                     </tr>
@@ -145,8 +166,8 @@
     
     <!-- Estado vacío -->
     <div id="empty-state" class="empty-state" style="display: none;">
-        <i class="fas fa-file-alt"></i>
-        <h3 id="empty-message">No se encontraron solicitudes</h3>
+        <i class="fas fa-network-wired"></i>
+        <h3 id="empty-message">No se encontraron solicitudes en la red</h3>
     </div>
     
     <!-- Modal de detalles -->
@@ -159,13 +180,24 @@
             </div>
         </div>
     </div>
+    
+    <!-- Modal de debug -->
+    <div id="modal-debug" class="modal">
+        <div class="modal-content">
+            <span class="close-debug">&times;</span>
+            <h3>Información de Debug - Red Administrativa</h3>
+            <div id="debug-content" class="debug-content">
+                <!-- Contenido dinámico -->
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- ESTILOS INTEGRADOS -->
 <style>
-/* Badge para vendedor interno */
-.vendedor-interno-badge {
-    background: linear-gradient(135deg, #2196F3, #1976D2);
+/* Badge para admin */
+.admin-badge {
+    background: linear-gradient(135deg, #ff5722, #d84315);
     color: white;
     padding: 4px 12px;
     border-radius: 20px;
@@ -175,7 +207,7 @@
     display: inline-block;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    box-shadow: 0 2px 4px rgba(33, 150, 243, 0.3);
+    box-shadow: 0 2px 4px rgba(255, 87, 34, 0.3);
     animation: fadeInScale 0.3s ease-out;
 }
 
@@ -190,21 +222,21 @@
     }
 }
 
-/* Indicador sutil en el header para vendedores internos */
-.header-interno-indicator {
+/* Indicador sutil en el header para admin */
+.header-admin-indicator {
     position: relative;
 }
 
-.header-interno-indicator::before {
+.header-admin-indicator::before {
     content: '';
     position: absolute;
     top: -2px;
     right: -2px;
     width: 8px;
     height: 8px;
-    background: #2196F3;
+    background: #ff5722;
     border-radius: 50%;
-    box-shadow: 0 0 0 2px white, 0 0 8px rgba(33, 150, 243, 0.5);
+    box-shadow: 0 0 0 2px white, 0 0 8px rgba(255, 87, 34, 0.5);
     animation: pulse 2s infinite;
 }
 
@@ -219,10 +251,10 @@
     }
 }
 
-/* Card de información del vendedor */
-.vendor-info-card {
-    background: linear-gradient(135deg, #e3f2fd, #bbdefb);
-    border-left: 4px solid #2196F3;
+/* Card de información del admin */
+.admin-info-card {
+    background: linear-gradient(135deg, #fff3e0, #ffcc80);
+    border-left: 4px solid #ff5722;
     padding: 12px 16px;
     margin-bottom: 20px;
     border-radius: 8px;
@@ -240,17 +272,45 @@
     }
 }
 
-.vendor-info-card .info-content {
+.admin-info-card .info-content {
     display: flex;
     align-items: center;
     font-size: 0.9rem;
-    color: #1565c0;
+    color: #bf360c;
     font-weight: 500;
 }
 
-.vendor-info-card .info-content i {
+.admin-info-card .info-content i {
     margin-right: 8px;
     font-size: 1rem;
+}
+
+/* Panel de información de red */
+.network-info-panel {
+    background: linear-gradient(135deg, #f3e5f5, #ce93d8);
+    border: 1px solid #9c27b0;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.network-stats {
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.network-stat {
+    display: flex;
+    align-items: center;
+    color: #4a148c;
+    font-size: 0.9rem;
+}
+
+.network-stat i {
+    margin-right: 8px;
+    font-size: 1.1rem;
 }
 
 /* Estadísticas */
@@ -322,6 +382,7 @@
 .filter-controls .actions {
     display: flex;
     align-items: flex-end;
+    gap: 10px;
 }
 
 .form-group {
@@ -514,6 +575,17 @@
     margin-left: 5px;
 }
 
+/* Badge para red administrativa */
+.red-admin-badge {
+    background-color: #9c27b0;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 8px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    margin-left: 5px;
+}
+
 /* Acciones */
 .action-btn {
     background: none;
@@ -567,7 +639,7 @@
     overflow-y: auto;
 }
 
-.close-modal {
+.close-modal, .close-debug {
     position: absolute;
     top: 15px;
     right: 20px;
@@ -577,7 +649,7 @@
     cursor: pointer;
 }
 
-.close-modal:hover {
+.close-modal:hover, .close-debug:hover {
     color: #333;
 }
 
@@ -692,9 +764,27 @@
     font-style: italic;
 }
 
+/* Debug content */
+.debug-content {
+    background-color: #263238;
+    color: #a7ffeb;
+    padding: 20px;
+    border-radius: 8px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.debug-content pre {
+    margin: 0;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
 /* Responsividad */
 @media (max-width: 768px) {
-    .vendedor-interno-badge {
+    .admin-badge {
         font-size: 0.7rem;
         padding: 3px 8px;
         margin-left: 5px;
@@ -706,6 +796,11 @@
     
     .filter-controls .col {
         min-width: auto;
+    }
+    
+    .filter-controls .actions {
+        flex-direction: row;
+        justify-content: center;
     }
     
     .data-table {
@@ -729,13 +824,22 @@
     .stat-card {
         min-width: auto;
     }
+    
+    .network-stats {
+        flex-direction: column;
+        text-align: center;
+    }
 }
 </style>
 
 <script>
-    // Variables globales
-    let tipoVendedor = 'externo'; // Default
+    // Variables globales específicas para admin
     let debugInfo = null;
+    let networkInfo = {
+        totalSources: 0,
+        tiendasInternas: 0,
+        tiendasExternas: 0
+    };
     
     // Elementos del DOM
     const loadingElement = document.getElementById('solicitudes-loading');
@@ -745,11 +849,10 @@
     const solicitudesTbody = document.getElementById('solicitudes-tbody');
     const emptyState = document.getElementById('empty-state');
     const emptyMessage = document.getElementById('empty-message');
-    const vendedorTipoBadge = document.getElementById('vendedor-tipo-badge');
-    const moduleTitle = document.getElementById('module-title');
-    const vendorInfo = document.getElementById('vendor-info');
-    const vendorInfoText = document.getElementById('vendor-info-text');
+    const adminInfo = document.getElementById('admin-info');
+    const adminInfoText = document.getElementById('admin-info-text');
     const estadisticasContainer = document.getElementById('estadisticas-container');
+    const networkInfoPanel = document.getElementById('network-info');
     
     // Elementos de estadísticas
     const statTotal = document.getElementById('stat-total');
@@ -759,11 +862,17 @@
     const statRechazadas = document.getElementById('stat-rechazadas');
     const statCanceladas = document.getElementById('stat-canceladas');
     
+    // Elementos de network info
+    const totalSources = document.getElementById('total-sources');
+    const tiendasInternas = document.getElementById('tiendas-internas');
+    const tiendasExternas = document.getElementById('tiendas-externas');
+    
     // Elementos de filtro
     const filtroEstado = document.getElementById('filtro-estado');
     const filtroOrigen = document.getElementById('filtro-origen');
     const busquedaInput = document.getElementById('busqueda');
     const btnRefresh = document.getElementById('btn-refresh');
+    const btnDebug = document.getElementById('btn-debug');
     
     // Elementos de paginación
     const prevPageBtn = document.getElementById('prev-page');
@@ -771,15 +880,20 @@
     const currentPageElement = document.getElementById('current-page');
     const totalPagesElement = document.getElementById('total-pages');
     
-    // Modal
+    // Modal principal
     const modal = document.getElementById('modal-detalles');
     const modalTitle = document.getElementById('modal-title');
     const modalContent = document.getElementById('modal-content');
     const closeModal = document.querySelector('.close-modal');
     
-    // Obtener datos del usuario
+    // Modal de debug
+    const modalDebug = document.getElementById('modal-debug');
+    const debugContent = document.getElementById('debug-content');
+    const closeDebug = document.querySelector('.close-debug');
+    
+    // Obtener datos del usuario (forzar admin)
     const userUID = sessionStorage.getItem('userUID') || '';
-    const userRole = sessionStorage.getItem('userRole') || 'vendedor';
+    const userRole = 'admin'; // Forzar rol admin para este módulo
     
     // Variables para almacenar datos
     let allSolicitudes = [];
@@ -787,37 +901,28 @@
     
     // Variables para paginación
     let currentPage = 1;
-    const itemsPerPage = 5;
+    const itemsPerPage = 10; // Más items por página para admin
     let totalPages = 1;
     
-    // Función para actualizar la UI según el tipo de vendedor
-    function updateVendedorTypeUI(tipo, debug = null) {
-        tipoVendedor = tipo;
-        debugInfo = debug;
-        
-        if (tipo === 'interno') {
-            // Mostrar badge de vendedor interno
-            vendedorTipoBadge.style.display = 'inline-block';
+    // Función para actualizar información de red
+    function updateNetworkInfo(debug) {
+        if (debug) {
+            networkInfo.totalSources = debug.total_usuarios_incluidos || 0;
+            networkInfo.tiendasInternas = debug.tiendas_procesadas ? debug.tiendas_procesadas.length : 0;
+            networkInfo.tiendasExternas = debug.tiendas_externas_encontradas ? debug.tiendas_externas_encontradas.length : 0;
             
-            // Agregar clase para el indicador del header
-            moduleTitle.classList.add('header-interno-indicator');
+            // Actualizar elementos
+            totalSources.textContent = networkInfo.totalSources;
+            tiendasInternas.textContent = networkInfo.tiendasInternas;
+            tiendasExternas.textContent = networkInfo.tiendasExternas;
             
-            // Mostrar información adicional
-            if (debug && debug.total_usuarios_incluidos > 1) {
-                vendorInfo.style.display = 'block';
-                vendorInfoText.textContent = `Acceso interno activo - Viendo ${debug.total_usuarios_incluidos} fuentes de datos`;
+            // Actualizar mensaje de admin
+            adminInfoText.textContent = `Supervisando ${networkInfo.totalSources} fuentes de datos en tu red administrativa`;
+            
+            // Mostrar panel de red si hay datos significativos
+            if (networkInfo.totalSources > 1) {
+                networkInfoPanel.style.display = 'block';
             }
-            
-            console.log('UI actualizada para vendedor interno', debug);
-        } else {
-            // Ocultar badge para vendedor externo
-            vendedorTipoBadge.style.display = 'none';
-            vendorInfo.style.display = 'none';
-            
-            // Remover clase del indicador
-            moduleTitle.classList.remove('header-interno-indicator');
-            
-            console.log('UI actualizada para vendedor externo');
         }
     }
     
@@ -853,6 +958,16 @@
     
     btnRefresh.addEventListener('click', loadSolicitudesPortabilidad);
     
+    // Event listener para debug
+    btnDebug.addEventListener('click', () => {
+        if (debugInfo) {
+            debugContent.innerHTML = `<pre>${JSON.stringify(debugInfo, null, 2)}</pre>`;
+            modalDebug.style.display = 'block';
+        } else {
+            alert('No hay información de debug disponible. Actualiza los datos primero.');
+        }
+    });
+    
     // Event listeners de paginación
     prevPageBtn.addEventListener('click', () => {
         if (currentPage > 1) {
@@ -870,8 +985,10 @@
     
     // Event listeners del modal
     closeModal.addEventListener('click', () => modal.style.display = 'none');
+    closeDebug.addEventListener('click', () => modalDebug.style.display = 'none');
     window.addEventListener('click', (e) => {
         if (e.target === modal) modal.style.display = 'none';
+        if (e.target === modalDebug) modalDebug.style.display = 'none';
     });
     
     // Función para normalizar estados
@@ -901,18 +1018,19 @@
         try {
             showLoading();
             
-            console.log('Iniciando carga de solicitudes para UID:', userUID, 'Role:', userRole);
+            console.log('🔥 ADMIN: Iniciando carga para UID:', userUID, 'Role:', userRole);
             
-            const response = await fetch(`../api/get_solicitudes_portabilidad.php?uid=${encodeURIComponent(userUID)}&role=${encodeURIComponent(userRole)}`);
+            // Forzar role=admin en la llamada a la API
+            const response = await fetch(`../api/get_solicitudes_portabilidad.php?uid=${encodeURIComponent(userUID)}&role=admin`);
             
             const responseText = await response.text();
             
             let data;
             try {
                 data = JSON.parse(responseText);
-                console.log('Respuesta completa de la API:', data);
+                console.log('🔥 ADMIN: Respuesta completa de la API:', data);
             } catch (jsonError) {
-                console.error("Error al parsear JSON:", responseText);
+                console.error("❌ Error al parsear JSON:", responseText);
                 throw new Error(`Error de formato en la respuesta: ${responseText.substring(0, 100)}...`);
             }
             
@@ -920,19 +1038,19 @@
                 throw new Error(data.error || "Error desconocido en la respuesta");
             }
             
-            // Actualizar UI según el tipo de vendedor
-            if (data.tipo_vendedor) {
-                updateVendedorTypeUI(data.tipo_vendedor, data.debug_info);
-            }
+            // Guardar debug info
+            debugInfo = data.debug_info;
+            
+            // Actualizar información de red
+            updateNetworkInfo(data.debug_info);
             
             // Actualizar estadísticas
             updateEstadisticas(data.estadisticas);
             
             allSolicitudes = data.solicitudes || [];
             
-            console.log('Solicitudes recibidas:', allSolicitudes.length);
-            console.log('Tipo de vendedor:', data.tipo_vendedor);
-            console.log('Debug info:', data.debug_info);
+            console.log('🔥 ADMIN: Solicitudes recibidas:', allSolicitudes.length);
+            console.log('🔥 ADMIN: Debug info:', data.debug_info);
             
             // Normalizar estados
             allSolicitudes.forEach(solicitud => {
@@ -942,7 +1060,7 @@
             aplicarFiltros();
             
         } catch (error) {
-            console.error('Error completo:', error);
+            console.error('❌ ADMIN: Error completo:', error);
             showError(`Error al cargar las solicitudes: ${error.message}`);
         }
     }
@@ -1006,7 +1124,7 @@
         totalPagesElement.textContent = totalPages;
         
         if (filteredSolicitudes.length === 0) {
-            showEmptyState('No se encontraron solicitudes con los filtros seleccionados');
+            showEmptyState('No se encontraron solicitudes en la red administrativa');
             return;
         }
         
@@ -1021,7 +1139,7 @@
     
     // Función para renderizar solicitudes
     function renderSolicitudes(solicitudes) {
-        console.log("Renderizando solicitudes con IDs:", solicitudes.map(s => s.id));
+        console.log("🔥 ADMIN: Renderizando solicitudes con IDs:", solicitudes.map(s => s.id));
         
         solicitudesTbody.innerHTML = '';
         
@@ -1053,12 +1171,16 @@
             
             const idOriginal = String(solicitud.id);
             
-            // Procesar nombre de tienda con badges apropiados
+            // Procesar nombre de tienda con badges específicos para admin
             let tiendaDisplay = solicitud.nombre_tienda || 'Sin tienda';
             
-            // Agregar badge para tiendas externas
-            if (tiendaDisplay.includes('(Externa)')) {
+            // Identificar tipo de fuente para admin
+            if (parseInt(solicitud.es_propia) === 1) {
+                tiendaDisplay += ' <span class="label-propio">ADMIN</span>';
+            } else if (tiendaDisplay.includes('(Externa)')) {
                 tiendaDisplay = tiendaDisplay.replace('(Externa)', '<span class="tienda-externa-badge">EXTERNA</span>');
+            } else {
+                tiendaDisplay += ' <span class="red-admin-badge">RED</span>';
             }
             
             const row = document.createElement('tr');
@@ -1084,17 +1206,17 @@
     
     // Función para ver detalles (global)
     window.verDetalles = function(id) {
-        console.log('Buscando solicitud con ID:', id, 'Tipo:', typeof id);
+        console.log('🔥 ADMIN: Buscando solicitud con ID:', id, 'Tipo:', typeof id);
         
         const solicitud = allSolicitudes.find(s => String(s.id) == String(id));
         
         if (!solicitud) {
-            console.error('No se encontró la solicitud con ID:', id);
+            console.error('❌ No se encontró la solicitud con ID:', id);
             alert(`No se encontró la solicitud con ID: ${id}`);
             return;
         }
         
-        console.log('Solicitud encontrada:', solicitud);
+        console.log('✅ ADMIN: Solicitud encontrada:', solicitud);
         
         const estado = solicitud.estado_solicitud;
         
@@ -1108,7 +1230,7 @@
             }
         }
         
-        modalTitle.textContent = `Solicitud de Portabilidad #${solicitud.id} (${estado})`;
+        modalTitle.textContent = `[ADMIN] Solicitud de Portabilidad #${solicitud.id} (${estado})`;
         
         let comentariosHtml = '';
         if (solicitud.comentarios && solicitud.comentarios.trim() !== '') {
@@ -1122,18 +1244,17 @@
             `;
         }
         
-        // Procesar nombre de tienda para el modal
+        // Procesar nombre de tienda para el modal (admin context)
         let tiendaDisplayModal = solicitud.nombre_tienda || 'Sin tienda asignada';
         let etiquetasEspeciales = '';
         
         if (parseInt(solicitud.es_propia) === 1) {
-            etiquetasEspeciales = '<span class="label-propio">Tú</span>';
-        }
-        
-        // Agregar badge para tiendas externas
-        if (tiendaDisplayModal.includes('(Externa)')) {
+            etiquetasEspeciales = '<span class="label-propio">ADMIN</span>';
+        } else if (tiendaDisplayModal.includes('(Externa)')) {
             tiendaDisplayModal = tiendaDisplayModal.replace('(Externa)', '');
             etiquetasEspeciales += ' <span class="tienda-externa-badge">EXTERNA</span>';
+        } else {
+            etiquetasEspeciales += ' <span class="red-admin-badge">RED</span>';
         }
         
         modalContent.innerHTML = `
@@ -1192,7 +1313,7 @@
                     <div class="detail-value">${fechaFormateada}</div>
                 </div>
                 <div class="detail-item">
-                    <div class="detail-label">Tienda:</div>
+                    <div class="detail-label">Fuente de datos:</div>
                     <div class="detail-value">
                         ${tiendaDisplayModal}
                         ${etiquetasEspeciales}
@@ -1242,6 +1363,7 @@
         solicitudesContainer.style.display = 'none';
         emptyState.style.display = 'none';
         estadisticasContainer.style.display = 'none';
+        networkInfoPanel.style.display = 'none';
     }
     
     function showError(message) {
@@ -1250,6 +1372,7 @@
         solicitudesContainer.style.display = 'none';
         emptyState.style.display = 'none';
         estadisticasContainer.style.display = 'none';
+        networkInfoPanel.style.display = 'none';
         errorMessageElement.textContent = message;
     }
     
@@ -1259,6 +1382,7 @@
         solicitudesContainer.style.display = 'block';
         emptyState.style.display = 'none';
         estadisticasContainer.style.display = 'flex';
+        // networkInfoPanel se maneja en updateNetworkInfo()
     }
     
     function showEmptyState(message) {
@@ -1267,6 +1391,7 @@
         solicitudesContainer.style.display = 'none';
         emptyState.style.display = 'block';
         estadisticasContainer.style.display = 'flex';
+        networkInfoPanel.style.display = 'none';
         emptyMessage.textContent = message;
     }
 </script>
