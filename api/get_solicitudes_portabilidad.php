@@ -1,5 +1,5 @@
 <?php
-// get_solicitudes_portabilidad.php - VERSIÓN FINAL CON pdv_supervendedor_relacion
+// get_solicitudes_portabilidad.php - VERSIÓN CORREGIDA
 header('Content-Type: application/json; charset=UTF-8');
 require_once 'db_connect.php';
 
@@ -70,9 +70,9 @@ try {
     
     // 4. LÓGICA PRINCIPAL POR ROLES
     if ($role === 'subdistribuidor') {
-        // SUBDISTRIBUIDOR: Usar tanto vendedor_tienda_relacion como pdv_supervendedor_relacion
+        // SUBDISTRIBUIDOR: Lógica mejorada
         
-        // Obtener vendedores directos asignados
+        // Paso 1: Obtener vendedores directos asignados
         $query_vendedores = "SELECT vtr.vendedor_id, vtr.tienda_id, s.nombre_tienda, vtr.tipo_relacion
                              FROM vendedor_tienda_relacion vtr
                              LEFT JOIN sucursales s ON vtr.tienda_id = s.id
@@ -83,6 +83,7 @@ try {
         mysqli_stmt_execute($stmt_vendedores);
         $result_vendedores = mysqli_stmt_get_result($stmt_vendedores);
         
+        $tiendas_de_vendedores = [];
         while ($row = mysqli_fetch_assoc($result_vendedores)) {
             if (!in_array($row['vendedor_id'], $lista_uids)) {
                 $lista_uids[] = $row['vendedor_id'];
@@ -93,11 +94,40 @@ try {
                     'es_subdistribuidor' => false
                 ];
             }
+            // Recolectar tiendas de los vendedores
+            if ($row['tienda_id']) {
+                $tiendas_de_vendedores[] = $row['tienda_id'];
+            }
         }
         mysqli_stmt_close($stmt_vendedores);
         
-        // NUEVO: Obtener usuarios de la misma tienda usando pdv_supervendedor_relacion
+        // Paso 2: Si el subdistribuidor tiene tienda, buscar otros usuarios de esa tienda
         if ($tienda_usuario) {
+            // Buscar otros vendedores de la misma tienda
+            $query_misma_tienda_vtr = "SELECT DISTINCT vtr.vendedor_id, s.nombre_tienda, vtr.tipo_relacion
+                                       FROM vendedor_tienda_relacion vtr
+                                       LEFT JOIN sucursales s ON vtr.tienda_id = s.id
+                                       WHERE vtr.tienda_id = ? AND vtr.vendedor_id != ?";
+            
+            $stmt_misma_tienda_vtr = mysqli_prepare($con, $query_misma_tienda_vtr);
+            mysqli_stmt_bind_param($stmt_misma_tienda_vtr, "is", $tienda_usuario, $uid);
+            mysqli_stmt_execute($stmt_misma_tienda_vtr);
+            $result_misma_tienda_vtr = mysqli_stmt_get_result($stmt_misma_tienda_vtr);
+            
+            while ($row = mysqli_fetch_assoc($result_misma_tienda_vtr)) {
+                if (!in_array($row['vendedor_id'], $lista_uids)) {
+                    $lista_uids[] = $row['vendedor_id'];
+                    $usuarios_con_tiendas[$row['vendedor_id']] = [
+                        'es_propio' => false,
+                        'nombre_tienda' => $row['nombre_tienda'] . ' (Misma tienda)',
+                        'tipo_relacion' => $row['tipo_relacion'],
+                        'es_subdistribuidor' => false
+                    ];
+                }
+            }
+            mysqli_stmt_close($stmt_misma_tienda_vtr);
+            
+            // Buscar otros subdistribuidores de la misma tienda en pdv_supervendedor_relacion
             $query_misma_tienda = "SELECT DISTINCT psr.supervendedor_id, s.nombre_tienda
                                    FROM pdv_supervendedor_relacion psr
                                    LEFT JOIN sucursales s ON psr.pdv_id = s.id
@@ -120,6 +150,33 @@ try {
                 }
             }
             mysqli_stmt_close($stmt_misma_tienda);
+        }
+        
+        // Paso 3: Buscar vendedores en las tiendas de los vendedores asignados
+        if (!empty($tiendas_de_vendedores)) {
+            $tiendas_str = implode(',', array_map('intval', array_unique($tiendas_de_vendedores)));
+            
+            $query_vendedores_tiendas = "SELECT DISTINCT vtr.vendedor_id, vtr.tienda_id, 
+                                         s.nombre_tienda, vtr.tipo_relacion
+                                         FROM vendedor_tienda_relacion vtr
+                                         LEFT JOIN sucursales s ON vtr.tienda_id = s.id
+                                         WHERE vtr.tienda_id IN ($tiendas_str)";
+            
+            $result_vendedores_tiendas = mysqli_query($con, $query_vendedores_tiendas);
+            
+            if ($result_vendedores_tiendas) {
+                while ($row = mysqli_fetch_assoc($result_vendedores_tiendas)) {
+                    if (!in_array($row['vendedor_id'], $lista_uids)) {
+                        $lista_uids[] = $row['vendedor_id'];
+                        $usuarios_con_tiendas[$row['vendedor_id']] = [
+                            'es_propio' => false,
+                            'nombre_tienda' => $row['nombre_tienda'] . ' (Tienda relacionada)',
+                            'tipo_relacion' => $row['tipo_relacion'],
+                            'es_subdistribuidor' => false
+                        ];
+                    }
+                }
+            }
         }
         
     } elseif ($role === 'admin') {
@@ -166,9 +223,11 @@ try {
         mysqli_stmt_execute($stmt_subs_directos);
         $result_subs_directos = mysqli_stmt_get_result($stmt_subs_directos);
         
+        $subdistribuidores_directos = [];
         while ($row = mysqli_fetch_assoc($result_subs_directos)) {
             if (!in_array($row['vendedor_id'], $lista_uids)) {
                 $lista_uids[] = $row['vendedor_id'];
+                $subdistribuidores_directos[] = $row['vendedor_id'];
                 $usuarios_con_tiendas[$row['vendedor_id']] = [
                     'es_propio' => false,
                     'nombre_tienda' => $row['nombre_tienda'] . ' (Subdistribuidor)',
@@ -178,6 +237,35 @@ try {
             }
         }
         mysqli_stmt_close($stmt_subs_directos);
+        
+        // NUEVO: Buscar vendedores asignados a los subdistribuidores
+        if (!empty($subdistribuidores_directos)) {
+            $subs_str = "'" . implode("','", array_map(function($id) use ($con) {
+                return mysqli_real_escape_string($con, $id);
+            }, $subdistribuidores_directos)) . "'";
+            
+            $query_vendedores_de_subs = "SELECT vtr.vendedor_id, vtr.tienda_id, s.nombre_tienda, 
+                                         vtr.tipo_relacion, vtr.asignado_por
+                                         FROM vendedor_tienda_relacion vtr
+                                         LEFT JOIN sucursales s ON vtr.tienda_id = s.id
+                                         WHERE vtr.asignado_por COLLATE utf8mb4_general_ci IN ($subs_str)";
+            
+            $result_vendedores_de_subs = mysqli_query($con, $query_vendedores_de_subs);
+            
+            if ($result_vendedores_de_subs) {
+                while ($row = mysqli_fetch_assoc($result_vendedores_de_subs)) {
+                    if (!in_array($row['vendedor_id'], $lista_uids)) {
+                        $lista_uids[] = $row['vendedor_id'];
+                        $usuarios_con_tiendas[$row['vendedor_id']] = [
+                            'es_propio' => false,
+                            'nombre_tienda' => $row['nombre_tienda'] . ' (Via Subdistribuidor)',
+                            'tipo_relacion' => $row['tipo_relacion'],
+                            'es_subdistribuidor' => false
+                        ];
+                    }
+                }
+            }
+        }
         
         // NUEVO: Obtener todos los subdistribuidores de pdv_supervendedor_relacion
         $query_todos_subs = "SELECT DISTINCT psr.supervendedor_id, s.nombre_tienda
@@ -273,6 +361,87 @@ try {
                                 ];
                             }
                         }
+                    }
+                }
+            }
+        }
+        
+    } elseif ($tipo_vendedor === 'externo' && $tienda_usuario) {
+        // VENDEDOR EXTERNO: Buscar otros usuarios de su tienda (incluyendo subdistribuidores)
+        
+        // Buscar otros vendedores de la misma tienda
+        $query_misma_tienda = "SELECT vtr.vendedor_id, vtr.tienda_id, s.nombre_tienda, vtr.tipo_relacion
+                              FROM vendedor_tienda_relacion vtr
+                              LEFT JOIN sucursales s ON vtr.tienda_id = s.id
+                              WHERE vtr.tienda_id = ? AND vtr.vendedor_id != ?";
+        
+        $stmt_misma_tienda = mysqli_prepare($con, $query_misma_tienda);
+        mysqli_stmt_bind_param($stmt_misma_tienda, "is", $tienda_usuario, $uid);
+        mysqli_stmt_execute($stmt_misma_tienda);
+        $result_misma_tienda = mysqli_stmt_get_result($stmt_misma_tienda);
+        
+        while ($row = mysqli_fetch_assoc($result_misma_tienda)) {
+            if (!in_array($row['vendedor_id'], $lista_uids)) {
+                $lista_uids[] = $row['vendedor_id'];
+                $usuarios_con_tiendas[$row['vendedor_id']] = [
+                    'es_propio' => false,
+                    'nombre_tienda' => $row['nombre_tienda'] . ' (Misma tienda)',
+                    'tipo_relacion' => $row['tipo_relacion'],
+                    'es_subdistribuidor' => false
+                ];
+            }
+        }
+        mysqli_stmt_close($stmt_misma_tienda);
+        
+        // Buscar subdistribuidores de la misma tienda
+        $query_subs_tienda = "SELECT psr.supervendedor_id, s.nombre_tienda
+                             FROM pdv_supervendedor_relacion psr
+                             LEFT JOIN sucursales s ON psr.pdv_id = s.id
+                             WHERE psr.pdv_id = ?";
+        
+        $stmt_subs_tienda = mysqli_prepare($con, $query_subs_tienda);
+        mysqli_stmt_bind_param($stmt_subs_tienda, "i", $tienda_usuario);
+        mysqli_stmt_execute($stmt_subs_tienda);
+        $result_subs_tienda = mysqli_stmt_get_result($stmt_subs_tienda);
+        
+        $subdistribuidores_tienda = [];
+        while ($row = mysqli_fetch_assoc($result_subs_tienda)) {
+            if (!in_array($row['supervendedor_id'], $lista_uids)) {
+                $lista_uids[] = $row['supervendedor_id'];
+                $subdistribuidores_tienda[] = $row['supervendedor_id'];
+                $usuarios_con_tiendas[$row['supervendedor_id']] = [
+                    'es_propio' => false,
+                    'nombre_tienda' => $row['nombre_tienda'] . ' (Subdistribuidor PDV)',
+                    'tipo_relacion' => 'externo',
+                    'es_subdistribuidor' => true
+                ];
+            }
+        }
+        mysqli_stmt_close($stmt_subs_tienda);
+        
+        // Buscar vendedores asignados a esos subdistribuidores
+        if (!empty($subdistribuidores_tienda)) {
+            $subs_str = "'" . implode("','", array_map(function($id) use ($con) {
+                return mysqli_real_escape_string($con, $id);
+            }, $subdistribuidores_tienda)) . "'";
+            
+            $query_vendedores_subs = "SELECT vtr.vendedor_id, vtr.tienda_id, s.nombre_tienda, vtr.tipo_relacion
+                                     FROM vendedor_tienda_relacion vtr
+                                     LEFT JOIN sucursales s ON vtr.tienda_id = s.id
+                                     WHERE vtr.asignado_por COLLATE utf8mb4_general_ci IN ($subs_str)";
+            
+            $result_vendedores_subs = mysqli_query($con, $query_vendedores_subs);
+            
+            if ($result_vendedores_subs) {
+                while ($row = mysqli_fetch_assoc($result_vendedores_subs)) {
+                    if (!in_array($row['vendedor_id'], $lista_uids)) {
+                        $lista_uids[] = $row['vendedor_id'];
+                        $usuarios_con_tiendas[$row['vendedor_id']] = [
+                            'es_propio' => false,
+                            'nombre_tienda' => $row['nombre_tienda'] . ' (Via Subdist)',
+                            'tipo_relacion' => $row['tipo_relacion'],
+                            'es_subdistribuidor' => false
+                        ];
                     }
                 }
             }
@@ -448,9 +617,9 @@ try {
         'tienda_usuario_actual' => $tienda_usuario,
         'es_subdistribuidor' => $es_subdistribuidor,
         'role' => $role,
-        'metodo' => 'QUERY_INVERSA_CON_PDV_SUPERVENDEDOR',
-        'tiendas_internas_procesadas' => isset($tiendas_internas) ? count($tiendas_internas) : 0,
-        'tiendas_externas_procesadas' => isset($tiendas_externas) ? count($tiendas_externas) : 0
+        'metodo' => 'QUERY_MEJORADA_RECURSIVA',
+        'subdistribuidores_procesados' => isset($subdistribuidores_directos) ? count($subdistribuidores_directos) : 0,
+        'tiendas_procesadas' => isset($tiendas_de_vendedores) ? count($tiendas_de_vendedores) : 0
     ];
     
     mysqli_close($con);
