@@ -1,6 +1,10 @@
+<!-- Estilos específicos del módulo -->
+<link rel="stylesheet" href="../modules_vendedor/css/portabilidad.css">
+
 <div class="card">
-    <h2 class="content-title">
+    <h2 class="content-title header-interno-indicator" id="module-title">
         <i class="fas fa-exchange-alt"></i> Gestión de Portabilidades
+        <span id="vendedor-tipo-badge" class="vendedor-interno-badge" style="display: none;">INTERNO</span>
     </h2>
     <p>Gestiona las solicitudes de portabilidad realizadas por ti y tus vendedores.</p>
     
@@ -43,7 +47,6 @@
             </div>
         </div>
     </div>
-    
     
     <!-- Estados de la interfaz -->
     <div id="solicitudes-loading" class="loading-spinner-container">
@@ -107,397 +110,10 @@
     </div>
 </div>
 
-<style>
-    /* Filtros */
-    .filter-controls {
-        background-color: #f8f9fa;
-        padding: 15px;
-        border-radius: 8px;
-        margin-bottom: 20px;
-    }
-    
-    .filter-controls .row {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 15px;
-    }
-    
-    .filter-controls .col {
-        flex: 1;
-        min-width: 200px;
-    }
-    
-    .filter-controls .actions {
-        display: flex;
-        align-items: flex-end;
-    }
-    
-    .form-group {
-        margin-bottom: 0;
-    }
-    
-    .form-group label {
-        display: block;
-        margin-bottom: 5px;
-        font-size: 0.9rem;
-        color: #666;
-    }
-    
-    .form-control {
-        width: 100%;
-        padding: 8px 12px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        font-size: 0.95rem;
-    }
-    
-    .search-input-container {
-        position: relative;
-    }
-    
-    .search-icon {
-        position: absolute;
-        left: 12px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: #6c757d;
-    }
-    
-    .search-input {
-        width: 100%;
-        padding: 8px 15px 8px 35px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        font-size: 0.95rem;
-    }
-    
-    .btn {
-        padding: 8px 16px;
-        border-radius: 4px;
-        font-size: 0.95rem;
-        cursor: pointer;
-        border: none;
-    }
-    
-    .btn-primary {
-        background-color: var(--primary-color);
-        color: white;
-    }
-    
-    .btn-outline {
-        background-color: transparent;
-        border: 1px solid #ddd;
-        color: #333;
-    }
-    
-    .btn-outline:hover {
-        background-color: #f5f5f5;
-    }
-    
-    .btn:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-    
-    /* Loader y estados */
-    .loading-spinner-container {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 50px 0;
-    }
-    
-    .loading-spinner {
-        width: 40px;
-        height: 40px;
-        border: 4px solid rgba(0,0,0,0.1);
-        border-radius: 50%;
-        border-top-color: var(--primary-color);
-        animation: spin 1s linear infinite;
-        margin-bottom: 15px;
-    }
-    
-    @keyframes spin {
-        to { transform: rotate(360deg); }
-    }
-    
-    .alert {
-        padding: 15px 20px;
-        border-radius: 8px;
-        margin: 20px 0;
-    }
-    
-    .alert-danger {
-        background-color: #fdecea;
-        color: #ea4335;
-        border: 1px solid #fadad7;
-    }
-    
-    .empty-state {
-        text-align: center;
-        padding: 40px 20px;
-        color: #666;
-    }
-    
-    .empty-state i {
-        font-size: 3rem;
-        color: #ddd;
-        margin-bottom: 15px;
-    }
-    
-    .empty-state h3 {
-        font-size: 1.2rem;
-        margin-bottom: 10px;
-    }
-    
-    /* Tabla de datos */
-    .table-responsive {
-        overflow-x: auto;
-    }
-    
-    .data-table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 20px;
-    }
-    
-    .data-table th, .data-table td {
-        padding: 12px 15px;
-        text-align: left;
-        border-bottom: 1px solid #ddd;
-    }
-    
-    .data-table th {
-        background-color: #f2f2f2;
-        font-weight: 600;
-    }
-    
-    .data-table tbody tr:hover {
-        background-color: #f5f5f5;
-    }
-    
-    /* Badges de estado */
-    .status-badge {
-        display: inline-block;
-        padding: 5px 10px;
-        border-radius: 12px;
-        font-size: 0.8rem;
-        font-weight: 500;
-    }
-    
-    .status-pendiente {
-        background-color: #FFF3CD;
-        color: #856404;
-    }
-    
-    .status-procesando {
-        background-color: #D1ECF1;
-        color: #0C5460;
-    }
-    
-    .status-completada {
-        background-color: #D4EDDA;
-        color: #155724;
-    }
-    
-    .status-rechazada {
-        background-color: #F8D7DA;
-        color: #721C24;
-    }
-    
-    .status-cancelada {
-        background-color: #E2E3E5;
-        color: #383D41;
-    }
-    
-    /* Acciones */
-    .action-btn {
-        background: none;
-        border: none;
-        color: var(--primary-color);
-        cursor: pointer;
-        margin-right: 5px;
-        font-size: 1rem;
-    }
-    
-    .action-btn:hover {
-        color: var(--primary-dark);
-    }
-    
-    /* Paginación */
-    .pagination-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        margin-top: 20px;
-        gap: 15px;
-    }
-    
-    #page-info {
-        font-size: 0.9rem;
-        color: #666;
-    }
-    
-    /* Modal */
-    .modal {
-        display: none;
-        position: fixed;
-        z-index: 1000;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0,0,0,0.7);
-    }
-    
-    .modal-content {
-        position: relative;
-        background-color: white;
-        margin: 5% auto;
-        padding: 25px;
-        width: 80%;
-        max-width: 800px;
-        border-radius: 10px;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        max-height: 80vh;
-        overflow-y: auto;
-    }
-    
-    .close-modal {
-        position: absolute;
-        top: 15px;
-        right: 20px;
-        font-size: 28px;
-        font-weight: bold;
-        color: #aaa;
-        cursor: pointer;
-    }
-    
-    .close-modal:hover {
-        color: #333;
-    }
-    
-    #modal-title {
-        margin-top: 0;
-        margin-bottom: 20px;
-        color: var(--primary-color);
-    }
-    
-    .modal-body {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 20px;
-    }
-    
-    .detail-group {
-        background-color: #f8f9fa;
-        padding: 15px;
-        border-radius: 8px;
-    }
-    
-    .detail-group h4 {
-        margin-top: 0;
-        margin-bottom: 15px;
-        color: #0288d1;
-        font-size: 1rem;
-    }
-    
-    .detail-item {
-        margin-bottom: 10px;
-    }
-    
-    .detail-label {
-        font-size: 0.85rem;
-        color: #666;
-        margin-bottom: 2px;
-    }
-    
-    .detail-value {
-        font-weight: 500;
-    }
-    
-    .label-propio {
-        background-color: #0288d1;
-        color: white;
-        padding: 3px 8px;
-        border-radius: 4px;
-        font-size: 0.75rem;
-        margin-left: 5px;
-    }
-    
-    /* Estilos para imágenes de INE */
-    .ine-container {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 15px;
-        margin-top: 15px;
-    }
-    
-    .ine-image {
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        overflow: hidden;
-        width: 100%;
-        min-height: 200px;
-        background-color: #f5f5f5;
-        display: flex;
-        flex-direction: column;
-    }
-    
-    .ine-image h5 {
-        background-color: #0288d1;
-        color: white;
-        margin: 0;
-        padding: 8px;
-        font-size: 0.9rem;
-        text-align: center;
-    }
-    
-    .ine-image img {
-        width: 100%;
-        height: auto;
-        object-fit: contain;
-        max-height: 250px;
-    }
-    
-    .ine-image .no-image {
-        height: 200px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #777;
-        font-size: 0.9rem;
-    }
-
-    /* Comentarios */
-    .comentarios-container {
-        background-color: #f9f9f9;
-        border-left: 4px solid #0288d1;
-        padding: 10px 15px;
-        margin-top: 10px;
-        border-radius: 0 4px 4px 0;
-    }
-    
-    .comentarios-title {
-        font-size: 0.9rem;
-        color: #666;
-        margin-bottom: 5px;
-    }
-    
-    .comentarios-content {
-        font-style: italic;
-    }
-
-    /* Dispositivo */
-    .device-info {
-        margin-top: 5px;
-        font-size: 0.9rem;
-        color: #666;
-    }
-</style>
-
 <script>
+    // Variables globales
+    let tipoVendedor = 'externo'; // Default
+    
     // Elementos del DOM
     const loadingElement = document.getElementById('solicitudes-loading');
     const errorElement = document.getElementById('solicitudes-error');
@@ -506,6 +122,8 @@
     const solicitudesTbody = document.getElementById('solicitudes-tbody');
     const emptyState = document.getElementById('empty-state');
     const emptyMessage = document.getElementById('empty-message');
+    const vendedorTipoBadge = document.getElementById('vendedor-tipo-badge');
+    const moduleTitle = document.getElementById('module-title');
     
     // Elementos de filtro
     const filtroEstado = document.getElementById('filtro-estado');
@@ -527,7 +145,7 @@
     
     // Obtener datos del usuario
     const userUID = sessionStorage.getItem('userUID') || '';
-    const userRole = sessionStorage.getItem('userRole') || 'subdistribuidor';
+    const userRole = sessionStorage.getItem('userRole') || 'vendedor';
     
     // Variables para almacenar datos
     let allSolicitudes = [];
@@ -535,12 +153,35 @@
     
     // Variables para paginación
     let currentPage = 1;
-    const itemsPerPage = 5; // Mostrar 5 solicitudes por página
+    const itemsPerPage = 5;
     let totalPages = 1;
+    
+    // Función para actualizar la UI según el tipo de vendedor
+    function updateVendedorTypeUI(tipo) {
+        tipoVendedor = tipo;
+        
+        if (tipo === 'interno') {
+            // Mostrar badge de vendedor interno
+            vendedorTipoBadge.style.display = 'inline-block';
+            
+            // Agregar clase para el indicador del header
+            moduleTitle.classList.add('header-interno-indicator');
+            
+            console.log('UI actualizada para vendedor interno');
+        } else {
+            // Ocultar badge para vendedor externo
+            vendedorTipoBadge.style.display = 'none';
+            
+            // Remover clase del indicador
+            moduleTitle.classList.remove('header-interno-indicator');
+            
+            console.log('UI actualizada para vendedor externo');
+        }
+    }
     
     // Event listeners
     filtroEstado.addEventListener('change', () => {
-        currentPage = 1; // Reiniciar a la primera página al filtrar
+        currentPage = 1;
         aplicarFiltros();
     });
     
@@ -579,11 +220,10 @@
         if (e.target === modal) modal.style.display = 'none';
     });
     
-    // Función para normalizar estados según los valores de la base de datos
+    // Función para normalizar estados
     function normalizarEstado(estadoOriginal) {
         if (!estadoOriginal) return 'pendiente';
         
-        // Convertir a string y minúsculas
         const estado = String(estadoOriginal).trim().toLowerCase();
         
         switch(estado) {
@@ -599,26 +239,22 @@
         }
     }
     
-    // Inicialización - Esta llamada inmediata es crucial
+    // Inicialización
     loadSolicitudesPortabilidad();
     
-    // Función para cargar solicitudes desde la API
+    // Función principal para cargar solicitudes
     async function loadSolicitudesPortabilidad() {
         try {
-            // Mostrar spinner de carga
             showLoading();
             
             console.log('Iniciando carga de solicitudes para UID:', userUID, 'Role:', userRole);
             
-            // Hacer solicitud a la API incluyendo role para mayor seguridad
             const response = await fetch(`../api/get_solicitudes_portabilidad.php?uid=${encodeURIComponent(userUID)}&role=${encodeURIComponent(userRole)}`);
             
-            // Obtener el texto para depuración
             const responseText = await response.text();
             
             let data;
             try {
-                // Intentar parsear como JSON
                 data = JSON.parse(responseText);
                 console.log('Respuesta completa de la API:', data);
             } catch (jsonError) {
@@ -626,29 +262,25 @@
                 throw new Error(`Error de formato en la respuesta: ${responseText.substring(0, 100)}...`);
             }
             
-            // Verificar si hay un mensaje de error
             if (!data.success) {
                 throw new Error(data.error || "Error desconocido en la respuesta");
             }
             
-            // Guardar todas las solicitudes exactamente como vienen de la API
-            // NO modificamos los IDs ni los convertimos a enteros
+            // Actualizar UI según el tipo de vendedor
+            if (data.tipo_vendedor) {
+                updateVendedorTypeUI(data.tipo_vendedor);
+            }
+            
             allSolicitudes = data.solicitudes || [];
             
             console.log('Solicitudes recibidas:', allSolicitudes.length);
-            if (allSolicitudes.length > 0) {
-                console.log('Primera solicitud:', allSolicitudes[0]);
-                console.log('IDs recibidos:', allSolicitudes.map(s => s.id));
-                console.log('Tipos de IDs:', allSolicitudes.map(s => typeof s.id));
-                console.log('Estados disponibles:', [...new Set(allSolicitudes.map(s => s.estado_solicitud))]);
-            }
+            console.log('Tipo de vendedor:', data.tipo_vendedor);
             
-            // Normalizar estados pero SIN modificar los IDs
+            // Normalizar estados
             allSolicitudes.forEach(solicitud => {
                 solicitud.estado_solicitud = normalizarEstado(solicitud.estado_solicitud);
             });
             
-            // Aplicar filtros iniciales
             aplicarFiltros();
             
         } catch (error) {
@@ -663,14 +295,11 @@
         const origen = filtroOrigen.value;
         const termino = busquedaInput.value.trim().toLowerCase();
         
-        // Filtrar solicitudes
         filteredSolicitudes = allSolicitudes.filter(solicitud => {
-            // Filtro por estado
             if (estado && solicitud.estado_solicitud !== estado) {
                 return false;
             }
             
-            // Filtro por origen (propias o de vendedores)
             if (origen !== '') {
                 const esPropia = parseInt(solicitud.es_propia) === 1;
                 if ((origen === '1' && !esPropia) || (origen === '0' && esPropia)) {
@@ -678,7 +307,6 @@
                 }
             }
             
-            // Filtro por término de búsqueda
             if (termino) {
                 const coincideNombre = solicitud.nombre_completo && 
                                      solicitud.nombre_completo.toLowerCase().includes(termino);
@@ -699,61 +327,47 @@
             return true;
         });
         
-        // Calcular número total de páginas
         totalPages = Math.max(1, Math.ceil(filteredSolicitudes.length / itemsPerPage));
         
-        // Ajustar página actual si es necesario
         if (currentPage > totalPages) {
             currentPage = totalPages;
         }
         
-        // Actualizar elementos de paginación
         currentPageElement.textContent = currentPage;
         totalPagesElement.textContent = totalPages;
         
-        // Renderizar resultados
         renderizarPagina();
     }
     
     // Función para renderizar la página actual
     function renderizarPagina() {
-        // Habilitar/deshabilitar botones de paginación
         prevPageBtn.disabled = currentPage <= 1;
         nextPageBtn.disabled = currentPage >= totalPages;
         
-        // Actualizar info de página
         currentPageElement.textContent = currentPage;
         totalPagesElement.textContent = totalPages;
         
-        // Si no hay resultados, mostrar estado vacío
         if (filteredSolicitudes.length === 0) {
             showEmptyState('No se encontraron solicitudes con los filtros seleccionados');
             return;
         }
         
-        // Calcular índices para paginación
         const startIndex = (currentPage - 1) * itemsPerPage;
         const endIndex = Math.min(startIndex + itemsPerPage, filteredSolicitudes.length);
         
-        // Obtener las solicitudes para esta página
         const solicitudesPagina = filteredSolicitudes.slice(startIndex, endIndex);
         
-        // Renderizar solicitudes de esta página
         renderSolicitudes(solicitudesPagina);
         showContent();
     }
     
     // Función para renderizar solicitudes
     function renderSolicitudes(solicitudes) {
-        // Depuración crítica
         console.log("Renderizando solicitudes con IDs:", solicitudes.map(s => s.id));
         
-        // Limpiar el contenedor
         solicitudesTbody.innerHTML = '';
         
-        // Crear filas para cada solicitud
         solicitudes.forEach(solicitud => {
-            // Determinar clase para el estado
             let estadoClass = '';
             let estado = solicitud.estado_solicitud || 'pendiente';
             
@@ -765,7 +379,6 @@
                 case 'cancelada': estadoClass = 'status-cancelada'; break;
             }
             
-            // Formatear fecha
             let fechaFormateada = 'No disponible';
             if (solicitud.fecha_creacion) {
                 try {
@@ -780,11 +393,17 @@
                 }
             }
             
-            // CRÍTICO: Usar ID original sin manipulación, estrictamente como string
             const idOriginal = String(solicitud.id);
             console.log(`Renderizando solicitud con ID: ${idOriginal} (tipo: ${typeof solicitud.id})`);
             
-            // Crear fila de la tabla con el ID original pasado como string
+            // Agregar badge "INTERNO" para vendedores internos en la columna de tienda
+            let tiendaDisplay = solicitud.nombre_tienda || 
+                              (parseInt(solicitud.es_propia) === 1 ? 'Solicitud propia' : 'No asignada');
+            
+            if (tipoVendedor === 'interno' && parseInt(solicitud.es_propia) === 1) {
+                tiendaDisplay += ' <span class="vendedor-interno-badge">INTERNO</span>';
+            }
+            
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${idOriginal}</td>
@@ -793,7 +412,7 @@
                 <td>${solicitud.nip_portabilidad || 'No disponible'}</td>
                 <td>${solicitud.operador_destino || 'No disponible'}</td>
                 <td>${fechaFormateada}</td>
-                <td>${solicitud.nombre_tienda || (parseInt(solicitud.es_propia) === 1 ? 'Solicitud propia' : 'No asignada')}</td>
+                <td>${tiendaDisplay}</td>
                 <td><span class="status-badge ${estadoClass}">${estado}</span></td>
                 <td>
                     <button class="action-btn" title="Ver detalles" onclick="verDetalles('${idOriginal}')">
@@ -806,11 +425,10 @@
         });
     }
     
-    // Función para ver detalles (debe ser global)
+    // Función para ver detalles (global)
     window.verDetalles = function(id) {
         console.log('Buscando solicitud con ID:', id, 'Tipo:', typeof id);
         
-        // Buscar la solicitud usando comparación flexible
         const solicitud = allSolicitudes.find(s => String(s.id) == String(id));
         
         if (!solicitud) {
@@ -821,10 +439,8 @@
         
         console.log('Solicitud encontrada:', solicitud);
         
-        // Normalizar el estado
         const estado = solicitud.estado_solicitud;
         
-        // Formatear fecha
         let fechaFormateada = 'No disponible';
         if (solicitud.fecha_creacion) {
             try {
@@ -835,10 +451,8 @@
             }
         }
         
-        // Título del modal con estado
         modalTitle.textContent = `Solicitud de Portabilidad #${solicitud.id} (${estado})`;
         
-        // Preparar sección de comentarios
         let comentariosHtml = '';
         if (solicitud.comentarios && solicitud.comentarios.trim() !== '') {
             comentariosHtml = `
@@ -851,7 +465,12 @@
             `;
         }
         
-        // Contenido del modal
+        // Generar etiquetas especiales para vendedores internos
+        let etiquetasEspeciales = '';
+        if (tipoVendedor === 'interno' && parseInt(solicitud.es_propia) === 1) {
+            etiquetasEspeciales = '<span class="vendedor-interno-badge">INTERNO</span>';
+        }
+        
         modalContent.innerHTML = `
             <div class="detail-group">
                 <h4>Información del Cliente</h4>
@@ -912,6 +531,7 @@
                     <div class="detail-value">
                         ${solicitud.nombre_tienda || (parseInt(solicitud.es_propia) === 1 ? 'Solicitud propia' : 'No asignada')}
                         ${parseInt(solicitud.es_propia) === 1 ? '<span class="label-propio">Tú</span>' : ''}
+                        ${etiquetasEspeciales}
                     </div>
                 </div>
                 ${comentariosHtml}
@@ -936,7 +556,6 @@
             </div>
         `;
         
-        // Mostrar modal
         modal.style.display = 'block';
     };
     

@@ -1,5 +1,5 @@
 <?php
-// get_solicitudes_portabilidad.php - SOLUCIÓN PARA ERROR DE COLACIÓN
+// get_solicitudes_portabilidad.php - SOLUCIÓN PARA ERROR DE COLACIÓN + TIPO VENDEDOR
 header('Content-Type: application/json; charset=UTF-8');
 require_once 'db_connect.php';
 
@@ -12,7 +12,24 @@ try {
     $uid = $_GET['uid'];
     $con = conexiondb();
     
-    // 1. Primera consulta para obtener vendedores - FORZAR COLACIÓN
+    // 1. Obtener el tipo de relación del vendedor
+    $tipo_vendedor = 'externo'; // Default
+    $query_tipo = "SELECT tipo_relacion FROM vendedor_tienda_relacion 
+                   WHERE vendedor_id = ? COLLATE utf8mb4_general_ci";
+    
+    $stmt_tipo = mysqli_prepare($con, $query_tipo);
+    if ($stmt_tipo) {
+        mysqli_stmt_bind_param($stmt_tipo, "s", $uid);
+        if (mysqli_stmt_execute($stmt_tipo)) {
+            $result_tipo = mysqli_stmt_get_result($stmt_tipo);
+            if ($row_tipo = mysqli_fetch_assoc($result_tipo)) {
+                $tipo_vendedor = $row_tipo['tipo_relacion'] ?: 'externo';
+            }
+        }
+        mysqli_stmt_close($stmt_tipo);
+    }
+    
+    // 2. Primera consulta para obtener vendedores - FORZAR COLACIÓN
     $vendedores = [];
     $query_vendedores = "SELECT vendedor_id FROM vendedor_tienda_relacion 
                          WHERE asignado_por = ? COLLATE utf8mb4_general_ci";
@@ -37,13 +54,13 @@ try {
     
     mysqli_stmt_close($stmt_vendedores);
     
-    // 2. Construir lista de UIDs para la consulta IN
+    // 3. Construir lista de UIDs para la consulta IN
     $lista_uids = "'" . mysqli_real_escape_string($con, $uid) . "'";
     foreach ($vendedores as $vendedor_id) {
         $lista_uids .= ",'" . mysqli_real_escape_string($con, $vendedor_id) . "'";
     }
     
-    // 3. Consulta principal - SIN UNIR TABLAS para evitar duplicados
+    // 4. Consulta principal - SIN UNIR TABLAS para evitar duplicados
     $query = "SELECT 
               id, user_id, nombre_completo, numero_portar, nip_portabilidad,
               operador_destino, fecha_creacion, estado_solicitud, comentarios,
@@ -91,11 +108,12 @@ try {
     
     mysqli_close($con);
     
-    // Devolver respuesta
+    // Devolver respuesta CON EL TIPO DE VENDEDOR
     echo json_encode([
         "success" => true,
         "solicitudes" => $solicitudes_unicas,
-        "estadisticas" => $estadisticas
+        "estadisticas" => $estadisticas,
+        "tipo_vendedor" => $tipo_vendedor // NUEVO CAMPO
     ]);
     
 } catch (Exception $e) {
