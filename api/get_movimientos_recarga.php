@@ -4,23 +4,35 @@ header('Content-Type: application/json; charset=UTF-8');
 require_once 'db_connect.php';
 
 try {
+    // Log inicial para debugging
+    error_log("get_movimientos_recarga.php - Iniciando");
+    
     // Verificar autorización
     if (!isset($_GET['uid']) || !isset($_GET['role'])) {
-        throw new Exception("No autorizado");
+        throw new Exception("No autorizado - Faltan parámetros uid o role");
     }
 
     $uid = $_GET['uid'];
     $role = $_GET['role'];
     
+    error_log("get_movimientos_recarga.php - UID: $uid, Role: $role");
+    
     // Solo root puede acceder
     if ($role !== 'root') {
-        throw new Exception("Solo el usuario root puede acceder a esta información");
+        throw new Exception("Solo el usuario root puede acceder a esta información. Role recibido: $role");
     }
     
     // Conectar a la base de datos
     $con = conexiondb();
     
+    if (!$con) {
+        throw new Exception("Error al conectar con la base de datos");
+    }
+    
+    error_log("get_movimientos_recarga.php - Conexión establecida");
+    
     // Consulta para obtener TODOS los movimientos de tipo RECARGA con información de tienda
+    // Simplificada para evitar problemas con JOINs
     $query = "SELECT 
                 m.id_movimiento,
                 m.tipo,
@@ -28,7 +40,6 @@ try {
                 m.id_bolsa_origen,
                 m.id_bolsa_destino,
                 m.referencia,
-                m.imagen_comprobante,
                 m.user_id,
                 m.dispositivo_id,
                 m.dispositivo_modelo,
@@ -36,25 +47,25 @@ try {
                 m.estado,
                 m.fecha_aprobacion,
                 m.aprobado_por,
-                COALESCE(s.nombre_tienda, 'Sin tienda asignada') as nombre_tienda,
-                s.id as tienda_id,
-                psr.pdv_id,
                 CASE 
                     WHEN m.imagen_comprobante IS NOT NULL AND LENGTH(m.imagen_comprobante) > 0 
                     THEN 1 
                     ELSE 0 
                 END as tiene_comprobante
               FROM movimientos m
-              LEFT JOIN pdv_supervendedor_relacion psr ON m.user_id = psr.supervendedor_id COLLATE utf8mb4_general_ci
-              LEFT JOIN sucursales s ON psr.pdv_id = s.id
               WHERE m.tipo = 'RECARGA'
               ORDER BY m.fecha_creacion DESC";
+    
+    error_log("get_movimientos_recarga.php - Ejecutando consulta principal");
     
     $result = mysqli_query($con, $query);
     
     if (!$result) {
-        throw new Exception("Error en la consulta: " . mysqli_error($con));
+        throw new Exception("Error en la consulta principal: " . mysqli_error($con));
     }
+    
+    $num_rows = mysqli_num_rows($result);
+    error_log("get_movimientos_recarga.php - Filas encontradas: $num_rows");
     
     // Construir array de resultados
     $movimientos = [];
@@ -76,8 +87,33 @@ try {
             $montoRechazado += $monto;
         }
         
+        // Buscar nombre de tienda por separado
+        $nombre_tienda = 'Sin tienda asignada';
+        $tienda_id = null;
+        
+        // Intentar obtener información de tienda desde pdv_supervendedor_relacion
+        $query_tienda = "SELECT psr.pdv_id, s.nombre_tienda 
+                        FROM pdv_supervendedor_relacion psr
+                        LEFT JOIN sucursales s ON psr.pdv_id = s.id
+                        WHERE psr.supervendedor_id = ? COLLATE utf8mb4_general_ci
+                        LIMIT 1";
+        
+        $stmt_tienda = mysqli_prepare($con, $query_tienda);
+        if ($stmt_tienda) {
+            mysqli_stmt_bind_param($stmt_tienda, "s", $row['user_id']);
+            mysqli_stmt_execute($stmt_tienda);
+            $result_tienda = mysqli_stmt_get_result($stmt_tienda);
+            
+            if ($row_tienda = mysqli_fetch_assoc($result_tienda)) {
+                $nombre_tienda = $row_tienda['nombre_tienda'] ?: 'Sin nombre';
+                $tienda_id = $row_tienda['pdv_id'];
+            }
+            mysqli_stmt_close($stmt_tienda);
+        }
+        
         // Agregar información adicional
-        $row['nombre_tienda'] = $row['nombre_tienda'] ?: 'Tienda no identificada';
+        $row['nombre_tienda'] = $nombre_tienda;
+        $row['tienda_id'] = $tienda_id;
         $row['monto_formateado'] = '$' . number_format($monto, 2);
         $row['fecha_formateada'] = date('d/m/Y H:i', strtotime($row['fecha_creacion']));
         
@@ -92,6 +128,8 @@ try {
         
         $movimientos[] = $row;
     }
+    
+    error_log("get_movimientos_recarga.php - Movimientos procesados: " . count($movimientos));
     
     // Obtener información de bolsas relacionadas
     $bolsasIds = [];
@@ -114,6 +152,8 @@ try {
                         LEFT JOIN sucursales s ON b.id_sucursal = s.id
                         WHERE b.id IN ($bolsasIdsStr)";
         
+        error_log("get_movimientos_recarga.php - Consultando bolsas");
+        
         $resultBolsas = mysqli_query($con, $queryBolsas);
         
         if ($resultBolsas) {
@@ -124,6 +164,8 @@ try {
                     'saldo' => floatval($bolsa['saldo_actual'])
                 ];
             }
+        } else {
+            error_log("get_movimientos_recarga.php - Error al consultar bolsas: " . mysqli_error($con));
         }
     }
     
@@ -163,19 +205,33 @@ try {
     // Cerrar conexión
     mysqli_close($con);
     
+    error_log("get_movimientos_recarga.php - Enviando respuesta exitosa");
+    
     // Devolver resultados
     echo json_encode([
         "success" => true,
         "movimientos" => $movimientos,
         "estadisticas" => $estadisticas,
-        "bolsas" => $bolsasInfo
+        "bolsas" => $bolsasInfo,
+        "debug" => [
+            "total_movimientos" => count($movimientos),
+            "role" => $role,
+            "uid" => $uid
+        ]
     ]);
     
 } catch (Exception $e) {
+    error_log("get_movimientos_recarga.php - ERROR: " . $e->getMessage());
+    
     http_response_code(500);
     echo json_encode([
         "success" => false,
-        "error" => $e->getMessage()
+        "error" => $e->getMessage(),
+        "debug" => [
+            "file" => "get_movimientos_recarga.php",
+            "line" => $e->getLine(),
+            "trace" => $e->getTraceAsString()
+        ]
     ]);
 }
 ?>

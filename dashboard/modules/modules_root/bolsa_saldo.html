@@ -384,8 +384,17 @@
     // Variables globales
     let movimientosData = [];
     let movimientosFiltrados = [];
-    const userRole = sessionStorage.getItem('userRole');
-    const userUid = sessionStorage.getItem('userUid');
+    const userRole = sessionStorage.getItem('userRole') || '';
+    const userUid = sessionStorage.getItem('userUid') || sessionStorage.getItem('userUID') || '';
+    
+    console.log('Módulo bolsa_saldo iniciado - Role:', userRole, 'UID:', userUid);
+    
+    // Verificar que tenemos los datos necesarios
+    if (!userRole || !userUid) {
+        console.error('Faltan datos de sesión - Role:', userRole, 'UID:', userUid);
+        document.getElementById('tbody-movimientos').innerHTML = 
+            '<tr><td colspan="9" class="text-center" style="color: red;">Error: No se encontraron datos de sesión. Por favor, vuelve a iniciar sesión.</td></tr>';
+    }
     
     // Función para mostrar botones de acción según permisos
     function mostrarBotonesAccion(mov) {
@@ -406,25 +415,46 @@
     
     // Función para cargar los movimientos
     async function cargarMovimientos() {
+        console.log('Iniciando carga de movimientos...');
+        console.log('Role:', userRole, 'UID:', userUid);
+        
         try {
-            const response = await fetch(`api/get_movimientos_recarga.php?role=${userRole}&uid=${userUid}`);
+            const url = `api/get_movimientos_recarga.php?role=${userRole}&uid=${userUid}`;
+            console.log('Llamando a:', url);
             
-            if (!response.ok) {
-                throw new Error('Error al cargar los movimientos');
+            const response = await fetch(url);
+            console.log('Response status:', response.status);
+            
+            const responseText = await response.text();
+            console.log('Response text:', responseText);
+            
+            let data;
+            try {
+                data = JSON.parse(responseText);
+            } catch (parseError) {
+                console.error('Error parseando JSON:', parseError);
+                throw new Error('Respuesta inválida del servidor: ' + responseText.substring(0, 200));
             }
             
-            const data = await response.json();
+            console.log('Data recibida:', data);
             
             if (data.success) {
-                movimientosData = data.movimientos;
-                actualizarEstadisticas(data.estadisticas);
+                console.log('Movimientos recibidos:', data.movimientos ? data.movimientos.length : 0);
+                movimientosData = data.movimientos || [];
+                actualizarEstadisticas(data.estadisticas || {
+                    total_recargas: 0,
+                    recargas_pendientes: 0,
+                    recargas_aprobadas: 0,
+                    monto_total: 0
+                });
                 aplicarFiltros();
             } else {
+                console.error('Error en la respuesta:', data);
                 throw new Error(data.error || 'Error al obtener los datos');
             }
             
         } catch (error) {
-            console.error('Error:', error);
+            console.error('Error completo:', error);
             mostrarError('Error al cargar los movimientos: ' + error.message);
         }
     }
@@ -626,6 +656,22 @@
     
     // Event listeners
     document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM cargado - Verificando permisos...');
+        
+        // Verificar que tenemos los datos necesarios
+        if (!userRole || !userUid) {
+            console.error('No se puede cargar el módulo sin datos de sesión');
+            return;
+        }
+        
+        // Verificar que el rol sea root
+        if (userRole !== 'root') {
+            console.error('Acceso denegado - Solo root puede acceder a este módulo');
+            document.getElementById('tbody-movimientos').innerHTML = 
+                '<tr><td colspan="9" class="text-center" style="color: red;">Acceso denegado. Solo el usuario root puede acceder a este módulo.</td></tr>';
+            return;
+        }
+        
         // Cargar movimientos al inicio
         cargarMovimientos();
         
