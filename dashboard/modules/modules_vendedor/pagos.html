@@ -21,7 +21,7 @@
                     <label for="filtro-estado">Estado:</label>
                     <select id="filtro-estado" class="form-control">
                         <option value="">Todos</option>
-                        <option value="pendiente">Pendiente</option>
+                        <option value="pendiente" selected>Pendiente</option>
                         <option value="procesando">Procesando</option>
                         <option value="completada">Completada</option>
                         <option value="rechazada">Rechazada</option>
@@ -36,6 +36,17 @@
                         <option value="">Todos</option>
                         <option value="1">Mis solicitudes</option>
                         <option value="0">Otras tiendas</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col">
+                <div class="form-group">
+                    <label for="filtro-proveedor">Proveedor:</label>
+                    <select id="filtro-proveedor" class="form-control">
+                        <option value="">Todos</option>
+                        <option value="telmex">Telmex</option>
+                        <option value="payjoy">Payjoy</option>
+                        <option value="telcel">Telcel</option>
                     </select>
                 </div>
             </div>
@@ -825,6 +836,7 @@
     // Elementos de filtro
     const filtroEstado = document.getElementById('filtro-estado');
     const filtroOrigen = document.getElementById('filtro-origen');
+    const filtroProveedor = document.getElementById('filtro-proveedor');
     const busquedaInput = document.getElementById('busqueda');
     const btnRefresh = document.getElementById('btn-refresh');
     
@@ -916,6 +928,11 @@
     });
     
     filtroOrigen.addEventListener('change', () => {
+        currentPage = 1;
+        aplicarFiltros();
+    });
+    
+    filtroProveedor.addEventListener('change', () => {
         currentPage = 1;
         aplicarFiltros();
     });
@@ -1047,6 +1064,7 @@
     function aplicarFiltros() {
         const estado = filtroEstado.value;
         const origen = filtroOrigen.value;
+        const proveedor = filtroProveedor.value;
         const termino = busquedaInput.value.trim().toLowerCase();
         
         filteredSolicitudes = allSolicitudes.filter(solicitud => {
@@ -1058,6 +1076,14 @@
             if (tipoVendedor === 'interno' && origen !== '') {
                 const esPropia = parseInt(solicitud.es_propia) === 1;
                 if ((origen === '1' && !esPropia) || (origen === '0' && esPropia)) {
+                    return false;
+                }
+            }
+            
+            // Aplicar filtro de proveedor
+            if (proveedor && solicitud.proveedor) {
+                const proveedorSolicitud = solicitud.proveedor.toLowerCase();
+                if (!proveedorSolicitud.includes(proveedor.toLowerCase())) {
                     return false;
                 }
             }
