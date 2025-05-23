@@ -138,7 +138,7 @@
         </div>
     </div>
     
-    <!-- NUEVO: Modal para visualizar comprobante con zoom -->
+    <!-- Modal para visualizar comprobante con zoom -->
     <div id="modal-comprobante" class="modal">
         <div class="modal-content comprobante-modal-content">
             <span class="close-modal">&times;</span>
@@ -159,6 +159,84 @@
                 <button id="btn-reset-zoom" class="btn btn-primary">
                     <i class="fas fa-sync"></i> Restablecer
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Validación de Solicitud -->
+    <div id="modal-validacion" class="modal">
+        <div class="modal-content validacion-modal-content">
+            <span class="close-modal">&times;</span>
+            <h3 id="validacion-title">Validar Solicitud de Recarga</h3>
+            
+            <div class="validacion-info">
+                <div class="solicitud-resumen">
+                    <h4>Información de la Solicitud</h4>
+                    <div class="resumen-grid">
+                        <div class="resumen-item">
+                            <span class="resumen-label">ID:</span>
+                            <span id="validacion-id">-</span>
+                        </div>
+                        <div class="resumen-item">
+                            <span class="resumen-label">Monto:</span>
+                            <span id="validacion-monto">-</span>
+                        </div>
+                        <div class="resumen-item">
+                            <span class="resumen-label">Tienda:</span>
+                            <span id="validacion-tienda">-</span>
+                        </div>
+                        <div class="resumen-item">
+                            <span class="resumen-label">Referencia:</span>
+                            <span id="validacion-referencia">-</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <form id="form-validacion">
+                    <div class="decision-section">
+                        <h4><i class="fas fa-gavel"></i> Decisión de Validación</h4>
+                        <div class="radio-group">
+                            <label class="radio-option aprobado">
+                                <input type="radio" name="decision" value="aprobado">
+                                <span class="radio-custom"></span>
+                                <i class="fas fa-check-circle"></i>
+                                <span class="radio-text">Aprobar Solicitud</span>
+                            </label>
+                            <label class="radio-option rechazado">
+                                <input type="radio" name="decision" value="rechazado">
+                                <span class="radio-custom"></span>
+                                <i class="fas fa-times-circle"></i>
+                                <span class="radio-text">Rechazar Solicitud</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="comentarios-section">
+                        <h4>Comentarios <span class="required">*</span></h4>
+                        <textarea id="comentarios-validacion" 
+                                 placeholder="Escriba los comentarios sobre su decisión (obligatorio)..."
+                                 rows="4"
+                                 maxlength="500"></textarea>
+                        <div class="char-counter">
+                            <span id="char-count">0</span>/500 caracteres
+                        </div>
+                    </div>
+                    
+                    <div class="modal-actions">
+                        <button type="button" id="btn-cancelar-validacion" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancelar
+                        </button>
+                        <button type="submit" id="btn-confirmar-validacion" class="btn btn-primary" disabled>
+                            <i class="fas fa-gavel"></i> Confirmar Decisión
+                        </button>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Loading state -->
+            <div id="validacion-loading" class="validacion-loading" style="display: none;">
+                <div class="loading-spinner"></div>
+                <p>Procesando validación...</p>
             </div>
         </div>
     </div>
@@ -601,7 +679,7 @@
         color: #721C24;
     }
     
-    /* NUEVO: Estilos para botón de ampliar comprobante */
+    /* Estilos para botón de ampliar comprobante */
     .btn-ampliar {
         position: absolute;
         bottom: 10px;
@@ -624,7 +702,7 @@
         background: rgba(0, 0, 0, 0.8);
     }
     
-    /* NUEVO: Estilos para el modal de comprobante con zoom */
+    /* Estilos para el modal de comprobante con zoom */
     .comprobante-modal-content {
         display: flex;
         flex-direction: column;
@@ -669,6 +747,212 @@
         border: 1px solid #ddd;
     }
 
+    /* Estilos para el modal de validación */
+    .validacion-modal-content {
+        max-width: 600px;
+        padding: 30px;
+    }
+
+    .validacion-info {
+        margin-top: 20px;
+    }
+
+    .solicitud-resumen {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 25px;
+        border-left: 4px solid var(--primary-color);
+    }
+
+    .solicitud-resumen h4 {
+        margin: 0 0 15px 0;
+        color: var(--primary-color);
+        font-size: 1.1rem;
+    }
+
+    .resumen-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 10px;
+    }
+
+    .resumen-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 5px 0;
+    }
+
+    .resumen-label {
+        font-weight: 600;
+        color: #666;
+    }
+
+    .decision-section {
+        margin-bottom: 25px;
+    }
+
+    .decision-section h4 {
+        margin: 0 0 15px 0;
+        color: #333;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .radio-group {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .radio-option {
+        display: flex;
+        align-items: center;
+        padding: 15px;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        gap: 12px;
+    }
+
+    .radio-option:hover {
+        border-color: #0288d1;
+        background-color: #f8f9fa;
+    }
+
+    .radio-option.aprobado input:checked ~ .radio-custom {
+        background-color: #28a745;
+        border-color: #28a745;
+    }
+
+    .radio-option.aprobado input:checked {
+        accent-color: #28a745;
+    }
+
+    .radio-option.aprobado:has(input:checked) {
+        border-color: #28a745;
+        background-color: #d4edda;
+    }
+
+    .radio-option.rechazado input:checked ~ .radio-custom {
+        background-color: #dc3545;
+        border-color: #dc3545;
+    }
+
+    .radio-option.rechazado input:checked {
+        accent-color: #dc3545;
+    }
+
+    .radio-option.rechazado:has(input:checked) {
+        border-color: #dc3545;
+        background-color: #f8d7da;
+    }
+
+    .radio-option input[type="radio"] {
+        margin: 0;
+        width: 18px;
+        height: 18px;
+    }
+
+    .radio-option i {
+        font-size: 1.2rem;
+        color: #6c757d;
+    }
+
+    .radio-option.aprobado i {
+        color: #28a745;
+    }
+
+    .radio-option.rechazado i {
+        color: #dc3545;
+    }
+
+    .radio-text {
+        font-weight: 500;
+        font-size: 1rem;
+    }
+
+    .comentarios-section h4 {
+        margin: 0 0 10px 0;
+        color: #333;
+    }
+
+    .required {
+        color: #dc3545;
+        font-weight: bold;
+    }
+
+    #comentarios-validacion {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        font-family: inherit;
+        font-size: 0.95rem;
+        resize: vertical;
+        min-height: 80px;
+        transition: border-color 0.3s ease;
+    }
+
+    #comentarios-validacion:focus {
+        outline: none;
+        border-color: var(--primary-color);
+    }
+
+    #comentarios-validacion.error {
+        border-color: #dc3545;
+    }
+
+    .char-counter {
+        text-align: right;
+        font-size: 0.85rem;
+        color: #6c757d;
+        margin-top: 5px;
+    }
+
+    .char-counter.warning {
+        color: #ffc107;
+    }
+
+    .char-counter.danger {
+        color: #dc3545;
+    }
+
+    .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        margin-top: 25px;
+        padding-top: 20px;
+        border-top: 1px solid #e9ecef;
+    }
+
+    .btn-secondary {
+        background-color: #6c757d;
+        color: white;
+        border: none;
+    }
+
+    .btn-secondary:hover {
+        background-color: #5a6268;
+    }
+
+    .validacion-loading {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255, 255, 255, 0.95);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+    }
+
     /* Responsividad */
     @media (max-width: 768px) {
         .vendedor-interno-badge {
@@ -707,6 +991,24 @@
         .comprobante-controls button {
             width: 100%;
         }
+
+        .validacion-modal-content {
+            width: 95%;
+            padding: 20px;
+            margin: 2% auto;
+        }
+        
+        .resumen-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .modal-actions {
+            flex-direction: column;
+        }
+        
+        .modal-actions .btn {
+            width: 100%;
+        }
     }
 </style>
 
@@ -739,7 +1041,7 @@
     const modalContent = document.getElementById('modal-content');
     const closeModal = document.querySelector('#modal-detalles .close-modal');
     
-    // NUEVO: Modal de comprobante con zoom
+    // Modal de comprobante con zoom
     const modalComprobante = document.getElementById('modal-comprobante');
     const comprobanteTitle = document.getElementById('comprobante-title');
     const comprobanteZoomImagen = document.getElementById('comprobante-zoom-imagen');
@@ -749,9 +1051,20 @@
     const btnDownload = document.getElementById('btn-download');
     const btnResetZoom = document.getElementById('btn-reset-zoom');
     
-    // NUEVO: Variables para el zoom
+    // Variables para el zoom
     let currentZoom = 1;
     let currentComprobanteId = null;
+
+    // Variables para el modal de validación
+    let currentSolicitudId = null;
+    const modalValidacion = document.getElementById('modal-validacion');
+    const formValidacion = document.getElementById('form-validacion');
+    const comentariosTextarea = document.getElementById('comentarios-validacion');
+    const charCount = document.getElementById('char-count');
+    const btnConfirmarValidacion = document.getElementById('btn-confirmar-validacion');
+    const btnCancelarValidacion = document.getElementById('btn-cancelar-validacion');
+    const closeModalValidacion = document.querySelector('#modal-validacion .close-modal');
+    const validacionLoading = document.getElementById('validacion-loading');
     
     // Obtener datos del usuario
     const userUID = sessionStorage.getItem('userUID') || '';
@@ -777,7 +1090,7 @@
         }
     }
     
-    // Event listeners
+    // Event listeners básicos
     filtroEstado.addEventListener('change', () => {
         currentPage = 1;
         aplicarFiltros();
@@ -815,16 +1128,21 @@
     // Event listeners del modal de detalles
     closeModal.addEventListener('click', () => modal.style.display = 'none');
     
-    // NUEVO: Event listeners del modal de comprobante
+    // Event listeners del modal de comprobante
     closeModalComprobante.addEventListener('click', () => modalComprobante.style.display = 'none');
     
+    // Event listeners para el modal de validación
+    closeModalValidacion.addEventListener('click', cerrarModalValidacion);
+    btnCancelarValidacion.addEventListener('click', cerrarModalValidacion);
+
     // Event listener para cerrar modales al hacer clic fuera
     window.addEventListener('click', (e) => {
         if (e.target === modal) modal.style.display = 'none';
         if (e.target === modalComprobante) modalComprobante.style.display = 'none';
+        if (e.target === modalValidacion) cerrarModalValidacion();
     });
     
-    // NUEVO: Event listeners para zoom
+    // Event listeners para zoom
     btnZoomIn.addEventListener('click', () => {
         currentZoom += 0.2;
         aplicarZoom();
@@ -842,10 +1160,9 @@
         aplicarZoom();
     });
     
-    // NUEVO: Event listener para descargar
+    // Event listener para descargar
     btnDownload.addEventListener('click', () => {
         if (currentComprobanteId) {
-            // Crear un enlace temporal para la descarga
             const link = document.createElement('a');
             link.href = `../api/get_comprobante.php?id=${currentComprobanteId}&download=1&t=${new Date().getTime()}`;
             link.download = `comprobante_${currentComprobanteId}.jpg`;
@@ -854,8 +1171,37 @@
             document.body.removeChild(link);
         }
     });
+
+    // Event listener para contar caracteres
+    comentariosTextarea.addEventListener('input', function() {
+        const length = this.value.length;
+        charCount.textContent = length;
+        
+        // Cambiar color según la cantidad de caracteres
+        const counter = document.querySelector('.char-counter');
+        counter.classList.remove('warning', 'danger');
+        
+        if (length > 400) {
+            counter.classList.add('danger');
+        } else if (length > 300) {
+            counter.classList.add('warning');
+        }
+        
+        validarFormulario();
+    });
+
+    // Event listeners para los radio buttons
+    document.querySelectorAll('input[name="decision"]').forEach(radio => {
+        radio.addEventListener('change', validarFormulario);
+    });
+
+    // Event listener para el submit del formulario
+    formValidacion.addEventListener('submit', function(e) {
+        e.preventDefault();
+        procesarValidacion();
+    });
     
-    // NUEVO: Función para aplicar zoom
+    // Función para aplicar zoom
     function aplicarZoom() {
         comprobanteZoomImagen.style.transform = `scale(${currentZoom})`;
     }
@@ -890,6 +1236,126 @@
             maximumFractionDigits: 2
         }).format(num);
     }
+
+    // Función para validar el formulario
+    function validarFormulario() {
+        const decision = document.querySelector('input[name="decision"]:checked');
+        const comentarios = comentariosTextarea.value.trim();
+        
+        const isValid = decision && comentarios.length >= 10; // Mínimo 10 caracteres
+        
+        btnConfirmarValidacion.disabled = !isValid;
+        
+        // Agregar/quitar clase de error al textarea
+        if (comentarios.length > 0 && comentarios.length < 10) {
+            comentariosTextarea.classList.add('error');
+        } else {
+            comentariosTextarea.classList.remove('error');
+        }
+    }
+
+    // Función para abrir el modal de validación
+    function validarSolicitud(id) {
+        console.log('Abriendo modal de validación para ID:', id);
+        
+        const movimiento = allMovimientos.find(m => String(m.id_movimiento) === String(id));
+        
+        if (!movimiento) {
+            console.error('No se encontró el movimiento con ID:', id);
+            alert(`No se encontró la solicitud con ID: ${id}`);
+            return;
+        }
+        
+        // Solo permitir validar solicitudes pendientes
+        if (movimiento.estado !== 'pendiente') {
+            alert('Solo se pueden validar solicitudes en estado pendiente');
+            return;
+        }
+        
+        currentSolicitudId = id;
+        
+        // Actualizar información en el modal
+        document.getElementById('validacion-id').textContent = movimiento.id_movimiento;
+        document.getElementById('validacion-monto').textContent = movimiento.monto_formateado || ('$' + parseFloat(movimiento.monto).toFixed(2));
+        document.getElementById('validacion-tienda').textContent = movimiento.nombre_tienda || 'Sin tienda';
+        document.getElementById('validacion-referencia').textContent = movimiento.referencia || 'N/A';
+        
+        // Limpiar formulario
+        formValidacion.reset();
+        comentariosTextarea.value = '';
+        charCount.textContent = '0';
+        comentariosTextarea.classList.remove('error');
+        btnConfirmarValidacion.disabled = true;
+        
+        // Mostrar modal
+        modalValidacion.style.display = 'block';
+    }
+
+    // Función para cerrar el modal de validación
+    function cerrarModalValidacion() {
+        modalValidacion.style.display = 'none';
+        currentSolicitudId = null;
+        formValidacion.reset();
+        comentariosTextarea.classList.remove('error');
+    }
+
+    // Función para procesar la validación
+    async function procesarValidacion() {
+        if (!currentSolicitudId) return;
+        
+        const decision = document.querySelector('input[name="decision"]:checked');
+        const comentarios = comentariosTextarea.value.trim();
+        
+        if (!decision || comentarios.length < 10) {
+            alert('Por favor seleccione una decisión y escriba comentarios de al menos 10 caracteres');
+            return;
+        }
+        
+        try {
+            // Mostrar loading
+            validacionLoading.style.display = 'flex';
+            btnConfirmarValidacion.disabled = true;
+            
+            const requestData = {
+                id_movimiento: currentSolicitudId,
+                decision: decision.value,
+                comentarios: comentarios,
+                uid: userUID,
+                role: userRole
+            };
+            
+            console.log('Enviando datos de validación:', requestData);
+            
+            const response = await fetch('../api/validar_recarga.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestData)
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                alert(`Solicitud ${decision.value} correctamente`);
+                cerrarModalValidacion();
+                // Recargar la lista
+                loadMovimientosRecarga();
+            } else {
+                throw new Error(result.error || 'Error desconocido');
+            }
+            
+        } catch (error) {
+            console.error('Error al procesar validación:', error);
+            alert(`Error al procesar la validación: ${error.message}`);
+        } finally {
+            validacionLoading.style.display = 'none';
+            btnConfirmarValidacion.disabled = false;
+        }
+    }
+
+    // Hacer la función global
+    window.validarSolicitud = validarSolicitud;
     
     // Inicialización
     loadMovimientosRecarga();
@@ -1053,7 +1519,7 @@
                 tiendaDisplay = 'Recarga propia <span class="label-propio">Tú</span>';
             }
             
-            // MODIFICADO: Icono de comprobante o miniatura
+            // Icono de comprobante o miniatura
             const tieneComprobante = parseInt(movimiento.tiene_comprobante) === 1;
             let comprobanteHtml = '';
             
@@ -1081,16 +1547,16 @@
                 <td><span class="status-badge ${estadoClass}">${estado}</span></td>
                 <td class="text-center">${comprobanteHtml}</td>
                 <td>
-    <button class="action-btn" title="Ver detalles" onclick="verDetalles('${idOriginal}')">
-        <i class="fas fa-eye"></i>
-    </button>
-    ${estado === 'pendiente' ? 
-        `<button class="action-btn" title="Validar solicitud" onclick="validarSolicitud('${idOriginal}')">
-            <i class="fas fa-gavel"></i>
-        </button>` : 
-        ''
-    }
-</td>
+                    <button class="action-btn" title="Ver detalles" onclick="verDetalles('${idOriginal}')">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    ${estado === 'pendiente' ? 
+                        `<button class="action-btn" title="Validar solicitud" onclick="validarSolicitud('${idOriginal}')">
+                            <i class="fas fa-gavel"></i>
+                        </button>` : 
+                        ''
+                    }
+                </td>
             `;
             
             movimientosTbody.appendChild(row);
@@ -1150,7 +1616,7 @@
             etiquetasEspeciales += ' <span class="tienda-externa-badge">EXTERNA</span>';
         }
         
-        // MODIFICADO: Verificar si tiene comprobante y agregar botón para ampliar
+        // Verificar si tiene comprobante y agregar botón para ampliar
         const tieneComprobante = parseInt(movimiento.tiene_comprobante) === 1;
         let comprobanteHtml = '<div class="no-image">No hay comprobante disponible</div>';
         
@@ -1231,7 +1697,7 @@
         modal.style.display = 'block';
     };
     
-    // NUEVO: Función para ver comprobante ampliado con zoom
+    // Función para ver comprobante ampliado con zoom
     window.verComprobante = function(id) {
         console.log('Mostrando comprobante ampliado para ID:', id);
         
