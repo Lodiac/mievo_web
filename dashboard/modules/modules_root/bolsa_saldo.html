@@ -1,7 +1,9 @@
 <div class="card">
-    <h2 class="content-title">
+    <h2 class="content-title" id="module-title">
         <i class="fas fa-wallet"></i> Gestión de Recargas de Saldo
+        <span id="vendedor-tipo-badge" class="vendedor-interno-badge" style="display: none;">INTERNO</span>
     </h2>
+    <p>Gestiona las solicitudes de recarga de saldo realizadas por ti y tus vendedores.</p>
     
     <!-- Estadísticas -->
     <div class="stats-container">
@@ -39,89 +41,153 @@
     </div>
     
     <!-- Filtros -->
-    <div class="filters-container">
-        <div class="filter-group">
-            <label for="filter-estado">Estado:</label>
-            <select id="filter-estado" class="filter-select">
-                <option value="">Todos</option>
-                <option value="pendiente">Pendiente</option>
-                <option value="aprobado">Aprobado</option>
-                <option value="rechazado">Rechazado</option>
-            </select>
+    <div class="filter-controls">
+        <div class="row">
+            <div class="col">
+                <div class="form-group">
+                    <label for="filtro-estado">Estado:</label>
+                    <select id="filtro-estado" class="form-control">
+                        <option value="">Todos</option>
+                        <option value="pendiente">Pendiente</option>
+                        <option value="aprobado">Aprobado</option>
+                        <option value="rechazado">Rechazado</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col">
+                <div class="form-group">
+                    <label for="filtro-origen">Origen:</label>
+                    <select id="filtro-origen" class="form-control">
+                        <option value="">Todos</option>
+                        <option value="1">Mis recargas</option>
+                        <option value="0">Otras tiendas</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col">
+                <div class="search-input-container">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" id="busqueda" class="search-input" placeholder="Buscar por tienda, referencia...">
+                </div>
+            </div>
+            <div class="col actions">
+                <button id="btn-refresh" class="btn btn-primary">
+                    <i class="fas fa-sync-alt"></i> Actualizar
+                </button>
+            </div>
         </div>
-        
-        <div class="filter-group">
-            <label for="filter-search">Buscar:</label>
-            <input type="text" id="filter-search" class="filter-input" 
-                   placeholder="Buscar por tienda, referencia o ID...">
-        </div>
-        
-        <button id="btn-refresh" class="btn-refresh">
-            <i class="fas fa-sync-alt"></i> Actualizar
-        </button>
     </div>
     
-    <!-- Tabla de movimientos -->
-    <div class="table-container">
-        <table id="tabla-movimientos" class="data-table">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Fecha</th>
-                    <th>Tienda</th>
-                    <th>Monto</th>
-                    <th>Bolsa Destino</th>
-                    <th>Referencia</th>
-                    <th>Estado</th>
-                </tr>
-            </thead>
-            <tbody id="tbody-movimientos">
-                <tr>
-                    <td colspan="7" class="text-center">Cargando movimientos...</td>
-                </tr>
-            </tbody>
-        </table>
+    <!-- Estados de la interfaz -->
+    <div id="movimientos-loading" class="loading-spinner-container">
+        <div class="loading-spinner"></div>
+        <p>Cargando recargas...</p>
     </div>
     
-    <!-- Área de depuración - VISIBLE SIEMPRE -->
-    <div id="debug-info" style="margin-top: 20px; padding: 10px; background-color: #f8f9fa; border-radius: 5px;">
-        <h3>Información de depuración</h3>
-        <div>
-            <strong>Role:</strong> <span id="debug-role">-</span><br>
-            <strong>UID:</strong> <span id="debug-uid">-</span><br>
-            <strong>Estado de carga:</strong> <span id="debug-estado">No iniciado</span>
+    <div id="movimientos-error" class="alert alert-danger" style="display: none;">
+        <i class="fas fa-exclamation-triangle"></i>
+        <span id="error-message">Error al cargar las recargas</span>
+    </div>
+    
+    <!-- Contenedor para movimientos -->
+    <div id="movimientos-container" style="display: none;">
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Fecha</th>
+                        <th>Tienda</th>
+                        <th>Monto</th>
+                        <th>Referencia</th>
+                        <th>Estado</th>
+                        <th>Comprobante</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="movimientos-tbody"></tbody>
+            </table>
         </div>
-        <pre id="debug-content" style="white-space: pre-wrap; font-size: 12px; margin-top: 10px; background: #f0f0f0; padding: 10px; max-height: 300px; overflow: auto;"></pre>
+        
+        <!-- Paginación -->
+        <div class="pagination-container">
+            <button id="prev-page" class="btn btn-outline">
+                <i class="fas fa-chevron-left"></i> Anterior
+            </button>
+            <span id="page-info">Página <span id="current-page">1</span> de <span id="total-pages">1</span></span>
+            <button id="next-page" class="btn btn-outline">
+                Siguiente <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+    </div>
+    
+    <!-- Estado vacío -->
+    <div id="empty-state" class="empty-state" style="display: none;">
+        <i class="fas fa-file-alt"></i>
+        <h3 id="empty-message">No se encontraron recargas</h3>
+    </div>
+    
+    <!-- Modal de detalles -->
+    <div id="modal-detalles" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h3 id="modal-title">Detalles de Recarga</h3>
+            <div id="modal-content" class="modal-body">
+                <!-- Contenido dinámico -->
+            </div>
+        </div>
     </div>
 </div>
 
 <style>
-    /* Estilos para las estadísticas */
+    /* Badge para vendedor interno */
+    .vendedor-interno-badge {
+        background: linear-gradient(135deg, #2196F3, #1976D2);
+        color: white;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-left: 8px;
+        display: inline-block;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        box-shadow: 0 2px 4px rgba(33, 150, 243, 0.3);
+        animation: fadeInScale 0.3s ease-out;
+    }
+
+    @keyframes fadeInScale {
+        from {
+            opacity: 0;
+            transform: scale(0.8);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+    
+    /* Estadísticas */
     .stats-container {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
         gap: 20px;
-        margin-bottom: 30px;
+        margin-bottom: 20px;
     }
     
     .stat-card {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
-        padding: 20px;
+        padding: 15px;
         border-radius: 10px;
         display: flex;
         align-items: center;
         gap: 15px;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        transition: transform 0.3s ease;
-    }
-    
-    .stat-card:hover {
-        transform: translateY(-5px);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     }
     
     .stat-icon {
-        font-size: 2.5em;
+        font-size: 2rem;
         opacity: 0.8;
     }
     
@@ -130,281 +196,535 @@
     }
     
     .stat-value {
-        font-size: 1.8em;
+        font-size: 1.5rem;
         font-weight: bold;
         margin-bottom: 5px;
     }
     
     .stat-label {
-        font-size: 0.9em;
+        font-size: 0.85rem;
         opacity: 0.9;
     }
-    
-    /* Estilos para filtros */
-    .filters-container {
-        display: flex;
-        gap: 15px;
+
+    /* Filtros */
+    .filter-controls {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
         margin-bottom: 20px;
+    }
+    
+    .filter-controls .row {
+        display: flex;
         flex-wrap: wrap;
+        gap: 15px;
+    }
+    
+    .filter-controls .col {
+        flex: 1;
+        min-width: 200px;
+    }
+    
+    .filter-controls .actions {
+        display: flex;
         align-items: flex-end;
     }
     
-    .filter-group {
-        display: flex;
-        flex-direction: column;
-        gap: 5px;
+    .form-group {
+        margin-bottom: 0;
     }
     
-    .filter-group label {
-        font-size: 0.9em;
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-size: 0.9rem;
         color: #666;
-        font-weight: 500;
     }
     
-    .filter-select,
-    .filter-input {
+    .form-control {
+        width: 100%;
         padding: 8px 12px;
         border: 1px solid #ddd;
-        border-radius: 5px;
-        font-size: 14px;
-        min-width: 150px;
+        border-radius: 4px;
+        font-size: 0.95rem;
     }
     
-    .btn-refresh {
+    .search-input-container {
+        position: relative;
+    }
+    
+    .search-icon {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+    }
+    
+    .search-input {
+        width: 100%;
+        padding: 8px 15px 8px 35px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 0.95rem;
+    }
+    
+    .btn {
         padding: 8px 16px;
-        background: #4CAF50;
-        color: white;
-        border: none;
-        border-radius: 5px;
+        border-radius: 4px;
+        font-size: 0.95rem;
         cursor: pointer;
+        border: none;
+    }
+    
+    .btn-primary {
+        background-color: var(--primary-color);
+        color: white;
+    }
+    
+    .btn-outline {
+        background-color: transparent;
+        border: 1px solid #ddd;
+        color: #333;
+    }
+    
+    .btn-outline:hover {
+        background-color: #f5f5f5;
+    }
+    
+    .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    
+    /* Loader y estados */
+    .loading-spinner-container {
         display: flex;
+        flex-direction: column;
         align-items: center;
-        gap: 5px;
-        transition: background 0.3s;
+        justify-content: center;
+        padding: 50px 0;
     }
     
-    .btn-refresh:hover {
-        background: #45a049;
+    .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid rgba(0,0,0,0.1);
+        border-radius: 50%;
+        border-top-color: var(--primary-color);
+        animation: spin 1s linear infinite;
+        margin-bottom: 15px;
     }
     
-    /* Estilos para la tabla */
-    .table-container {
-        overflow-x: auto;
-        background: white;
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    
+    .alert {
+        padding: 15px 20px;
         border-radius: 8px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        margin: 20px 0;
+    }
+    
+    .alert-danger {
+        background-color: #fdecea;
+        color: #ea4335;
+        border: 1px solid #fadad7;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        color: #666;
+    }
+    
+    .empty-state i {
+        font-size: 3rem;
+        color: #ddd;
+        margin-bottom: 15px;
+    }
+    
+    .empty-state h3 {
+        font-size: 1.2rem;
+        margin-bottom: 10px;
+    }
+    
+    /* Tabla de datos */
+    .table-responsive {
+        overflow-x: auto;
     }
     
     .data-table {
         width: 100%;
         border-collapse: collapse;
+        margin-top: 20px;
     }
     
-    .data-table thead {
-        background-color: #f8f9fa;
+    .data-table th, .data-table td {
+        padding: 12px 15px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
     }
     
     .data-table th {
-        padding: 12px;
-        text-align: left;
+        background-color: #f2f2f2;
         font-weight: 600;
-        color: #333;
-        border-bottom: 2px solid #dee2e6;
-    }
-    
-    .data-table td {
-        padding: 12px;
-        border-bottom: 1px solid #dee2e6;
     }
     
     .data-table tbody tr:hover {
-        background-color: #f8f9fa;
+        background-color: #f5f5f5;
     }
     
-    /* Estilos para estados */
-    .estado-badge {
-        padding: 4px 12px;
-        border-radius: 12px;
-        font-size: 0.85em;
-        font-weight: 500;
+    /* Badges de estado */
+    .status-badge {
         display: inline-block;
+        padding: 5px 10px;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: 500;
     }
     
-    .estado-pendiente {
-        background-color: #ffeaa7;
-        color: #d63031;
+    .status-pendiente {
+        background-color: #FFF3CD;
+        color: #856404;
     }
     
-    .estado-aprobado {
-        background-color: #55efc4;
-        color: #00b894;
+    .status-aprobado {
+        background-color: #D4EDDA;
+        color: #155724;
     }
     
-    .estado-rechazado {
-        background-color: #fab1a0;
-        color: #d63031;
+    .status-rechazado {
+        background-color: #F8D7DA;
+        color: #721C24;
     }
     
-    .text-center {
+    /* Badge para tiendas externas */
+    .tienda-externa-badge {
+        background-color: #ff9800;
+        color: white;
+        padding: 2px 6px;
+        border-radius: 8px;
+        font-size: 0.7rem;
+        font-weight: 500;
+        margin-left: 5px;
+    }
+    
+    /* Acciones */
+    .action-btn {
+        background: none;
+        border: none;
+        color: var(--primary-color);
+        cursor: pointer;
+        margin-right: 5px;
+        font-size: 1rem;
+    }
+    
+    .action-btn:hover {
+        color: var(--primary-dark);
+    }
+    
+    /* Paginación */
+    .pagination-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 20px;
+        gap: 15px;
+    }
+    
+    #page-info {
+        font-size: 0.9rem;
+        color: #666;
+    }
+    
+    /* Modal */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.7);
+    }
+    
+    .modal-content {
+        position: relative;
+        background-color: white;
+        margin: 5% auto;
+        padding: 25px;
+        width: 80%;
+        max-width: 800px;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+    
+    .close-modal {
+        position: absolute;
+        top: 15px;
+        right: 20px;
+        font-size: 28px;
+        font-weight: bold;
+        color: #aaa;
+        cursor: pointer;
+    }
+    
+    .close-modal:hover {
+        color: #333;
+    }
+    
+    #modal-title {
+        margin-top: 0;
+        margin-bottom: 20px;
+        color: var(--primary-color);
+    }
+    
+    .modal-body {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+    }
+    
+    .detail-group {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+    }
+    
+    .detail-group h4 {
+        margin-top: 0;
+        margin-bottom: 15px;
+        color: #0288d1;
+        font-size: 1rem;
+    }
+    
+    .detail-item {
+        margin-bottom: 10px;
+    }
+    
+    .detail-label {
+        font-size: 0.85rem;
+        color: #666;
+        margin-bottom: 2px;
+    }
+    
+    .detail-value {
+        font-weight: 500;
+    }
+    
+    .label-propio {
+        background-color: #0288d1;
+        color: white;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        margin-left: 5px;
+    }
+    
+    /* Imagen de comprobante */
+    .comprobante-container {
+        margin-top: 15px;
+    }
+    
+    .comprobante-image {
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        overflow: hidden;
+        width: 100%;
+        min-height: 200px;
+        background-color: #f5f5f5;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .comprobante-image h5 {
+        background-color: #0288d1;
+        color: white;
+        margin: 0;
+        padding: 8px;
+        font-size: 0.9rem;
         text-align: center;
     }
     
-    .loading {
-        display: inline-block;
-        width: 20px;
-        height: 20px;
-        border: 3px solid #f3f3f3;
-        border-top: 3px solid #3498db;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
+    .comprobante-image img {
+        width: 100%;
+        height: auto;
+        object-fit: contain;
+        max-height: 250px;
     }
     
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
+    .comprobante-image .no-image {
+        height: 200px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #777;
+        font-size: 0.9rem;
+    }
+
+    /* Indicador de comprobante */
+    .has-comprobante {
+        color: #155724;
+    }
+    
+    .no-comprobante {
+        color: #721C24;
+    }
+
+    /* Responsividad */
+    @media (max-width: 768px) {
+        .vendedor-interno-badge {
+            font-size: 0.7rem;
+            padding: 3px 8px;
+            margin-left: 5px;
+        }
+        
+        .filter-controls .row {
+            flex-direction: column;
+        }
+        
+        .filter-controls .col {
+            min-width: auto;
+        }
+        
+        .data-table {
+            font-size: 0.9rem;
+        }
+        
+        .modal-content {
+            width: 95%;
+            margin: 2% auto;
+            padding: 15px;
+        }
+        
+        .modal-body {
+            grid-template-columns: 1fr;
+        }
     }
 </style>
 
 <script>
-    // Variables globales
-    let movimientosData = [];
-    let movimientosFiltrados = [];
+    // Elementos del DOM
+    const loadingElement = document.getElementById('movimientos-loading');
+    const errorElement = document.getElementById('movimientos-error');
+    const errorMessageElement = document.getElementById('error-message');
+    const movimientosContainer = document.getElementById('movimientos-container');
+    const movimientosTbody = document.getElementById('movimientos-tbody');
+    const emptyState = document.getElementById('empty-state');
+    const emptyMessage = document.getElementById('empty-message');
+    const vendedorTipoBadge = document.getElementById('vendedor-tipo-badge');
     
-    // IMPORTANTE: Enviar role="root" siempre, y obtener el UID de la sesión
-    const userRole = "root";
-    const userUid = sessionStorage.getItem('userUid') || sessionStorage.getItem('userUID') || '';
+    // Elementos de filtro
+    const filtroEstado = document.getElementById('filtro-estado');
+    const filtroOrigen = document.getElementById('filtro-origen');
+    const busquedaInput = document.getElementById('busqueda');
+    const btnRefresh = document.getElementById('btn-refresh');
     
-    // Mostrar información de depuración
-    document.getElementById('debug-role').textContent = userRole;
-    document.getElementById('debug-uid').textContent = userUid || "No encontrado";
+    // Elementos de paginación
+    const prevPageBtn = document.getElementById('prev-page');
+    const nextPageBtn = document.getElementById('next-page');
+    const currentPageElement = document.getElementById('current-page');
+    const totalPagesElement = document.getElementById('total-pages');
     
-    console.log('Módulo bolsa_saldo iniciado - Role:', userRole, 'UID:', userUid);
+    // Modal
+    const modal = document.getElementById('modal-detalles');
+    const modalTitle = document.getElementById('modal-title');
+    const modalContent = document.getElementById('modal-content');
+    const closeModal = document.querySelector('.close-modal');
     
-    // Función para cargar los movimientos - REESCRITA PARA MAYOR CLARIDAD
-    async function cargarMovimientos() {
-        document.getElementById('debug-estado').textContent = "Iniciando carga...";
-        console.log('Iniciando carga de movimientos...');
-        
-        try {
-            // Construir URL con los parámetros
-            const url = `../api/get_movimientos_recarga.php?role=${userRole}&uid=${userUid}`;
-            console.log('Llamando a:', url);
-            document.getElementById('debug-estado').textContent = "Enviando solicitud...";
-            
-            // Realizar la solicitud HTTP
-            const response = await fetch(url);
-            console.log('Response status:', response.status);
-            document.getElementById('debug-estado').textContent = `Respuesta recibida: ${response.status}`;
-            
-            // Obtener el texto de la respuesta
-            const responseText = await response.text();
-            document.getElementById('debug-content').textContent = responseText;
-            
-            // Intentar parsear la respuesta como JSON
-            let data;
-            try {
-                data = JSON.parse(responseText);
-                document.getElementById('debug-estado').textContent = "JSON parseado correctamente";
-            } catch (parseError) {
-                console.error('Error parseando JSON:', parseError);
-                document.getElementById('debug-estado').textContent = "ERROR: No se pudo parsear JSON";
-                throw new Error('Respuesta inválida del servidor: ' + responseText.substring(0, 200));
-            }
-            
-            console.log('Data recibida:', data);
-            
-            // Verificar si la respuesta es exitosa
-            if (data.success) {
-                console.log('Movimientos recibidos:', data.movimientos ? data.movimientos.length : 0);
-                document.getElementById('debug-estado').textContent = `Éxito: ${data.movimientos ? data.movimientos.length : 0} movimientos recibidos`;
-                
-                // Guardar los datos y actualizar la interfaz
-                movimientosData = data.movimientos || [];
-                actualizarEstadisticas(data.estadisticas || {
-                    total_recargas: 0,
-                    recargas_pendientes: 0,
-                    recargas_aprobadas: 0,
-                    monto_total: 0
-                });
-                aplicarFiltros();
-            } else {
-                console.error('Error en la respuesta:', data);
-                document.getElementById('debug-estado').textContent = `ERROR: ${data.error || 'Respuesta sin éxito'}`;
-                throw new Error(data.error || 'Error al obtener los datos');
-            }
-            
-        } catch (error) {
-            console.error('Error completo:', error);
-            document.getElementById('debug-estado').textContent = `ERROR FATAL: ${error.message}`;
-            mostrarError('Error al cargar los movimientos: ' + error.message);
+    // Obtener datos del usuario
+    const userUID = sessionStorage.getItem('userUID') || '';
+    const userRole = sessionStorage.getItem('userRole') || 'vendedor';
+    
+    // Variables para almacenar datos
+    let allMovimientos = [];
+    let filteredMovimientos = [];
+    
+    // Variables para paginación
+    let currentPage = 1;
+    const itemsPerPage = 10;
+    let totalPages = 1;
+    
+    // Función para actualizar la UI según el tipo de vendedor
+    function updateVendedorTypeUI(tipo) {
+        if (tipo === 'interno') {
+            vendedorTipoBadge.style.display = 'inline-block';
+            console.log('Mostrando badge de vendedor interno');
+        } else {
+            vendedorTipoBadge.style.display = 'none';
+            console.log('Ocultando badge - vendedor externo');
         }
     }
     
-    // Función para actualizar las estadísticas
+    // Event listeners
+    filtroEstado.addEventListener('change', () => {
+        currentPage = 1;
+        aplicarFiltros();
+    });
+    
+    filtroOrigen.addEventListener('change', () => {
+        currentPage = 1;
+        aplicarFiltros();
+    });
+    
+    busquedaInput.addEventListener('keyup', (e) => {
+        if (e.key === 'Enter') {
+            currentPage = 1;
+            aplicarFiltros();
+        }
+    });
+    
+    btnRefresh.addEventListener('click', loadMovimientosRecarga);
+    
+    // Event listeners de paginación
+    prevPageBtn.addEventListener('click', () => {
+        if (currentPage > 1) {
+            currentPage--;
+            renderizarPagina();
+        }
+    });
+    
+    nextPageBtn.addEventListener('click', () => {
+        if (currentPage < totalPages) {
+            currentPage++;
+            renderizarPagina();
+        }
+    });
+    
+    // Event listeners del modal
+    closeModal.addEventListener('click', () => modal.style.display = 'none');
+    window.addEventListener('click', (e) => {
+        if (e.target === modal) modal.style.display = 'none';
+    });
+    
+    // Función para normalizar estados
+    function normalizarEstado(estadoOriginal) {
+        if (!estadoOriginal) return 'pendiente';
+        
+        const estado = String(estadoOriginal).trim().toLowerCase();
+        
+        switch(estado) {
+            case 'pendiente': return 'pendiente';
+            case 'aprobado': return 'aprobado';
+            case 'completado': return 'aprobado';
+            case 'rechazado': return 'rechazado';
+            default: return 'pendiente';
+        }
+    }
+    
+    // Actualizar estadísticas
     function actualizarEstadisticas(stats) {
-        document.getElementById('total-recargas').textContent = stats.total_recargas;
-        document.getElementById('recargas-pendientes').textContent = stats.recargas_pendientes;
-        document.getElementById('recargas-aprobadas').textContent = stats.recargas_aprobadas;
-        document.getElementById('monto-total').textContent = '$' + formatNumber(stats.monto_total);
+        document.getElementById('total-recargas').textContent = stats.total_recargas || 0;
+        document.getElementById('recargas-pendientes').textContent = stats.recargas_pendientes || 0;
+        document.getElementById('recargas-aprobadas').textContent = stats.recargas_aprobadas || 0;
+        document.getElementById('monto-total').textContent = '$' + formatNumber(stats.monto_total || 0);
     }
     
-    // Función para aplicar filtros
-    function aplicarFiltros() {
-        const estado = document.getElementById('filter-estado').value;
-        const busqueda = document.getElementById('filter-search').value.toLowerCase();
-        
-        movimientosFiltrados = movimientosData.filter(mov => {
-            let cumple = true;
-            
-            // Filtro por estado
-            if (estado && mov.estado !== estado) {
-                cumple = false;
-            }
-            
-            // Filtro por búsqueda
-            if (busqueda) {
-                const textoCompleto = `${mov.id_movimiento} ${mov.nombre_tienda || ''} ${mov.referencia || ''} ${mov.user_id || ''}`.toLowerCase();
-                if (!textoCompleto.includes(busqueda)) {
-                    cumple = false;
-                }
-            }
-            
-            return cumple;
-        });
-        
-        renderizarTabla();
-    }
-    
-    // Función para renderizar la tabla
-    function renderizarTabla() {
-        const tbody = document.getElementById('tbody-movimientos');
-        
-        if (movimientosFiltrados.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" class="text-center">No se encontraron movimientos</td></tr>';
-            return;
-        }
-        
-        tbody.innerHTML = movimientosFiltrados.map(mov => {
-            const estadoClass = `estado-${mov.estado}`;
-            const bolsaDestino = mov.bolsa_destino_info ? 
-                `${mov.bolsa_destino_info.nombre} (${mov.bolsa_destino_info.tienda})` : 
-                'N/A';
-            
-            return `
-                <tr>
-                    <td>${mov.id_movimiento}</td>
-                    <td>${mov.fecha_formateada || new Date(mov.fecha_creacion).toLocaleString()}</td>
-                    <td>${mov.nombre_tienda || 'Sin tienda'}</td>
-                    <td>${mov.monto_formateado || ('$' + parseFloat(mov.monto).toFixed(2))}</td>
-                    <td>${bolsaDestino}</td>
-                    <td>${mov.referencia || 'N/A'}</td>
-                    <td><span class="estado-badge ${estadoClass}">${mov.estado}</span></td>
-                </tr>
-            `;
-        }).join('');
-    }
-    
-    // Función para formatear números
+    // Formatear números
     function formatNumber(num) {
         return new Intl.NumberFormat('es-MX', {
             minimumFractionDigits: 2,
@@ -412,30 +732,351 @@
         }).format(num);
     }
     
-    // Función para mostrar errores
-    function mostrarError(mensaje) {
-        const tbody = document.getElementById('tbody-movimientos');
-        tbody.innerHTML = `<tr><td colspan="7" class="text-center" style="color: red;">${mensaje}</td></tr>`;
+    // Inicialización
+    loadMovimientosRecarga();
+    
+    // Función principal para cargar movimientos
+    async function loadMovimientosRecarga() {
+        try {
+            showLoading();
+            
+            console.log('Iniciando carga de recargas para UID:', userUID, 'Role:', userRole);
+            
+            const response = await fetch(`../api/get_bolsa_saldo.php?uid=${encodeURIComponent(userUID)}&role=${encodeURIComponent(userRole)}`);
+            
+            const responseText = await response.text();
+            
+            let data;
+            try {
+                data = JSON.parse(responseText);
+                console.log('Respuesta completa de la API:', data);
+            } catch (jsonError) {
+                console.error("Error al parsear JSON:", responseText);
+                throw new Error(`Error de formato en la respuesta: ${responseText.substring(0, 100)}...`);
+            }
+            
+            if (!data.success) {
+                throw new Error(data.error || "Error desconocido en la respuesta");
+            }
+            
+            // Actualizar UI según el tipo de vendedor (si viene en la respuesta)
+            if (data.tipo_vendedor) {
+                updateVendedorTypeUI(data.tipo_vendedor);
+            }
+            
+            allMovimientos = data.movimientos || [];
+            
+            console.log('Movimientos recibidos:', allMovimientos.length);
+            if (data.tipo_vendedor) {
+                console.log('Tipo de vendedor:', data.tipo_vendedor);
+            }
+            
+            // Actualizar estadísticas
+            actualizarEstadisticas(data.estadisticas || {});
+            
+            // Normalizar estados
+            allMovimientos.forEach(movimiento => {
+                movimiento.estado = normalizarEstado(movimiento.estado);
+            });
+            
+            aplicarFiltros();
+            
+        } catch (error) {
+            console.error('Error completo:', error);
+            showError(`Error al cargar las recargas: ${error.message}`);
+        }
     }
     
-    // Event listeners
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('DOM cargado - Iniciando módulo...');
+    // Función para aplicar filtros
+    function aplicarFiltros() {
+        const estado = filtroEstado.value;
+        const origen = filtroOrigen.value;
+        const termino = busquedaInput.value.trim().toLowerCase();
         
-        // Cargar movimientos inmediatamente sin verificaciones
-        cargarMovimientos();
-        
-        // Configurar event listeners para filtros
-        document.getElementById('filter-estado').addEventListener('change', aplicarFiltros);
-        document.getElementById('filter-search').addEventListener('input', aplicarFiltros);
-        
-        // Botón actualizar
-        document.getElementById('btn-refresh').addEventListener('click', function() {
-            this.querySelector('i').classList.add('fa-spin');
-            document.getElementById('debug-estado').textContent = "Actualizando...";
-            cargarMovimientos().then(() => {
-                this.querySelector('i').classList.remove('fa-spin');
-            });
+        filteredMovimientos = allMovimientos.filter(movimiento => {
+            if (estado && movimiento.estado !== estado) {
+                return false;
+            }
+            
+            if (origen !== '') {
+                const esPropia = parseInt(movimiento.es_propia) === 1;
+                if ((origen === '1' && !esPropia) || (origen === '0' && esPropia)) {
+                    return false;
+                }
+            }
+            
+            if (termino) {
+                const textoCompleto = `${movimiento.id_movimiento} ${movimiento.nombre_tienda || ''} ${movimiento.referencia || ''} ${movimiento.user_id || ''}`.toLowerCase();
+                if (!textoCompleto.includes(termino)) {
+                    return false;
+                }
+            }
+            
+            return true;
         });
-    });
+        
+        totalPages = Math.max(1, Math.ceil(filteredMovimientos.length / itemsPerPage));
+        
+        if (currentPage > totalPages) {
+            currentPage = totalPages;
+        }
+        
+        currentPageElement.textContent = currentPage;
+        totalPagesElement.textContent = totalPages;
+        
+        renderizarPagina();
+    }
+    
+    // Función para renderizar la página actual
+    function renderizarPagina() {
+        prevPageBtn.disabled = currentPage <= 1;
+        nextPageBtn.disabled = currentPage >= totalPages;
+        
+        currentPageElement.textContent = currentPage;
+        totalPagesElement.textContent = totalPages;
+        
+        if (filteredMovimientos.length === 0) {
+            showEmptyState('No se encontraron recargas con los filtros seleccionados');
+            return;
+        }
+        
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = Math.min(startIndex + itemsPerPage, filteredMovimientos.length);
+        
+        const movimientosPagina = filteredMovimientos.slice(startIndex, endIndex);
+        
+        renderMovimientos(movimientosPagina);
+        showContent();
+    }
+    
+    // Función para renderizar movimientos
+    function renderMovimientos(movimientos) {
+        console.log("Renderizando movimientos con IDs:", movimientos.map(m => m.id_movimiento));
+        
+        movimientosTbody.innerHTML = '';
+        
+        movimientos.forEach(movimiento => {
+            let estadoClass = '';
+            let estado = movimiento.estado || 'pendiente';
+            
+            switch(estado) {
+                case 'pendiente': estadoClass = 'status-pendiente'; break;
+                case 'aprobado': estadoClass = 'status-aprobado'; break;
+                case 'rechazado': estadoClass = 'status-rechazado'; break;
+            }
+            
+            let fechaFormateada = 'No disponible';
+            if (movimiento.fecha_creacion) {
+                try {
+                    const fecha = new Date(movimiento.fecha_creacion);
+                    fechaFormateada = fecha.toLocaleDateString('es-MX', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric'
+                    });
+                } catch (e) {
+                    console.error('Error al formatear fecha:', e);
+                }
+            }
+            
+            const idOriginal = String(movimiento.id_movimiento);
+            
+            // Procesar nombre de tienda con badges apropiados
+            let tiendaDisplay = movimiento.nombre_tienda || 'Sin tienda';
+            
+            // Agregar badge para tiendas externas
+            if (tiendaDisplay.includes('(Externa)')) {
+                tiendaDisplay = tiendaDisplay.replace('(Externa)', '<span class="tienda-externa-badge">EXTERNA</span>');
+            }
+            
+            // Agregar badge para movimientos propios
+            if (parseInt(movimiento.es_propia) === 1) {
+                tiendaDisplay = 'Recarga propia <span class="label-propio">Tú</span>';
+            }
+            
+            // Icono de comprobante
+            const tieneComprobante = parseInt(movimiento.tiene_comprobante) === 1;
+            const comprobanteHtml = tieneComprobante ? 
+                '<i class="fas fa-check-circle has-comprobante" title="Tiene comprobante"></i>' : 
+                '<i class="fas fa-times-circle no-comprobante" title="Sin comprobante"></i>';
+            
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${idOriginal}</td>
+                <td>${fechaFormateada}</td>
+                <td>${tiendaDisplay}</td>
+                <td>${movimiento.monto_formateado || ('$' + parseFloat(movimiento.monto).toFixed(2))}</td>
+                <td>${movimiento.referencia || 'N/A'}</td>
+                <td><span class="status-badge ${estadoClass}">${estado}</span></td>
+                <td class="text-center">${comprobanteHtml}</td>
+                <td>
+                    <button class="action-btn" title="Ver detalles" onclick="verDetalles('${idOriginal}')">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </td>
+            `;
+            
+            movimientosTbody.appendChild(row);
+        });
+    }
+    
+    // Función para ver detalles (global)
+    window.verDetalles = function(id) {
+        console.log('Buscando movimiento con ID:', id, 'Tipo:', typeof id);
+        
+        const movimiento = allMovimientos.find(m => String(m.id_movimiento) == String(id));
+        
+        if (!movimiento) {
+            console.error('No se encontró el movimiento con ID:', id);
+            alert(`No se encontró el movimiento con ID: ${id}`);
+            return;
+        }
+        
+        console.log('Movimiento encontrado:', movimiento);
+        
+        const estado = movimiento.estado;
+        
+        let fechaFormateada = 'No disponible';
+        if (movimiento.fecha_creacion) {
+            try {
+                const fecha = new Date(movimiento.fecha_creacion);
+                fechaFormateada = fecha.toLocaleString('es-MX');
+            } catch (e) {
+                console.error('Error al formatear fecha:', e);
+            }
+        }
+        
+        let fechaAprobacion = 'No aprobado aún';
+        if (movimiento.fecha_aprobacion) {
+            try {
+                const fecha = new Date(movimiento.fecha_aprobacion);
+                fechaAprobacion = fecha.toLocaleString('es-MX');
+            } catch (e) {
+                console.error('Error al formatear fecha de aprobación:', e);
+            }
+        }
+        
+        modalTitle.textContent = `Recarga de Saldo #${movimiento.id_movimiento} (${estado})`;
+        
+        // Procesar nombre de tienda para el modal
+        let tiendaDisplayModal = movimiento.nombre_tienda || 'Sin tienda asignada';
+        let etiquetasEspeciales = '';
+        
+        if (parseInt(movimiento.es_propia) === 1) {
+            tiendaDisplayModal = 'Recarga propia';
+            etiquetasEspeciales = '<span class="label-propio">Tú</span>';
+        }
+        
+        // Agregar badge para tiendas externas
+        if (tiendaDisplayModal.includes('(Externa)')) {
+            tiendaDisplayModal = tiendaDisplayModal.replace('(Externa)', '');
+            etiquetasEspeciales += ' <span class="tienda-externa-badge">EXTERNA</span>';
+        }
+        
+        // Verificar si tiene comprobante
+        const tieneComprobante = parseInt(movimiento.tiene_comprobante) === 1;
+        let comprobanteHtml = '<div class="no-image">No hay comprobante disponible</div>';
+        
+        if (tieneComprobante) {
+            comprobanteHtml = `<img src="../api/get_comprobante.php?id=${movimiento.id_movimiento}&t=${new Date().getTime()}" 
+                               alt="Comprobante" 
+                               onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'no-image\\'>Error al cargar la imagen</div>';">`;
+        }
+        
+        modalContent.innerHTML = `
+            <div class="detail-group">
+                <h4>Información de la Recarga</h4>
+                <div class="detail-item">
+                    <div class="detail-label">Monto:</div>
+                    <div class="detail-value">${movimiento.monto_formateado || ('$' + parseFloat(movimiento.monto).toFixed(2))}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Referencia:</div>
+                    <div class="detail-value">${movimiento.referencia || 'No disponible'}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Estado:</div>
+                    <div class="detail-value">
+                        <span class="status-badge status-${estado}">
+                            ${estado}
+                        </span>
+                    </div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Fecha de creación:</div>
+                    <div class="detail-value">${fechaFormateada}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Fecha de aprobación:</div>
+                    <div class="detail-value">${fechaAprobacion}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Aprobado por:</div>
+                    <div class="detail-value">${movimiento.aprobado_por || 'Pendiente'}</div>
+                </div>
+            </div>
+            
+            <div class="detail-group">
+                <h4>Información del Usuario</h4>
+                <div class="detail-item">
+                    <div class="detail-label">Usuario ID:</div>
+                    <div class="detail-value">${movimiento.user_id || 'No disponible'}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Tienda:</div>
+                    <div class="detail-value">
+                        ${tiendaDisplayModal}
+                        ${etiquetasEspeciales}
+                    </div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Dispositivo:</div>
+                    <div class="detail-value">${movimiento.dispositivo_modelo || 'No disponible'}</div>
+                </div>
+            </div>
+            
+            <div class="detail-group">
+                <h4>Comprobante</h4>
+                <div class="comprobante-container">
+                    <div class="comprobante-image">
+                        <h5>Comprobante de Pago</h5>
+                        ${comprobanteHtml}
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        modal.style.display = 'block';
+    };
+    
+    // Funciones de utilidad para mostrar/ocultar elementos
+    function showLoading() {
+        loadingElement.style.display = 'flex';
+        errorElement.style.display = 'none';
+        movimientosContainer.style.display = 'none';
+        emptyState.style.display = 'none';
+    }
+    
+    function showError(message) {
+        loadingElement.style.display = 'none';
+        errorElement.style.display = 'block';
+        movimientosContainer.style.display = 'none';
+        emptyState.style.display = 'none';
+        errorMessageElement.textContent = message;
+    }
+    
+    function showContent() {
+        loadingElement.style.display = 'none';
+        errorElement.style.display = 'none';
+        movimientosContainer.style.display = 'block';
+        emptyState.style.display = 'none';
+    }
+    
+    function showEmptyState(message) {
+        loadingElement.style.display = 'none';
+        errorElement.style.display = 'none';
+        movimientosContainer.style.display = 'none';
+        emptyState.style.display = 'block';
+        emptyMessage.textContent = message;
+    }
 </script>

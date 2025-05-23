@@ -1,5 +1,5 @@
 <?php
-// api/get_movimientos_recarga.php - VERSIÓN SIMPLIFICADA
+// api/get_movimientos_recarga.php - VERSIÓN CORREGIDA
 header('Content-Type: application/json; charset=UTF-8');
 require_once 'db_connect.php';
 
@@ -14,6 +14,11 @@ try {
     // Registrar parámetros recibidos para depuración
     error_log("get_movimientos_recarga.php - Parámetros: uid=$uid, role=$role");
     
+    // VALIDACIÓN DE ROL - Solo permitir rol root
+    if ($role !== 'root') {
+        throw new Exception("No tienes permisos para ver estos datos. Se requiere rol root.");
+    }
+    
     // Conectar a la base de datos
     $con = conexiondb();
     
@@ -21,7 +26,7 @@ try {
         throw new Exception("Error al conectar con la base de datos");
     }
     
-    // CONSULTA DIRECTA - Sin verificación de rol para debugging
+    // CONSULTA - Ahora validada por rol
     $query = "SELECT 
                 m.id_movimiento,
                 m.tipo,
@@ -75,6 +80,25 @@ try {
         // Información básica de tienda
         $row['nombre_tienda'] = 'Usuario #' . $row['user_id'];
         
+        // Intentar obtener nombre de tienda desde la base de datos
+        $query_tienda = "SELECT s.nombre_tienda 
+                        FROM vendedor_tienda_relacion vtr
+                        JOIN sucursales s ON vtr.tienda_id = s.id
+                        WHERE vtr.vendedor_id = ?";
+        
+        $stmt_tienda = mysqli_prepare($con, $query_tienda);
+        if ($stmt_tienda) {
+            mysqli_stmt_bind_param($stmt_tienda, "s", $row['user_id']);
+            mysqli_stmt_execute($stmt_tienda);
+            $result_tienda = mysqli_stmt_get_result($stmt_tienda);
+            
+            if ($tienda_row = mysqli_fetch_assoc($result_tienda)) {
+                $row['nombre_tienda'] = $tienda_row['nombre_tienda'];
+            }
+            
+            mysqli_stmt_close($stmt_tienda);
+        }
+        
         $movimientos[] = $row;
     }
     
@@ -118,7 +142,7 @@ try {
     // Cerrar conexión
     mysqli_close($con);
     
-    // Respuesta final simplificada
+    // Respuesta final
     echo json_encode([
         "success" => true,
         "movimientos" => $movimientos,
