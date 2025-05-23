@@ -1081,10 +1081,16 @@
                 <td><span class="status-badge ${estadoClass}">${estado}</span></td>
                 <td class="text-center">${comprobanteHtml}</td>
                 <td>
-                    <button class="action-btn" title="Ver detalles" onclick="verDetalles('${idOriginal}')">
-                        <i class="fas fa-eye"></i>
-                    </button>
-                </td>
+    <button class="action-btn" title="Ver detalles" onclick="verDetalles('${idOriginal}')">
+        <i class="fas fa-eye"></i>
+    </button>
+    ${estado === 'pendiente' ? 
+        `<button class="action-btn" title="Validar solicitud" onclick="validarSolicitud('${idOriginal}')">
+            <i class="fas fa-gavel"></i>
+        </button>` : 
+        ''
+    }
+</td>
             `;
             
             movimientosTbody.appendChild(row);
