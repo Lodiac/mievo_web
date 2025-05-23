@@ -137,6 +137,31 @@
             </div>
         </div>
     </div>
+    
+    <!-- NUEVO: Modal para visualizar comprobante con zoom -->
+    <div id="modal-comprobante" class="modal">
+        <div class="modal-content comprobante-modal-content">
+            <span class="close-modal">&times;</span>
+            <h3 id="comprobante-title">Comprobante de Pago</h3>
+            <div class="comprobante-zoom-container">
+                <img id="comprobante-zoom-imagen" src="" alt="Comprobante">
+            </div>
+            <div class="comprobante-controls">
+                <button id="btn-zoom-in" class="btn btn-primary">
+                    <i class="fas fa-search-plus"></i> Aumentar
+                </button>
+                <button id="btn-zoom-out" class="btn btn-primary">
+                    <i class="fas fa-search-minus"></i> Reducir
+                </button>
+                <button id="btn-download" class="btn btn-primary">
+                    <i class="fas fa-download"></i> Descargar
+                </button>
+                <button id="btn-reset-zoom" class="btn btn-primary">
+                    <i class="fas fa-sync"></i> Restablecer
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <style>
@@ -477,7 +502,7 @@
         color: #333;
     }
     
-    #modal-title {
+    #modal-title, #comprobante-title {
         margin-top: 0;
         margin-bottom: 20px;
         color: var(--primary-color);
@@ -539,6 +564,7 @@
         background-color: #f5f5f5;
         display: flex;
         flex-direction: column;
+        position: relative; /* Para posicionar el botón de ampliar */
     }
     
     .comprobante-image h5 {
@@ -574,6 +600,74 @@
     .no-comprobante {
         color: #721C24;
     }
+    
+    /* NUEVO: Estilos para botón de ampliar comprobante */
+    .btn-ampliar {
+        position: absolute;
+        bottom: 10px;
+        right: 10px;
+        background: rgba(0, 0, 0, 0.6);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background 0.3s;
+        z-index: 10;
+    }
+    
+    .btn-ampliar:hover {
+        background: rgba(0, 0, 0, 0.8);
+    }
+    
+    /* NUEVO: Estilos para el modal de comprobante con zoom */
+    .comprobante-modal-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .comprobante-zoom-container {
+        width: 100%;
+        height: 60vh;
+        margin: 15px 0;
+        overflow: auto;
+        position: relative;
+        background: #f5f5f5;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    #comprobante-zoom-imagen {
+        max-width: 100%;
+        max-height: 100%;
+        transition: transform 0.3s ease;
+    }
+    
+    .comprobante-controls {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    /* Comprobante en miniatura para tabla */
+    .comprobante-thumbnail {
+        width: 30px;
+        height: 30px;
+        border-radius: 4px;
+        object-fit: cover;
+        cursor: pointer;
+        border: 1px solid #ddd;
+    }
 
     /* Responsividad */
     @media (max-width: 768px) {
@@ -604,6 +698,15 @@
         .modal-body {
             grid-template-columns: 1fr;
         }
+        
+        .comprobante-controls {
+            flex-direction: column;
+            width: 100%;
+        }
+        
+        .comprobante-controls button {
+            width: 100%;
+        }
     }
 </style>
 
@@ -630,11 +733,25 @@
     const currentPageElement = document.getElementById('current-page');
     const totalPagesElement = document.getElementById('total-pages');
     
-    // Modal
+    // Modal de detalles
     const modal = document.getElementById('modal-detalles');
     const modalTitle = document.getElementById('modal-title');
     const modalContent = document.getElementById('modal-content');
-    const closeModal = document.querySelector('.close-modal');
+    const closeModal = document.querySelector('#modal-detalles .close-modal');
+    
+    // NUEVO: Modal de comprobante con zoom
+    const modalComprobante = document.getElementById('modal-comprobante');
+    const comprobanteTitle = document.getElementById('comprobante-title');
+    const comprobanteZoomImagen = document.getElementById('comprobante-zoom-imagen');
+    const closeModalComprobante = document.querySelector('#modal-comprobante .close-modal');
+    const btnZoomIn = document.getElementById('btn-zoom-in');
+    const btnZoomOut = document.getElementById('btn-zoom-out');
+    const btnDownload = document.getElementById('btn-download');
+    const btnResetZoom = document.getElementById('btn-reset-zoom');
+    
+    // NUEVO: Variables para el zoom
+    let currentZoom = 1;
+    let currentComprobanteId = null;
     
     // Obtener datos del usuario
     const userUID = sessionStorage.getItem('userUID') || '';
@@ -695,11 +812,53 @@
         }
     });
     
-    // Event listeners del modal
+    // Event listeners del modal de detalles
     closeModal.addEventListener('click', () => modal.style.display = 'none');
+    
+    // NUEVO: Event listeners del modal de comprobante
+    closeModalComprobante.addEventListener('click', () => modalComprobante.style.display = 'none');
+    
+    // Event listener para cerrar modales al hacer clic fuera
     window.addEventListener('click', (e) => {
         if (e.target === modal) modal.style.display = 'none';
+        if (e.target === modalComprobante) modalComprobante.style.display = 'none';
     });
+    
+    // NUEVO: Event listeners para zoom
+    btnZoomIn.addEventListener('click', () => {
+        currentZoom += 0.2;
+        aplicarZoom();
+    });
+    
+    btnZoomOut.addEventListener('click', () => {
+        if (currentZoom > 0.5) {
+            currentZoom -= 0.2;
+            aplicarZoom();
+        }
+    });
+    
+    btnResetZoom.addEventListener('click', () => {
+        currentZoom = 1;
+        aplicarZoom();
+    });
+    
+    // NUEVO: Event listener para descargar
+    btnDownload.addEventListener('click', () => {
+        if (currentComprobanteId) {
+            // Crear un enlace temporal para la descarga
+            const link = document.createElement('a');
+            link.href = `../api/get_comprobante.php?id=${currentComprobanteId}&download=1&t=${new Date().getTime()}`;
+            link.download = `comprobante_${currentComprobanteId}.jpg`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    });
+    
+    // NUEVO: Función para aplicar zoom
+    function aplicarZoom() {
+        comprobanteZoomImagen.style.transform = `scale(${currentZoom})`;
+    }
     
     // Función para normalizar estados
     function normalizarEstado(estadoOriginal) {
@@ -894,11 +1053,23 @@
                 tiendaDisplay = 'Recarga propia <span class="label-propio">Tú</span>';
             }
             
-            // Icono de comprobante
+            // MODIFICADO: Icono de comprobante o miniatura
             const tieneComprobante = parseInt(movimiento.tiene_comprobante) === 1;
-            const comprobanteHtml = tieneComprobante ? 
-                '<i class="fas fa-check-circle has-comprobante" title="Tiene comprobante"></i>' : 
-                '<i class="fas fa-times-circle no-comprobante" title="Sin comprobante"></i>';
+            let comprobanteHtml = '';
+            
+            if (tieneComprobante) {
+                // Mostrar miniatura del comprobante
+                comprobanteHtml = `
+                    <img src="../api/get_comprobante.php?id=${idOriginal}&t=${new Date().getTime()}" 
+                         class="comprobante-thumbnail" 
+                         onclick="verComprobante(${idOriginal})" 
+                         alt="Ver comprobante" 
+                         title="Haz clic para ver el comprobante"
+                         onerror="this.onerror=null; this.outerHTML='<i class=\\'fas fa-check-circle has-comprobante\\' title=\\'Tiene comprobante\\'></i>';">
+                `;
+            } else {
+                comprobanteHtml = '<i class="fas fa-times-circle no-comprobante" title="Sin comprobante"></i>';
+            }
             
             const row = document.createElement('tr');
             row.innerHTML = `
@@ -973,14 +1144,19 @@
             etiquetasEspeciales += ' <span class="tienda-externa-badge">EXTERNA</span>';
         }
         
-        // Verificar si tiene comprobante
+        // MODIFICADO: Verificar si tiene comprobante y agregar botón para ampliar
         const tieneComprobante = parseInt(movimiento.tiene_comprobante) === 1;
         let comprobanteHtml = '<div class="no-image">No hay comprobante disponible</div>';
         
         if (tieneComprobante) {
-            comprobanteHtml = `<img src="../api/get_comprobante.php?id=${movimiento.id_movimiento}&t=${new Date().getTime()}" 
-                               alt="Comprobante" 
-                               onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'no-image\\'>Error al cargar la imagen</div>';">`;
+            comprobanteHtml = `
+                <img src="../api/get_comprobante.php?id=${movimiento.id_movimiento}&t=${new Date().getTime()}" 
+                     alt="Comprobante" 
+                     onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'no-image\\'>Error al cargar la imagen</div>';">
+                <button class="btn-ampliar" onclick="verComprobante(${movimiento.id_movimiento})" title="Ampliar comprobante">
+                    <i class="fas fa-search-plus"></i>
+                </button>
+            `;
         }
         
         modalContent.innerHTML = `
@@ -1047,6 +1223,35 @@
         `;
         
         modal.style.display = 'block';
+    };
+    
+    // NUEVO: Función para ver comprobante ampliado con zoom
+    window.verComprobante = function(id) {
+        console.log('Mostrando comprobante ampliado para ID:', id);
+        
+        // Guardar el ID para la descarga
+        currentComprobanteId = id;
+        
+        // Resetear zoom
+        currentZoom = 1;
+        comprobanteZoomImagen.style.transform = 'scale(1)';
+        
+        // Actualizar título
+        comprobanteTitle.textContent = `Comprobante de Pago - Recarga #${id}`;
+        
+        // Cargar la imagen con un timestamp para evitar caché
+        const timestamp = new Date().getTime();
+        comprobanteZoomImagen.src = `../api/get_comprobante.php?id=${id}&t=${timestamp}`;
+        
+        // Manejar errores de carga
+        comprobanteZoomImagen.onerror = function() {
+            this.onerror = null;
+            alert('Error al cargar el comprobante. La imagen puede no estar disponible.');
+            modalComprobante.style.display = 'none';
+        };
+        
+        // Mostrar el modal
+        modalComprobante.style.display = 'block';
     };
     
     // Funciones de utilidad para mostrar/ocultar elementos
