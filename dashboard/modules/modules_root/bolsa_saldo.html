@@ -1,0 +1,660 @@
+<div class="card">
+    <h2 class="content-title">
+        <i class="fas fa-wallet"></i> Gestión de Recargas de Saldo
+    </h2>
+    
+    <!-- Estadísticas -->
+    <div class="stats-container">
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-receipt"></i></div>
+            <div class="stat-content">
+                <div class="stat-value" id="total-recargas">0</div>
+                <div class="stat-label">Total Recargas</div>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-clock"></i></div>
+            <div class="stat-content">
+                <div class="stat-value" id="recargas-pendientes">0</div>
+                <div class="stat-label">Pendientes</div>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+            <div class="stat-content">
+                <div class="stat-value" id="recargas-aprobadas">0</div>
+                <div class="stat-label">Aprobadas</div>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-dollar-sign"></i></div>
+            <div class="stat-content">
+                <div class="stat-value" id="monto-total">$0.00</div>
+                <div class="stat-label">Monto Total</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Filtros -->
+    <div class="filters-container">
+        <div class="filter-group">
+            <label for="filter-estado">Estado:</label>
+            <select id="filter-estado" class="filter-select">
+                <option value="">Todos</option>
+                <option value="pendiente">Pendiente</option>
+                <option value="aprobado">Aprobado</option>
+                <option value="rechazado">Rechazado</option>
+            </select>
+        </div>
+        
+        <div class="filter-group">
+            <label for="filter-search">Buscar:</label>
+            <input type="text" id="filter-search" class="filter-input" 
+                   placeholder="Buscar por tienda, referencia o ID...">
+        </div>
+        
+        <div class="filter-group">
+            <label for="filter-fecha">Fecha:</label>
+            <input type="date" id="filter-fecha" class="filter-input">
+        </div>
+        
+        <button id="btn-refresh" class="btn-refresh">
+            <i class="fas fa-sync-alt"></i> Actualizar
+        </button>
+    </div>
+    
+    <!-- Tabla de movimientos -->
+    <div class="table-container">
+        <table id="tabla-movimientos" class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Fecha</th>
+                    <th>Tienda</th>
+                    <th>Monto</th>
+                    <th>Bolsa Destino</th>
+                    <th>Referencia</th>
+                    <th>Estado</th>
+                    <th>Aprobado por</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="tbody-movimientos">
+                <tr>
+                    <td colspan="9" class="text-center">Cargando movimientos...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal para ver detalles -->
+<div id="modal-detalles" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Detalles del Movimiento</h3>
+            <span class="close-modal">&times;</span>
+        </div>
+        <div class="modal-body" id="modal-body-content">
+            <!-- El contenido se llenará dinámicamente -->
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Estilos para las estadísticas */
+    .stats-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+    
+    .stat-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .stat-icon {
+        font-size: 2.5em;
+        opacity: 0.8;
+    }
+    
+    .stat-content {
+        flex: 1;
+    }
+    
+    .stat-value {
+        font-size: 1.8em;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    
+    .stat-label {
+        font-size: 0.9em;
+        opacity: 0.9;
+    }
+    
+    /* Estilos para filtros */
+    .filters-container {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        align-items: flex-end;
+    }
+    
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .filter-group label {
+        font-size: 0.9em;
+        color: #666;
+        font-weight: 500;
+    }
+    
+    .filter-select,
+    .filter-input {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 14px;
+        min-width: 150px;
+    }
+    
+    .btn-refresh {
+        padding: 8px 16px;
+        background: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        transition: background 0.3s;
+    }
+    
+    .btn-refresh:hover {
+        background: #45a049;
+    }
+    
+    /* Estilos para la tabla */
+    .table-container {
+        overflow-x: auto;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .data-table thead {
+        background-color: #f8f9fa;
+    }
+    
+    .data-table th {
+        padding: 12px;
+        text-align: left;
+        font-weight: 600;
+        color: #333;
+        border-bottom: 2px solid #dee2e6;
+    }
+    
+    .data-table td {
+        padding: 12px;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .data-table tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+    
+    /* Estilos para estados */
+    .estado-badge {
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 0.85em;
+        font-weight: 500;
+        display: inline-block;
+    }
+    
+    .estado-pendiente {
+        background-color: #ffeaa7;
+        color: #d63031;
+    }
+    
+    .estado-aprobado {
+        background-color: #55efc4;
+        color: #00b894;
+    }
+    
+    .estado-rechazado {
+        background-color: #fab1a0;
+        color: #d63031;
+    }
+    
+    /* Estilos para acciones */
+    .btn-action {
+        padding: 4px 8px;
+        margin: 0 2px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.9em;
+        transition: opacity 0.3s;
+    }
+    
+    .btn-action:hover {
+        opacity: 0.8;
+    }
+    
+    .btn-ver {
+        background-color: #3498db;
+        color: white;
+    }
+    
+    .btn-comprobante {
+        background-color: #9b59b6;
+        color: white;
+    }
+    
+    .btn-aprobar {
+        background-color: #27ae60;
+        color: white;
+    }
+    
+    .btn-rechazar {
+        background-color: #e74c3c;
+        color: white;
+    }
+    
+    /* Modal */
+    .modal {
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .modal-content {
+        background-color: #fefefe;
+        padding: 0;
+        border-radius: 8px;
+        max-width: 600px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+    
+    .modal-header {
+        padding: 20px;
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .modal-header h3 {
+        margin: 0;
+        color: #333;
+    }
+    
+    .close-modal {
+        font-size: 28px;
+        font-weight: bold;
+        color: #aaa;
+        cursor: pointer;
+        line-height: 20px;
+    }
+    
+    .close-modal:hover {
+        color: #000;
+    }
+    
+    .modal-body {
+        padding: 20px;
+    }
+    
+    .detail-row {
+        display: flex;
+        padding: 10px 0;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .detail-label {
+        font-weight: 600;
+        width: 150px;
+        color: #666;
+    }
+    
+    .detail-value {
+        flex: 1;
+        color: #333;
+    }
+    
+    .text-center {
+        text-align: center;
+    }
+    
+    .loading {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid #3498db;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+
+<script>
+    // Variables globales
+    let movimientosData = [];
+    let movimientosFiltrados = [];
+    const userRole = sessionStorage.getItem('userRole');
+    const userUid = sessionStorage.getItem('userUid');
+    
+    // Función para mostrar botones de acción según permisos
+    function mostrarBotonesAccion(mov) {
+        if (mov.estado !== 'pendiente') return '';
+        
+        if (userRole === 'root') {
+            return `
+                <button class="btn-action btn-aprobar" onclick="procesarMovimiento(${mov.id_movimiento}, 'aprobar')">
+                    <i class="fas fa-check"></i>
+                </button>
+                <button class="btn-action btn-rechazar" onclick="procesarMovimiento(${mov.id_movimiento}, 'rechazar')">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+        }
+        return '';
+    }
+    
+    // Función para cargar los movimientos
+    async function cargarMovimientos() {
+        try {
+            const response = await fetch(`api/get_movimientos_recarga.php?role=${userRole}&uid=${userUid}`);
+            
+            if (!response.ok) {
+                throw new Error('Error al cargar los movimientos');
+            }
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                movimientosData = data.movimientos;
+                actualizarEstadisticas(data.estadisticas);
+                aplicarFiltros();
+            } else {
+                throw new Error(data.error || 'Error al obtener los datos');
+            }
+            
+        } catch (error) {
+            console.error('Error:', error);
+            mostrarError('Error al cargar los movimientos: ' + error.message);
+        }
+    }
+    
+    // Función para actualizar las estadísticas
+    function actualizarEstadisticas(stats) {
+        document.getElementById('total-recargas').textContent = stats.total_recargas;
+        document.getElementById('recargas-pendientes').textContent = stats.recargas_pendientes;
+        document.getElementById('recargas-aprobadas').textContent = stats.recargas_aprobadas;
+        document.getElementById('monto-total').textContent = '$' + formatNumber(stats.monto_total);
+    }
+    
+    // Función para aplicar filtros
+    function aplicarFiltros() {
+        const estado = document.getElementById('filter-estado').value;
+        const busqueda = document.getElementById('filter-search').value.toLowerCase();
+        const fecha = document.getElementById('filter-fecha').value;
+        
+        movimientosFiltrados = movimientosData.filter(mov => {
+            let cumple = true;
+            
+            // Filtro por estado
+            if (estado && mov.estado !== estado) {
+                cumple = false;
+            }
+            
+            // Filtro por búsqueda
+            if (busqueda) {
+                const textoCompleto = `${mov.id_movimiento} ${mov.nombre_tienda} ${mov.referencia} ${mov.user_id}`.toLowerCase();
+                if (!textoCompleto.includes(busqueda)) {
+                    cumple = false;
+                }
+            }
+            
+            // Filtro por fecha
+            if (fecha) {
+                const fechaMov = new Date(mov.fecha_creacion).toISOString().split('T')[0];
+                if (fechaMov !== fecha) {
+                    cumple = false;
+                }
+            }
+            
+            return cumple;
+        });
+        
+        renderizarTabla();
+    }
+    
+    // Función para renderizar la tabla
+    function renderizarTabla() {
+        const tbody = document.getElementById('tbody-movimientos');
+        
+        if (movimientosFiltrados.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="9" class="text-center">No se encontraron movimientos</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = movimientosFiltrados.map(mov => {
+            const estadoClass = `estado-${mov.estado}`;
+            const bolsaDestino = mov.bolsa_destino_info ? 
+                `${mov.bolsa_destino_info.nombre} (${mov.bolsa_destino_info.tienda})` : 
+                'N/A';
+            
+            return `
+                <tr>
+                    <td>${mov.id_movimiento}</td>
+                    <td>${mov.fecha_formateada}</td>
+                    <td>${mov.nombre_tienda}</td>
+                    <td>${mov.monto_formateado}</td>
+                    <td>${bolsaDestino}</td>
+                    <td>${mov.referencia || 'N/A'}</td>
+                    <td><span class="estado-badge ${estadoClass}">${mov.estado}</span></td>
+                    <td>${mov.aprobado_por || 'N/A'}</td>
+                    <td>
+                        <button class="btn-action btn-ver" onclick="verDetalles(${mov.id_movimiento})">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        ${mov.tiene_comprobante == 1 ? 
+                            `<button class="btn-action btn-comprobante" onclick="verComprobante(${mov.id_movimiento})">
+                                <i class="fas fa-file-image"></i>
+                            </button>` : ''
+                        }
+                        ${mostrarBotonesAccion(mov)}
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+    
+    // Función para ver detalles
+    function verDetalles(id) {
+        const mov = movimientosData.find(m => m.id_movimiento === id);
+        if (!mov) return;
+        
+        const modalBody = document.getElementById('modal-body-content');
+        modalBody.innerHTML = `
+            <div class="detail-row">
+                <div class="detail-label">ID Movimiento:</div>
+                <div class="detail-value">${mov.id_movimiento}</div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Fecha Creación:</div>
+                <div class="detail-value">${mov.fecha_formateada}</div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Tienda:</div>
+                <div class="detail-value">${mov.nombre_tienda}</div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Usuario ID:</div>
+                <div class="detail-value">${mov.user_id}</div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Monto:</div>
+                <div class="detail-value">${mov.monto_formateado}</div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Referencia:</div>
+                <div class="detail-value">${mov.referencia || 'N/A'}</div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Estado:</div>
+                <div class="detail-value"><span class="estado-badge estado-${mov.estado}">${mov.estado}</span></div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Dispositivo:</div>
+                <div class="detail-value">${mov.dispositivo_modelo || 'N/A'} (ID: ${mov.dispositivo_id || 'N/A'})</div>
+            </div>
+            ${mov.fecha_aprobacion ? `
+                <div class="detail-row">
+                    <div class="detail-label">Fecha Aprobación:</div>
+                    <div class="detail-value">${mov.fecha_aprobacion_formateada}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Aprobado por:</div>
+                    <div class="detail-value">${mov.aprobado_por || 'N/A'}</div>
+                </div>
+            ` : ''}
+        `;
+        
+        document.getElementById('modal-detalles').style.display = 'flex';
+    }
+    
+    // Función para ver comprobante
+    function verComprobante(id) {
+        window.open(`api/get_comprobante.php?id=${id}&tipo=movimiento`, '_blank');
+    }
+    
+    // Función para procesar movimiento (aprobar/rechazar)
+    async function procesarMovimiento(id, accion) {
+        const confirmMsg = accion === 'aprobar' ? 
+            '¿Estás seguro de que deseas aprobar esta recarga?' : 
+            '¿Estás seguro de que deseas rechazar esta recarga?';
+        
+        if (!confirm(confirmMsg)) return;
+        
+        try {
+            const response = await fetch('api/procesar_recarga.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    id_movimiento: id,
+                    accion: accion,
+                    uid: userUid,
+                    role: userRole
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                alert(data.message);
+                cargarMovimientos(); // Recargar la tabla
+            } else {
+                throw new Error(data.error || 'Error al procesar el movimiento');
+            }
+            
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error al procesar el movimiento: ' + error.message);
+        }
+    }
+    
+    // Función para formatear números
+    function formatNumber(num) {
+        return new Intl.NumberFormat('es-MX', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }).format(num);
+    }
+    
+    // Función para mostrar errores
+    function mostrarError(mensaje) {
+        const tbody = document.getElementById('tbody-movimientos');
+        tbody.innerHTML = `<tr><td colspan="9" class="text-center" style="color: red;">${mensaje}</td></tr>`;
+    }
+    
+    // Event listeners
+    document.addEventListener('DOMContentLoaded', function() {
+        // Cargar movimientos al inicio
+        cargarMovimientos();
+        
+        // Configurar event listeners para filtros
+        document.getElementById('filter-estado').addEventListener('change', aplicarFiltros);
+        document.getElementById('filter-search').addEventListener('input', aplicarFiltros);
+        document.getElementById('filter-fecha').addEventListener('change', aplicarFiltros);
+        
+        // Botón actualizar
+        document.getElementById('btn-refresh').addEventListener('click', function() {
+            this.querySelector('i').classList.add('fa-spin');
+            cargarMovimientos().then(() => {
+                this.querySelector('i').classList.remove('fa-spin');
+            });
+        });
+        
+        // Cerrar modal
+        document.querySelector('.close-modal').addEventListener('click', function() {
+            document.getElementById('modal-detalles').style.display = 'none';
+        });
+        
+        // Cerrar modal al hacer clic fuera
+        document.getElementById('modal-detalles').addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.style.display = 'none';
+            }
+        });
+        
+        // Actualizar automáticamente cada 30 segundos
+        setInterval(cargarMovimientos, 30000);
+    });
+</script>
