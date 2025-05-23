@@ -133,7 +133,7 @@ try {
         'monto_total_pendiente' => $montoPendiente,
         'monto_total_aprobado' => $montoAprobado,
         'monto_total_rechazado' => $montoRechazado,
-        'monto_total' => $montoPendiente + $montoAprobado + $montoRechazado,
+        'monto_total' => $montoPendiente,
         'recargas_pendientes' => $recargasPendientes,
         'recargas_aprobadas' => $recargasAprobadas,
         'recargas_rechazadas' => $recargasRechazadas
