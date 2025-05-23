@@ -33,7 +33,7 @@ try {
     
     // Consulta para obtener TODOS los movimientos de tipo RECARGA con información de tienda
     // Simplificada para evitar problemas con JOINs
-    $query = "SELECT 
+      $query = "SELECT 
                 m.id_movimiento,
                 m.tipo,
                 m.monto,

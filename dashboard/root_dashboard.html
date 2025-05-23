@@ -243,6 +243,14 @@
             // Obtener el rol del usuario
             const userRole = userData?.role || 'guest';
             
+            // IMPORTANTE: Guardar el rol en sessionStorage para que los módulos puedan acceder
+            sessionStorage.setItem('userRole', userRole);
+            
+            // También guardar userUid (minúsculas) para mantener compatibilidad
+            if (userUID) {
+                sessionStorage.setItem('userUid', userUID);
+            }
+            
             // Función mejorada para cargar módulos con validación en servidor
             async function loadModule(moduleName) {
                 // Mostrar loader
