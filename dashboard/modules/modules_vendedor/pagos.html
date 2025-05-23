@@ -162,6 +162,38 @@
             </div>
         </div>
     </div>
+
+    <!-- Modal para completar solicitud (solo para vendedores internos) -->
+    <div id="modal-completar" class="modal">
+        <div class="modal-content">
+            <span class="close-modal-completar">&times;</span>
+            <h3 id="modal-completar-title">Completar Pago de Servicio</h3>
+            <div class="modal-body">
+                <div class="detail-group">
+                    <h4>Información de la Solicitud</h4>
+                    <div id="solicitud-info-completar">
+                        <!-- Información de la solicitud -->
+                    </div>
+                </div>
+                
+                <div class="detail-group">
+                    <h4>Comentarios del Procesamiento</h4>
+                    <div class="form-group">
+                        <label for="comentarios-completar">Comentarios (obligatorio):</label>
+                        <textarea id="comentarios-completar" class="form-control" rows="4" 
+                                placeholder="Describe el procesamiento realizado, número de confirmación, observaciones, etc."></textarea>
+                    </div>
+                </div>
+                
+                <div class="modal-actions">
+                    <button id="btn-cancelar-completar" class="btn btn-outline">Cancelar</button>
+                    <button id="btn-confirmar-completar" class="btn btn-success">
+                        <i class="fas fa-check"></i> Completar Solicitud
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <style>
@@ -342,11 +374,22 @@
         font-size: 0.95rem;
         cursor: pointer;
         border: none;
+        transition: all 0.2s ease;
     }
     
     .btn-primary {
         background-color: var(--primary-color);
         color: white;
+    }
+
+    .btn-success {
+        background-color: #28a745;
+        color: white;
+    }
+
+    .btn-warning {
+        background-color: #ffc107;
+        color: #212529;
     }
     
     .btn-outline {
@@ -362,6 +405,11 @@
     .btn:disabled {
         opacity: 0.5;
         cursor: not-allowed;
+    }
+
+    .btn:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
     
     /* Loader y estados */
@@ -500,10 +548,32 @@
         cursor: pointer;
         margin-right: 5px;
         font-size: 1rem;
+        padding: 4px;
+        border-radius: 4px;
+        transition: all 0.2s ease;
     }
     
     .action-btn:hover {
         color: var(--primary-dark);
+        background-color: rgba(2, 136, 209, 0.1);
+    }
+
+    .action-btn-success {
+        color: #28a745;
+    }
+
+    .action-btn-success:hover {
+        color: #1e7e34;
+        background-color: rgba(40, 167, 69, 0.1);
+    }
+
+    .action-btn-warning {
+        color: #ffc107;
+    }
+
+    .action-btn-warning:hover {
+        color: #e0a800;
+        background-color: rgba(255, 193, 7, 0.1);
     }
     
     /* Paginación */
@@ -545,7 +615,7 @@
         overflow-y: auto;
     }
     
-    .close-modal {
+    .close-modal, .close-modal-completar {
         position: absolute;
         top: 15px;
         right: 20px;
@@ -555,11 +625,11 @@
         cursor: pointer;
     }
     
-    .close-modal:hover {
+    .close-modal:hover, .close-modal-completar:hover {
         color: #333;
     }
     
-    #modal-title {
+    #modal-title, #modal-completar-title {
         margin-top: 0;
         margin-bottom: 20px;
         color: var(--primary-color);
@@ -624,6 +694,23 @@
     
     .comentarios-content {
         font-style: italic;
+    }
+
+    /* Modal actions */
+    .modal-actions {
+        grid-column: 1 / -1;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid #ddd;
+    }
+
+    /* Textarea */
+    textarea.form-control {
+        resize: vertical;
+        min-height: 100px;
     }
     
     /* Estilos para el ticket */
@@ -698,6 +785,10 @@
         .modal-body {
             grid-template-columns: 1fr;
         }
+
+        .modal-actions {
+            flex-direction: column;
+        }
     }
 </style>
 
@@ -743,11 +834,20 @@
     const currentPageElement = document.getElementById('current-page');
     const totalPagesElement = document.getElementById('total-pages');
     
-    // Modal
+    // Modal detalles
     const modal = document.getElementById('modal-detalles');
     const modalTitle = document.getElementById('modal-title');
     const modalContent = document.getElementById('modal-content');
     const closeModal = document.querySelector('.close-modal');
+
+    // Modal completar (para vendedores internos)
+    const modalCompletar = document.getElementById('modal-completar');
+    const modalCompletarTitle = document.getElementById('modal-completar-title');
+    const solicitudInfoCompletar = document.getElementById('solicitud-info-completar');
+    const comentariosCompletar = document.getElementById('comentarios-completar');
+    const btnCancelarCompletar = document.getElementById('btn-cancelar-completar');
+    const btnConfirmarCompletar = document.getElementById('btn-confirmar-completar');
+    const closeModalCompletar = document.querySelector('.close-modal-completar');
     
     // Obtener datos del usuario
     const userUID = sessionStorage.getItem('userUID') || '';
@@ -756,6 +856,7 @@
     // Variables para almacenar datos
     let allSolicitudes = [];
     let filteredSolicitudes = [];
+    let solicitudActual = null; // Para el modal de completar
     
     // Variables para paginación
     let currentPage = 1;
@@ -772,7 +873,7 @@
             
             // Actualizar título y descripción
             moduleTitle.innerHTML = '<i class="fas fa-money-bill-wave"></i> Mis Pagos de Servicios <span class="vendedor-interno-badge">INTERNO</span>';
-            moduleDescription.textContent = 'Gestiona tus solicitudes de pago de servicios. Como vendedor interno, puedes ver solicitudes adicionales.';
+            moduleDescription.textContent = 'Gestiona tus solicitudes de pago de servicios. Como vendedor interno, puedes ver y procesar solicitudes adicionales.';
             
             // Mostrar información adicional
             if (debug && debug.total_usuarios_incluidos > 1) {
@@ -843,11 +944,21 @@
         }
     });
     
-    // Event listeners del modal
+    // Event listeners del modal de detalles
     closeModal.addEventListener('click', () => modal.style.display = 'none');
     window.addEventListener('click', (e) => {
         if (e.target === modal) modal.style.display = 'none';
     });
+
+    // Event listeners del modal de completar (solo para vendedores internos)
+    if (closeModalCompletar) {
+        closeModalCompletar.addEventListener('click', () => modalCompletar.style.display = 'none');
+        btnCancelarCompletar.addEventListener('click', () => modalCompletar.style.display = 'none');
+        btnConfirmarCompletar.addEventListener('click', completarSolicitud);
+        window.addEventListener('click', (e) => {
+            if (e.target === modalCompletar) modalCompletar.style.display = 'none';
+        });
+    }
     
     // Función para normalizar estados según los valores de la base de datos
     function normalizarEstado(estadoOriginal) {
@@ -1070,6 +1181,33 @@
                 tiendaCell = `<td class="tienda-column" style="display: none;"></td>`;
             }
             
+            // Generar botones de acción según el estado y tipo de vendedor
+            let accionesHTML = `
+                <button class="action-btn" title="Ver detalles" onclick="verDetalles('${solicitud.id}')">
+                    <i class="fas fa-eye"></i>
+                </button>
+                <button class="action-btn" title="Generar Ticket" onclick="generarTicket('${solicitud.id}')">
+                    <i class="fas fa-receipt"></i>
+                </button>
+            `;
+
+            // Agregar botones de procesamiento solo para vendedores internos
+            if (tipoVendedor === 'interno') {
+                if (estado === 'pendiente') {
+                    accionesHTML += `
+                        <button class="action-btn action-btn-warning" title="Iniciar procesamiento" onclick="iniciarProcesamiento('${solicitud.id}')">
+                            <i class="fas fa-play"></i>
+                        </button>
+                    `;
+                } else if (estado === 'procesando') {
+                    accionesHTML += `
+                        <button class="action-btn action-btn-success" title="Completar solicitud" onclick="mostrarModalCompletar('${solicitud.id}')">
+                            <i class="fas fa-check"></i>
+                        </button>
+                    `;
+                }
+            }
+            
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${solicitud.id}</td>
@@ -1082,14 +1220,7 @@
                 <td>${fechaFormateada}</td>
                 ${tiendaCell}
                 <td><span class="status-badge ${estadoClass}">${estado}</span></td>
-                <td>
-                    <button class="action-btn" title="Ver detalles" onclick="verDetalles('${solicitud.id}')">
-                        <i class="fas fa-eye"></i>
-                    </button>
-                    <button class="action-btn" title="Generar Ticket" onclick="generarTicket('${solicitud.id}')">
-                        <i class="fas fa-receipt"></i>
-                    </button>
-                </td>
+                <td>${accionesHTML}</td>
             `;
             
             solicitudesTbody.appendChild(row);
@@ -1226,6 +1357,160 @@
         modal.style.display = 'block';
     };
     
+    // Función para iniciar procesamiento de solicitud (solo para vendedores internos)
+    window.iniciarProcesamiento = async function(id) {
+        try {
+            if (!confirm('¿Estás seguro de que deseas iniciar el procesamiento de esta solicitud?')) {
+                return;
+            }
+
+            showLoading();
+            
+            console.log('Iniciando procesamiento de solicitud ID:', id);
+            
+            const data = {
+                id_solicitud: parseInt(id),
+                uid: userUID,
+                role: userRole,
+                accion: 'iniciar'
+            };
+            
+            const response = await fetch('../api/procesar_solicitud_pago.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+            
+            const result = await response.json();
+            
+            if (!result.success) {
+                throw new Error(result.error || 'Error desconocido al iniciar el procesamiento');
+            }
+            
+            alert('✅ ' + result.message);
+            
+            // Recargar las solicitudes
+            await loadSolicitudesPagoservicios();
+            
+        } catch (error) {
+            console.error('Error al iniciar procesamiento:', error);
+            alert(`❌ Error: ${error.message}`);
+        } finally {
+            hideLoading();
+        }
+    };
+
+    // Función para mostrar el modal de completar (solo para vendedores internos)
+    window.mostrarModalCompletar = function(id) {
+        const solicitud = allSolicitudes.find(s => String(s.id) === String(id));
+        
+        if (!solicitud) {
+            alert('No se encontró la solicitud');
+            return;
+        }
+
+        solicitudActual = solicitud;
+        
+        // Formatear información de la solicitud
+        let montoFormateado = 'No disponible';
+        if (solicitud.monto) {
+            try {
+                montoFormateado = '$' + parseFloat(solicitud.monto).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+            } catch (e) {
+                console.error('Error al formatear monto:', e);
+            }
+        }
+
+        modalCompletarTitle.textContent = `Completar Pago de Servicio #${solicitud.id}`;
+        
+        solicitudInfoCompletar.innerHTML = `
+            <div class="detail-item">
+                <div class="detail-label">Cliente:</div>
+                <div class="detail-value">${solicitud.user_name || 'No disponible'}</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">Proveedor:</div>
+                <div class="detail-value">${solicitud.proveedor || 'No disponible'}</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">Tipo de servicio:</div>
+                <div class="detail-value">${solicitud.tipo_servicio || 'No disponible'}</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">Cuenta/Número:</div>
+                <div class="detail-value">${solicitud.cuenta || 'No disponible'}</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">Monto:</div>
+                <div class="detail-value">${montoFormateado}</div>
+            </div>
+        `;
+
+        // Limpiar comentarios
+        comentariosCompletar.value = '';
+        
+        modalCompletar.style.display = 'block';
+    };
+
+    // Función para completar solicitud (solo para vendedores internos)
+    async function completarSolicitud() {
+        try {
+            const comentarios = comentariosCompletar.value.trim();
+            
+            if (!comentarios) {
+                alert('Los comentarios son obligatorios para completar la solicitud');
+                comentariosCompletar.focus();
+                return;
+            }
+
+            if (!solicitudActual) {
+                alert('Error: No se ha seleccionado ninguna solicitud');
+                return;
+            }
+
+            showLoading();
+            modalCompletar.style.display = 'none';
+            
+            console.log('Completando solicitud ID:', solicitudActual.id);
+            
+            const data = {
+                id_solicitud: parseInt(solicitudActual.id),
+                uid: userUID,
+                role: userRole,
+                accion: 'completar',
+                comentarios: comentarios
+            };
+            
+            const response = await fetch('../api/procesar_solicitud_pago.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+            
+            const result = await response.json();
+            
+            if (!result.success) {
+                throw new Error(result.error || 'Error desconocido al completar la solicitud');
+            }
+            
+            alert('✅ ' + result.message);
+            
+            // Recargar las solicitudes
+            await loadSolicitudesPagoservicios();
+            
+        } catch (error) {
+            console.error('Error al completar solicitud:', error);
+            alert(`❌ Error: ${error.message}`);
+        } finally {
+            hideLoading();
+            solicitudActual = null;
+        }
+    }
+
     // Función para generar ticket (debe ser global)
     window.generarTicket = async function(id) {
         try {
