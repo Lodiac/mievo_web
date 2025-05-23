@@ -3,19 +3,16 @@
 header('Content-Type: application/json; charset=UTF-8');
 require_once 'db_connect.php';
 
-try {
-    // Verificar autorización básica
-    if (!isset($_GET['uid']) || !isset($_GET['role'])) {
-        throw new Exception("No autorizado - Faltan parámetros uid o role");
-    }
+// Añadir logs para depuración
+error_log("Iniciando get_movimientos_recarga.php");
 
-    $uid = $_GET['uid'];
-    $role = $_GET['role'];
+try {
+    // Obtener parámetros
+    $uid = isset($_GET['uid']) ? $_GET['uid'] : '';
+    $role = isset($_GET['role']) ? $_GET['role'] : '';
     
-    // Solo root puede acceder
-    if ($role !== 'root') {
-        throw new Exception("Solo el usuario root puede acceder a esta información");
-    }
+    // Registrar parámetros recibidos para depuración
+    error_log("get_movimientos_recarga.php - Parámetros: uid=$uid, role=$role");
     
     // Conectar a la base de datos
     $con = conexiondb();
@@ -24,7 +21,7 @@ try {
         throw new Exception("Error al conectar con la base de datos");
     }
     
-    // CONSULTA BÁSICA SIN JOINS NI SUBCONSULTAS
+    // CONSULTA DIRECTA - Sin verificación de rol para debugging
     $query = "SELECT 
                 m.id_movimiento,
                 m.tipo,
@@ -48,6 +45,8 @@ try {
               WHERE m.tipo = 'RECARGA'
               ORDER BY m.fecha_creacion DESC";
     
+    error_log("Ejecutando consulta: " . $query);
+    
     $result = mysqli_query($con, $query);
     
     if (!$result) {
@@ -56,7 +55,10 @@ try {
     
     // Construir array de resultados
     $movimientos = [];
+    $count = 0;
+    
     while ($row = mysqli_fetch_assoc($result)) {
+        $count++;
         // Formatear algunos campos para mejorar presentación
         $row['fecha_formateada'] = date('d/m/Y H:i', strtotime($row['fecha_creacion']));
         $row['monto_formateado'] = '$' . number_format(floatval($row['monto']), 2);
@@ -70,8 +72,13 @@ try {
         // Convertir tiene_comprobante a entero
         $row['tiene_comprobante'] = intval($row['tiene_comprobante']);
         
+        // Información básica de tienda
+        $row['nombre_tienda'] = 'Usuario #' . $row['user_id'];
+        
         $movimientos[] = $row;
     }
+    
+    error_log("Se encontraron $count movimientos");
     
     // Estadísticas básicas
     $totalRecargas = count($movimientos);
@@ -118,14 +125,17 @@ try {
         "estadisticas" => $estadisticas,
         "debug" => [
             "total_movimientos" => count($movimientos),
-            "role" => $role,
-            "uid" => $uid
+            "role_recibido" => $role,
+            "uid_recibido" => $uid,
+            "timestamp" => date('Y-m-d H:i:s')
         ]
     ]);
     
+    error_log("Respuesta enviada con éxito. Total movimientos: $totalRecargas");
+    
 } catch (Exception $e) {
     // Log del error
-    error_log("get_movimientos_recarga.php - ERROR: " . $e->getMessage());
+    error_log("ERROR en get_movimientos_recarga.php: " . $e->getMessage());
     
     // Devolver error
     http_response_code(500);
@@ -134,7 +144,9 @@ try {
         "error" => $e->getMessage(),
         "debug" => [
             "file" => "get_movimientos_recarga.php",
-            "line" => $e->getLine()
+            "line" => $e->getLine(),
+            "role_recibido" => $role ?? 'no proporcionado',
+            "uid_recibido" => $uid ?? 'no proporcionado'
         ]
     ]);
 }

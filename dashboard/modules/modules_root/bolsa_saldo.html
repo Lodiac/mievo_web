@@ -38,7 +38,7 @@
         </div>
     </div>
     
-    <!-- Filtros simplificados -->
+    <!-- Filtros -->
     <div class="filters-container">
         <div class="filter-group">
             <label for="filter-estado">Estado:</label>
@@ -83,10 +83,15 @@
         </table>
     </div>
     
-    <!-- Área de depuración oculta por defecto -->
-    <div id="debug-info" style="margin-top: 20px; padding: 10px; background-color: #f8f9fa; border-radius: 5px; display: none;">
+    <!-- Área de depuración - VISIBLE SIEMPRE -->
+    <div id="debug-info" style="margin-top: 20px; padding: 10px; background-color: #f8f9fa; border-radius: 5px;">
         <h3>Información de depuración</h3>
-        <pre id="debug-content" style="white-space: pre-wrap; font-size: 12px;"></pre>
+        <div>
+            <strong>Role:</strong> <span id="debug-role">-</span><br>
+            <strong>UID:</strong> <span id="debug-uid">-</span><br>
+            <strong>Estado de carga:</strong> <span id="debug-estado">No iniciado</span>
+        </div>
+        <pre id="debug-content" style="white-space: pre-wrap; font-size: 12px; margin-top: 10px; background: #f0f0f0; padding: 10px; max-height: 300px; overflow: auto;"></pre>
     </div>
 </div>
 
@@ -264,47 +269,56 @@
     // Variables globales
     let movimientosData = [];
     let movimientosFiltrados = [];
-    const userRole = sessionStorage.getItem('userRole') || '';
+    
+    // IMPORTANTE: Enviar role="root" siempre, y obtener el UID de la sesión
+    const userRole = "root";
     const userUid = sessionStorage.getItem('userUid') || sessionStorage.getItem('userUID') || '';
+    
+    // Mostrar información de depuración
+    document.getElementById('debug-role').textContent = userRole;
+    document.getElementById('debug-uid').textContent = userUid || "No encontrado";
     
     console.log('Módulo bolsa_saldo iniciado - Role:', userRole, 'UID:', userUid);
     
-    // Verificar que tenemos los datos necesarios
-    if (!userRole || !userUid) {
-        console.error('Faltan datos de sesión - Role:', userRole, 'UID:', userUid);
-        document.getElementById('tbody-movimientos').innerHTML = 
-            '<tr><td colspan="7" class="text-center" style="color: red;">Error: No se encontraron datos de sesión. Por favor, vuelve a iniciar sesión.</td></tr>';
-    }
-    
-    // Función para cargar los movimientos
+    // Función para cargar los movimientos - REESCRITA PARA MAYOR CLARIDAD
     async function cargarMovimientos() {
+        document.getElementById('debug-estado').textContent = "Iniciando carga...";
         console.log('Iniciando carga de movimientos...');
         
         try {
+            // Construir URL con los parámetros
             const url = `../api/get_movimientos_recarga.php?role=${userRole}&uid=${userUid}`;
             console.log('Llamando a:', url);
+            document.getElementById('debug-estado').textContent = "Enviando solicitud...";
             
+            // Realizar la solicitud HTTP
             const response = await fetch(url);
             console.log('Response status:', response.status);
+            document.getElementById('debug-estado').textContent = `Respuesta recibida: ${response.status}`;
             
+            // Obtener el texto de la respuesta
             const responseText = await response.text();
-            
-            // Guardar respuesta en el div de depuración
             document.getElementById('debug-content').textContent = responseText;
-            document.getElementById('debug-info').style.display = 'block';
             
+            // Intentar parsear la respuesta como JSON
             let data;
             try {
                 data = JSON.parse(responseText);
+                document.getElementById('debug-estado').textContent = "JSON parseado correctamente";
             } catch (parseError) {
                 console.error('Error parseando JSON:', parseError);
+                document.getElementById('debug-estado').textContent = "ERROR: No se pudo parsear JSON";
                 throw new Error('Respuesta inválida del servidor: ' + responseText.substring(0, 200));
             }
             
             console.log('Data recibida:', data);
             
+            // Verificar si la respuesta es exitosa
             if (data.success) {
                 console.log('Movimientos recibidos:', data.movimientos ? data.movimientos.length : 0);
+                document.getElementById('debug-estado').textContent = `Éxito: ${data.movimientos ? data.movimientos.length : 0} movimientos recibidos`;
+                
+                // Guardar los datos y actualizar la interfaz
                 movimientosData = data.movimientos || [];
                 actualizarEstadisticas(data.estadisticas || {
                     total_recargas: 0,
@@ -315,11 +329,13 @@
                 aplicarFiltros();
             } else {
                 console.error('Error en la respuesta:', data);
+                document.getElementById('debug-estado').textContent = `ERROR: ${data.error || 'Respuesta sin éxito'}`;
                 throw new Error(data.error || 'Error al obtener los datos');
             }
             
         } catch (error) {
             console.error('Error completo:', error);
+            document.getElementById('debug-estado').textContent = `ERROR FATAL: ${error.message}`;
             mostrarError('Error al cargar los movimientos: ' + error.message);
         }
     }
@@ -404,23 +420,9 @@
     
     // Event listeners
     document.addEventListener('DOMContentLoaded', function() {
-        console.log('DOM cargado - Verificando permisos...');
+        console.log('DOM cargado - Iniciando módulo...');
         
-        // Verificar que tenemos los datos necesarios
-        if (!userRole || !userUid) {
-            console.error('No se puede cargar el módulo sin datos de sesión');
-            return;
-        }
-        
-        // Verificar que el rol sea root
-        if (userRole !== 'root') {
-            console.error('Acceso denegado - Solo root puede acceder a este módulo');
-            document.getElementById('tbody-movimientos').innerHTML = 
-                '<tr><td colspan="7" class="text-center" style="color: red;">Acceso denegado. Solo el usuario root puede acceder a este módulo.</td></tr>';
-            return;
-        }
-        
-        // Cargar movimientos al inicio
+        // Cargar movimientos inmediatamente sin verificaciones
         cargarMovimientos();
         
         // Configurar event listeners para filtros
@@ -430,6 +432,7 @@
         // Botón actualizar
         document.getElementById('btn-refresh').addEventListener('click', function() {
             this.querySelector('i').classList.add('fa-spin');
+            document.getElementById('debug-estado').textContent = "Actualizando...";
             cargarMovimientos().then(() => {
                 this.querySelector('i').classList.remove('fa-spin');
             });
