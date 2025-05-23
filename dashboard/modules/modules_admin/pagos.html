@@ -31,6 +31,17 @@
                 </div>
             </div>
             <div class="col">
+                <div class="form-group">
+                    <label for="filtro-proveedor">Proveedor:</label>
+                    <select id="filtro-proveedor" class="form-control">
+                        <option value="">Todos</option>
+                        <option value="telmex">Telmex</option>
+                        <option value="payjoy">Payjoy</option>
+                        <option value="telcel">Telcel</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col">
                 <div class="search-input-container">
                     <i class="fas fa-search search-icon"></i>
                     <input type="text" id="busqueda" class="search-input" placeholder="Buscar por nombre, número, cuenta...">
@@ -98,8 +109,6 @@
                 <span class="stat-value" id="stat-canceladas">0</span>
                 <span class="stat-label">Canceladas</span>
             </div>
-
-            
         </div>
     </div>
     
@@ -734,6 +743,7 @@
     // Elementos de filtro
     const filtroEstado = document.getElementById('filtro-estado');
     const filtroOrigen = document.getElementById('filtro-origen');
+    const filtroProveedor = document.getElementById('filtro-proveedor');
     const busquedaInput = document.getElementById('busqueda');
     const btnRefresh = document.getElementById('btn-refresh');
     
@@ -779,6 +789,11 @@
     });
     
     filtroOrigen.addEventListener('change', () => {
+        currentPage = 1;
+        aplicarFiltros();
+    });
+    
+    filtroProveedor.addEventListener('change', () => {
         currentPage = 1;
         aplicarFiltros();
     });
@@ -902,6 +917,7 @@
     function aplicarFiltros() {
         const estado = filtroEstado.value;
         const origen = filtroOrigen.value;
+        const proveedor = filtroProveedor.value;
         const termino = busquedaInput.value.trim().toLowerCase();
         
         filteredSolicitudes = allSolicitudes.filter(solicitud => {
@@ -912,6 +928,13 @@
             if (origen !== '') {
                 const esPropia = parseInt(solicitud.es_propia) === 1;
                 if ((origen === '1' && !esPropia) || (origen === '0' && esPropia)) {
+                    return false;
+                }
+            }
+            
+            if (proveedor && solicitud.proveedor) {
+                const proveedorSolicitud = solicitud.proveedor.toLowerCase();
+                if (!proveedorSolicitud.includes(proveedor.toLowerCase())) {
                     return false;
                 }
             }
