@@ -1,5 +1,5 @@
 <?php
-// api/procesar_solicitud_pago.php - VERSIÓN FINAL MEJORADA
+// api/procesar_solicitud_pago.php - VERSIÓN CORREGIDA PARA ADMIN + VENDEDOR INTERNO
 header('Content-Type: application/json; charset=UTF-8');
 require_once 'db_connect.php';
 
@@ -97,6 +97,7 @@ try {
         $saldoActual = null;
         $nuevoSaldo = null;
         $montoSolicitud = (float) $solicitud['monto'];
+        $debeDescontarSaldo = true; // Nueva variable para controlar descuento
         
         error_log("Solicitud propia: " . ($esSolicitudPropia ? 'SI' : 'NO'));
         
@@ -158,43 +159,80 @@ try {
                 throw new Exception("No se pudo determinar la tienda de la solicitud. Usuario: " . $solicitud['user_id']);
             }
             
-            // Verificar saldo en la tabla bolsas
-            $query_saldo = "SELECT saldo_actual FROM bolsas WHERE id_sucursal = ?";
-            $stmt_saldo = mysqli_prepare($con, $query_saldo);
-            mysqli_stmt_bind_param($stmt_saldo, "i", $tiendaId);
-            mysqli_stmt_execute($stmt_saldo);
-            $result_saldo = mysqli_stmt_get_result($stmt_saldo);
-            
-            if (mysqli_num_rows($result_saldo) === 0) {
-                throw new Exception("No se encontró información de saldo para la tienda ID: " . $tiendaId);
+            // NUEVA LÓGICA: Verificar si admin debe descontar saldo
+            if ($role === 'admin') {
+                error_log("Verificando si admin debe descontar saldo para user_id: {$solicitud['user_id']}");
+                
+                // Verificar si el solicitante es vendedor interno
+                $query_tipo_solicitante = "SELECT tipo_relacion FROM vendedor_tienda_relacion 
+                                          WHERE vendedor_id = ? COLLATE utf8mb4_general_ci";
+                $stmt_tipo_sol = mysqli_prepare($con, $query_tipo_solicitante);
+                mysqli_stmt_bind_param($stmt_tipo_sol, "s", $solicitud['user_id']);
+                mysqli_stmt_execute($stmt_tipo_sol);
+                $result_tipo_sol = mysqli_stmt_get_result($stmt_tipo_sol);
+                
+                if (mysqli_num_rows($result_tipo_sol) > 0) {
+                    $row_tipo_sol = mysqli_fetch_assoc($result_tipo_sol);
+                    if ($row_tipo_sol['tipo_relacion'] === 'interno') {
+                        $debeDescontarSaldo = false;
+                        $metodo_tienda = 'admin_vendedor_interno';
+                        error_log("Admin procesando vendedor interno - SIN descuento de saldo");
+                    } else {
+                        error_log("Admin procesando vendedor externo - CON descuento de saldo");
+                    }
+                } else {
+                    error_log("Admin procesando usuario no-vendedor - CON descuento de saldo");
+                }
+                mysqli_stmt_close($stmt_tipo_sol);
             }
             
-            $row_saldo = mysqli_fetch_assoc($result_saldo);
-            $saldoActual = (float) $row_saldo['saldo_actual'];
-            mysqli_stmt_close($stmt_saldo);
-            
-            error_log("Saldo actual: $saldoActual, Monto requerido: $montoSolicitud");
-            
-            // Validar que el saldo sea suficiente
-            if ($saldoActual < $montoSolicitud) {
-                throw new Exception("Saldo insuficiente. Saldo disponible: $" . number_format($saldoActual, 2) . 
-                                  ", Monto requerido: $" . number_format($montoSolicitud, 2));
+            // Procesar descuento de saldo solo si es necesario
+            if ($debeDescontarSaldo) {
+                // Verificar saldo en la tabla bolsas
+                $query_saldo = "SELECT saldo_actual FROM bolsas WHERE id_sucursal = ?";
+                $stmt_saldo = mysqli_prepare($con, $query_saldo);
+                mysqli_stmt_bind_param($stmt_saldo, "i", $tiendaId);
+                mysqli_stmt_execute($stmt_saldo);
+                $result_saldo = mysqli_stmt_get_result($stmt_saldo);
+                
+                if (mysqli_num_rows($result_saldo) === 0) {
+                    throw new Exception("No se encontró información de saldo para la tienda ID: " . $tiendaId);
+                }
+                
+                $row_saldo = mysqli_fetch_assoc($result_saldo);
+                $saldoActual = (float) $row_saldo['saldo_actual'];
+                mysqli_stmt_close($stmt_saldo);
+                
+                error_log("Saldo actual: $saldoActual, Monto requerido: $montoSolicitud");
+                
+                // Validar que el saldo sea suficiente
+                if ($saldoActual < $montoSolicitud) {
+                    throw new Exception("Saldo insuficiente. Saldo disponible: $" . number_format($saldoActual, 2) . 
+                                      ", Monto requerido: $" . number_format($montoSolicitud, 2));
+                }
+                
+                // Descontar el saldo
+                $nuevoSaldo = $saldoActual - $montoSolicitud;
+                $query_update_saldo = "UPDATE bolsas SET saldo_actual = ? WHERE id_sucursal = ?";
+                $stmt_update_saldo = mysqli_prepare($con, $query_update_saldo);
+                mysqli_stmt_bind_param($stmt_update_saldo, "di", $nuevoSaldo, $tiendaId);
+                
+                if (!mysqli_stmt_execute($stmt_update_saldo)) {
+                    throw new Exception("Error al actualizar el saldo: " . mysqli_stmt_error($stmt_update_saldo));
+                }
+                mysqli_stmt_close($stmt_update_saldo);
+                
+                error_log("Saldo actualizado: $saldoActual -> $nuevoSaldo");
+            } else {
+                error_log("Saltando descuento de saldo por política admin-vendedor interno");
+                // Para efectos de respuesta, mantener valores informativos
+                $saldoActual = 0;
+                $nuevoSaldo = 0;
             }
             
-            // Descontar el saldo
-            $nuevoSaldo = $saldoActual - $montoSolicitud;
-            $query_update_saldo = "UPDATE bolsas SET saldo_actual = ? WHERE id_sucursal = ?";
-            $stmt_update_saldo = mysqli_prepare($con, $query_update_saldo);
-            mysqli_stmt_bind_param($stmt_update_saldo, "di", $nuevoSaldo, $tiendaId);
-            
-            if (!mysqli_stmt_execute($stmt_update_saldo)) {
-                throw new Exception("Error al actualizar el saldo: " . mysqli_stmt_error($stmt_update_saldo));
-            }
-            mysqli_stmt_close($stmt_update_saldo);
-            
-            error_log("Saldo actualizado: $saldoActual -> $nuevoSaldo");
         } else {
             $metodo_tienda = 'solicitud_propia';
+            $debeDescontarSaldo = false;
             error_log("Solicitud propia, no se requiere descuento de saldo");
         }
         
@@ -210,21 +248,31 @@ try {
         }
         mysqli_stmt_close($stmt_update_solicitud);
         
+        // Determinar mensaje de respuesta
+        $mensaje = "";
+        if ($esSolicitudPropia) {
+            $mensaje = "Solicitud propia iniciada correctamente";
+        } elseif ($role === 'admin' && !$debeDescontarSaldo) {
+            $mensaje = "Solicitud de vendedor interno iniciada correctamente (sin descuento de saldo)";
+        } else {
+            $mensaje = "Solicitud iniciada y saldo descontado correctamente";
+        }
+        
         // Respuesta exitosa
         echo json_encode([
             "success" => true,
-            "message" => $esSolicitudPropia ? 
-                "Solicitud propia iniciada correctamente" : 
-                "Solicitud iniciada y saldo descontado correctamente",
+            "message" => $mensaje,
             "nuevo_estado" => "procesando",
-            "saldo_descontado" => !$esSolicitudPropia,
+            "saldo_descontado" => $debeDescontarSaldo,
             "detalles" => [
                 "tienda_id" => $tiendaId,
                 "metodo_tienda" => $metodo_tienda,
                 "saldo_anterior" => $saldoActual,
                 "saldo_actual" => $nuevoSaldo,
-                "monto_descontado" => $esSolicitudPropia ? 0 : $montoSolicitud,
-                "es_solicitud_propia" => $esSolicitudPropia
+                "monto_descontado" => $debeDescontarSaldo ? $montoSolicitud : 0,
+                "es_solicitud_propia" => $esSolicitudPropia,
+                "debe_descontar_saldo" => $debeDescontarSaldo,
+                "procesador_role" => $role
             ]
         ]);
         
@@ -287,6 +335,8 @@ try {
             "es_solicitud_propia" => isset($esSolicitudPropia) ? $esSolicitudPropia : null,
             "tienda_encontrada" => isset($tiendaId) ? $tiendaId : null,
             "metodo_tienda" => isset($metodo_tienda) ? $metodo_tienda : null,
+            "debe_descontar_saldo" => isset($debeDescontarSaldo) ? $debeDescontarSaldo : null,
+            "procesador_role" => $role ?? null,
             "timestamp" => date('Y-m-d H:i:s')
         ]
     ]);
