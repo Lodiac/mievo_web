@@ -53,7 +53,7 @@
             <div class="col">
                 <div class="search-input-container">
                     <i class="fas fa-search search-icon"></i>
-                    <input type="text" id="busqueda" class="search-input" placeholder="Buscar por nombre, número, cuenta...">
+                    <input type="text" id="busqueda" class="search-input" placeholder="Buscar por cliente, origen, cuenta...">
                 </div>
             </div>
             <div class="col actions">
@@ -129,6 +129,7 @@
                     <tr>
                         <th>ID</th>
                         <th>Cliente</th>
+                        <th>Origen</th>
                         <th>Proveedor</th>
                         <th>Tipo Servicio</th>
                         <th>Cuenta</th>
@@ -174,11 +175,11 @@
         </div>
     </div>
 
-    <!-- Modal para completar solicitud (solo para vendedores internos) -->
+    <!-- Modal para procesar solicitud (solo para vendedores internos) -->
     <div id="modal-completar" class="modal">
         <div class="modal-content">
             <span class="close-modal-completar">&times;</span>
-            <h3 id="modal-completar-title">Completar Pago de Servicio</h3>
+            <h3 id="modal-completar-title">Procesar Pago de Servicio</h3>
             <div class="modal-body">
                 <div class="detail-group">
                     <h4>Información de la Solicitud</h4>
@@ -198,6 +199,9 @@
                 
                 <div class="modal-actions">
                     <button id="btn-cancelar-completar" class="btn btn-outline">Cancelar</button>
+                    <button id="btn-rechazar-solicitud" class="btn btn-danger">
+                        <i class="fas fa-times"></i> Rechazar Solicitud
+                    </button>
                     <button id="btn-confirmar-completar" class="btn btn-success">
                         <i class="fas fa-check"></i> Completar Solicitud
                     </button>
@@ -395,6 +399,11 @@
 
     .btn-success {
         background-color: #28a745;
+        color: white;
+    }
+
+    .btn-danger {
+        background-color: #dc3545;
         color: white;
     }
 
@@ -859,6 +868,7 @@
     const comentariosCompletar = document.getElementById('comentarios-completar');
     const btnCancelarCompletar = document.getElementById('btn-cancelar-completar');
     const btnConfirmarCompletar = document.getElementById('btn-confirmar-completar');
+    const btnRechazarSolicitud = document.getElementById('btn-rechazar-solicitud');
     const closeModalCompletar = document.querySelector('.close-modal-completar');
     
     // Obtener datos del usuario
@@ -971,7 +981,8 @@
     if (closeModalCompletar) {
         closeModalCompletar.addEventListener('click', () => modalCompletar.style.display = 'none');
         btnCancelarCompletar.addEventListener('click', () => modalCompletar.style.display = 'none');
-        btnConfirmarCompletar.addEventListener('click', completarSolicitud);
+        btnConfirmarCompletar.addEventListener('click', () => procesarSolicitud('completar'));
+        btnRechazarSolicitud.addEventListener('click', () => procesarSolicitud('rechazar'));
         window.addEventListener('click', (e) => {
             if (e.target === modalCompletar) modalCompletar.style.display = 'none';
         });
@@ -1089,7 +1100,9 @@
             }
             
             if (termino) {
-                const coincideNombre = solicitud.user_name && 
+                const coincideCliente = solicitud.nombre_cliente && 
+                                      solicitud.nombre_cliente.toLowerCase().includes(termino);
+                const coincideOrigen = solicitud.user_name && 
                                      solicitud.user_name.toLowerCase().includes(termino);
                 const coincideCuenta = solicitud.cuenta && 
                                      solicitud.cuenta.toLowerCase().includes(termino);
@@ -1102,7 +1115,7 @@
                 const coincideTienda = solicitud.nombre_tienda && 
                                      solicitud.nombre_tienda.toLowerCase().includes(termino);
                 
-                if (!coincideNombre && !coincideCuenta && !coincideNumero && !coincideProveedor && !coincideTipoServicio && !coincideTienda) {
+                if (!coincideCliente && !coincideOrigen && !coincideCuenta && !coincideNumero && !coincideProveedor && !coincideTipoServicio && !coincideTienda) {
                     return false;
                 }
             }
@@ -1221,13 +1234,13 @@
             if (tipoVendedor === 'interno') {
                 if (estado === 'pendiente') {
                     accionesHTML += `
-                        <button class="action-btn action-btn-warning" title="Iniciar procesamiento" onclick="iniciarProcesamiento('${solicitud.id}')">
+                        <button class="action-btn action-btn-warning" title="Iniciar procesamiento" onclick="iniciarSolicitud('${solicitud.id}')">
                             <i class="fas fa-play"></i>
                         </button>
                     `;
                 } else if (estado === 'procesando') {
                     accionesHTML += `
-                        <button class="action-btn action-btn-success" title="Completar solicitud" onclick="mostrarModalCompletar('${solicitud.id}')">
+                        <button class="action-btn action-btn-success" title="Completar/Rechazar solicitud" onclick="mostrarModalCompletar('${solicitud.id}')">
                             <i class="fas fa-check"></i>
                         </button>
                     `;
@@ -1237,6 +1250,7 @@
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${solicitud.id}</td>
+                <td>${solicitud.nombre_cliente || 'No disponible'}</td>
                 <td>${solicitud.user_name || 'No disponible'}</td>
                 <td>${solicitud.proveedor || 'No disponible'}</td>
                 <td>${solicitud.tipo_servicio || 'No disponible'}</td>
@@ -1251,6 +1265,188 @@
             
             solicitudesTbody.appendChild(row);
         });
+    }
+
+    // Función para INICIAR solicitud (pendiente → procesando → abrir modal) - Solo vendedores internos
+    window.iniciarSolicitud = async function(id) {
+        try {
+            showLoading();
+            
+            console.log('Iniciando procesamiento de solicitud ID:', id);
+            
+            const data = {
+                id_solicitud: parseInt(id),
+                uid: userUID,
+                role: userRole,
+                accion: 'iniciar'
+            };
+            
+            const response = await fetch('../api/procesar_solicitud_pago.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+            
+            const result = await response.json();
+            
+            if (!result.success) {
+                throw new Error(result.error || 'Error desconocido al iniciar el procesamiento');
+            }
+            
+            // Mostrar mensaje de éxito
+            alert('✅ ' + result.message);
+            
+            // Recargar las solicitudes para actualizar el estado
+            await loadSolicitudesPagoservicios();
+            
+            // Si la API indica que debemos abrir la modal, hacerlo
+            if (result.abrir_modal) {
+                // Buscar la solicitud actualizada y abrir modal
+                setTimeout(() => {
+                    mostrarModalCompletar(id);
+                }, 500); // Pequeño delay para que se actualice la vista
+            }
+            
+        } catch (error) {
+            console.error('Error al iniciar procesamiento:', error);
+            alert(`❌ Error: ${error.message}`);
+        } finally {
+            hideLoading();
+        }
+    };
+
+    // Función para mostrar el modal de completar (solo vendedores internos)
+    window.mostrarModalCompletar = function(id) {
+        const solicitud = allSolicitudes.find(s => String(s.id) === String(id));
+        
+        if (!solicitud) {
+            alert('No se encontró la solicitud');
+            return;
+        }
+
+        solicitudActual = solicitud;
+        
+        // Formatear información de la solicitud
+        let montoFormateado = 'No disponible';
+        if (solicitud.monto) {
+            try {
+                montoFormateado = '$' + parseFloat(solicitud.monto).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+            } catch (e) {
+                console.error('Error al formatear monto:', e);
+            }
+        }
+
+        modalCompletarTitle.textContent = `Procesar Pago de Servicio #${solicitud.id}`;
+        
+        solicitudInfoCompletar.innerHTML = `
+            <div class="detail-item">
+                <div class="detail-label">Cliente:</div>
+                <div class="detail-value">${solicitud.nombre_cliente || 'No disponible'}</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">Origen:</div>
+                <div class="detail-value">${solicitud.user_name || 'No disponible'}</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">Proveedor:</div>
+                <div class="detail-value">${solicitud.proveedor || 'No disponible'}</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">Tipo de servicio:</div>
+                <div class="detail-value">${solicitud.tipo_servicio || 'No disponible'}</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">Cuenta/Número:</div>
+                <div class="detail-value">${solicitud.cuenta || 'No disponible'}</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">Monto:</div>
+                <div class="detail-value">${montoFormateado}</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">Estado actual:</div>
+                <div class="detail-value">
+                    <span class="status-badge ${getEstadoClass(solicitud.estado_solicitud)}">
+                        ${solicitud.estado_solicitud}
+                    </span>
+                </div>
+            </div>
+        `;
+
+        // Limpiar comentarios
+        comentariosCompletar.value = '';
+        
+        modalCompletar.style.display = 'block';
+    };
+
+    // Función universal para procesar solicitudes (completar/rechazar) - Solo vendedores internos
+    async function procesarSolicitud(accion) {
+        try {
+            const comentarios = comentariosCompletar.value.trim();
+            
+            if (!comentarios) {
+                alert('Los comentarios son obligatorios');
+                comentariosCompletar.focus();
+                return;
+            }
+
+            if (!solicitudActual) {
+                alert('Error: No se ha seleccionado ninguna solicitud');
+                return;
+            }
+
+            let confirmMessage = '';
+            if (accion === 'completar') {
+                confirmMessage = '¿Estás seguro de que deseas completar esta solicitud?';
+            } else if (accion === 'rechazar') {
+                confirmMessage = '¿Estás seguro de que deseas rechazar esta solicitud? El saldo será regresado automáticamente.';
+            }
+
+            if (!confirm(confirmMessage)) {
+                return;
+            }
+
+            showLoading();
+            modalCompletar.style.display = 'none';
+            
+            console.log(`${accion.charAt(0).toUpperCase() + accion.slice(1)} solicitud ID:`, solicitudActual.id);
+            
+            const data = {
+                id_solicitud: parseInt(solicitudActual.id),
+                uid: userUID,
+                role: userRole,
+                accion: accion,
+                comentarios: comentarios
+            };
+            
+            const response = await fetch('../api/procesar_solicitud_pago.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+            
+            const result = await response.json();
+            
+            if (!result.success) {
+                throw new Error(result.error || `Error desconocido al ${accion} la solicitud`);
+            }
+            
+            alert('✅ ' + result.message);
+            
+            // Recargar las solicitudes
+            await loadSolicitudesPagoservicios();
+            
+        } catch (error) {
+            console.error(`Error al ${accion} solicitud:`, error);
+            alert(`❌ Error: ${error.message}`);
+        } finally {
+            hideLoading();
+            solicitudActual = null;
+        }
     }
     
     // Función para ver detalles (debe ser global)
@@ -1332,7 +1528,11 @@
             <div class="detail-group">
                 <h4>Información del Cliente</h4>
                 <div class="detail-item">
-                    <div class="detail-label">Nombre/Tienda:</div>
+                    <div class="detail-label">Cliente:</div>
+                    <div class="detail-value">${solicitud.nombre_cliente || 'No disponible'}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Origen/Tienda:</div>
                     <div class="detail-value">${solicitud.user_name || 'No disponible'}</div>
                 </div>
                 <div class="detail-item">
@@ -1382,160 +1582,6 @@
         
         modal.style.display = 'block';
     };
-    
-    // Función para iniciar procesamiento de solicitud (solo para vendedores internos)
-    window.iniciarProcesamiento = async function(id) {
-        try {
-            if (!confirm('¿Estás seguro de que deseas iniciar el procesamiento de esta solicitud?')) {
-                return;
-            }
-
-            showLoading();
-            
-            console.log('Iniciando procesamiento de solicitud ID:', id);
-            
-            const data = {
-                id_solicitud: parseInt(id),
-                uid: userUID,
-                role: userRole,
-                accion: 'iniciar'
-            };
-            
-            const response = await fetch('../api/procesar_solicitud_pago.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(data)
-            });
-            
-            const result = await response.json();
-            
-            if (!result.success) {
-                throw new Error(result.error || 'Error desconocido al iniciar el procesamiento');
-            }
-            
-            alert('✅ ' + result.message);
-            
-            // Recargar las solicitudes
-            await loadSolicitudesPagoservicios();
-            
-        } catch (error) {
-            console.error('Error al iniciar procesamiento:', error);
-            alert(`❌ Error: ${error.message}`);
-        } finally {
-            hideLoading();
-        }
-    };
-
-    // Función para mostrar el modal de completar (solo para vendedores internos)
-    window.mostrarModalCompletar = function(id) {
-        const solicitud = allSolicitudes.find(s => String(s.id) === String(id));
-        
-        if (!solicitud) {
-            alert('No se encontró la solicitud');
-            return;
-        }
-
-        solicitudActual = solicitud;
-        
-        // Formatear información de la solicitud
-        let montoFormateado = 'No disponible';
-        if (solicitud.monto) {
-            try {
-                montoFormateado = '$' + parseFloat(solicitud.monto).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
-            } catch (e) {
-                console.error('Error al formatear monto:', e);
-            }
-        }
-
-        modalCompletarTitle.textContent = `Completar Pago de Servicio #${solicitud.id}`;
-        
-        solicitudInfoCompletar.innerHTML = `
-            <div class="detail-item">
-                <div class="detail-label">Cliente:</div>
-                <div class="detail-value">${solicitud.user_name || 'No disponible'}</div>
-            </div>
-            <div class="detail-item">
-                <div class="detail-label">Proveedor:</div>
-                <div class="detail-value">${solicitud.proveedor || 'No disponible'}</div>
-            </div>
-            <div class="detail-item">
-                <div class="detail-label">Tipo de servicio:</div>
-                <div class="detail-value">${solicitud.tipo_servicio || 'No disponible'}</div>
-            </div>
-            <div class="detail-item">
-                <div class="detail-label">Cuenta/Número:</div>
-                <div class="detail-value">${solicitud.cuenta || 'No disponible'}</div>
-            </div>
-            <div class="detail-item">
-                <div class="detail-label">Monto:</div>
-                <div class="detail-value">${montoFormateado}</div>
-            </div>
-        `;
-
-        // Limpiar comentarios
-        comentariosCompletar.value = '';
-        
-        modalCompletar.style.display = 'block';
-    };
-
-    // Función para completar solicitud (solo para vendedores internos)
-    async function completarSolicitud() {
-        try {
-            const comentarios = comentariosCompletar.value.trim();
-            
-            if (!comentarios) {
-                alert('Los comentarios son obligatorios para completar la solicitud');
-                comentariosCompletar.focus();
-                return;
-            }
-
-            if (!solicitudActual) {
-                alert('Error: No se ha seleccionado ninguna solicitud');
-                return;
-            }
-
-            showLoading();
-            modalCompletar.style.display = 'none';
-            
-            console.log('Completando solicitud ID:', solicitudActual.id);
-            
-            const data = {
-                id_solicitud: parseInt(solicitudActual.id),
-                uid: userUID,
-                role: userRole,
-                accion: 'completar',
-                comentarios: comentarios
-            };
-            
-            const response = await fetch('../api/procesar_solicitud_pago.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(data)
-            });
-            
-            const result = await response.json();
-            
-            if (!result.success) {
-                throw new Error(result.error || 'Error desconocido al completar la solicitud');
-            }
-            
-            alert('✅ ' + result.message);
-            
-            // Recargar las solicitudes
-            await loadSolicitudesPagoservicios();
-            
-        } catch (error) {
-            console.error('Error al completar solicitud:', error);
-            alert(`❌ Error: ${error.message}`);
-        } finally {
-            hideLoading();
-            solicitudActual = null;
-        }
-    }
 
     // Función para generar ticket (debe ser global)
     window.generarTicket = async function(id) {
