@@ -554,8 +554,8 @@ try {
     }, $lista_uids)) . "'";
     
     // 7. CONSULTA ÚNICA A SOLICITUDES
-    $query_solicitudes = "SELECT 
-                         id, user_id, user_name, proveedor, tipo_servicio, cuenta, monto, numero_contacto, 
+   $query_solicitudes = "SELECT 
+                         id, user_id, user_name, nombre_cliente, proveedor, tipo_servicio, cuenta, monto, numero_contacto, 
                          estado_solicitud, fecha_creacion, comentarios, 
                          estado
                          FROM sol_pagoservicios 

@@ -23,7 +23,7 @@ try {
     $role = $input['role'];
     
     // Verificar que el usuario tenga permiso
-    if ($role !== 'subdistribuidor' && $role !== 'vendedor') {
+    if ($role !== 'subdistribuidor' && $role !== 'vendedor' && $role !== 'admin') {
         throw new Exception("No tienes permiso para realizar esta acción");
     }
     
@@ -106,25 +106,50 @@ try {
         mysqli_stmt_close($stmt_check);
     }
     
-    // 2. Verificar cuántos tickets se han generado para esta solicitud
-    $query_tickets = "SELECT COUNT(*) as total FROM ticket_generados WHERE solicitud_id = ?";
-    $stmt_tickets = mysqli_prepare($con, $query_tickets);
-    mysqli_stmt_bind_param($stmt_tickets, "i", $solicitudId);
+    // 2. Verificar cuántos tickets se han generado para esta solicitud (solo para subdistribuidores y vendedores externos)
+    $debeVerificarLimite = true;
     
-    if (!mysqli_stmt_execute($stmt_tickets)) {
-        throw new Exception("Error al verificar tickets generados: " . mysqli_stmt_error($stmt_tickets));
+    // Admin y vendedores internos no tienen límite
+    if ($role === 'admin') {
+        $debeVerificarLimite = false;
+    } else {
+        // Verificar si es vendedor interno
+        $query_tipo = "SELECT tipo_relacion FROM vendedor_tienda_relacion 
+                       WHERE vendedor_id = ? COLLATE utf8mb4_general_ci";
+        $stmt_tipo = mysqli_prepare($con, $query_tipo);
+        mysqli_stmt_bind_param($stmt_tipo, "s", $uid);
+        mysqli_stmt_execute($stmt_tipo);
+        $result_tipo = mysqli_stmt_get_result($stmt_tipo);
+        
+        if ($result_tipo && mysqli_num_rows($result_tipo) > 0) {
+            $row_tipo = mysqli_fetch_assoc($result_tipo);
+            if ($row_tipo['tipo_relacion'] === 'interno') {
+                $debeVerificarLimite = false;
+            }
+        }
+        mysqli_stmt_close($stmt_tipo);
     }
     
-    $result_tickets = mysqli_stmt_get_result($stmt_tickets);
-    $row_tickets = mysqli_fetch_assoc($result_tickets);
-    $tickets_generados = (int) $row_tickets['total'];
-    
-    mysqli_stmt_close($stmt_tickets);
-    
-    // 3. Verificar límite (2 tickets por solicitud)
-    if ($tickets_generados >= 2) {
-        // No informar directamente sobre el límite, mostrar un mensaje genérico
-        throw new Exception("No se puede generar el ticket en este momento");
+    if ($debeVerificarLimite) {
+        $query_tickets = "SELECT COUNT(*) as total FROM ticket_generados WHERE solicitud_id = ?";
+        $stmt_tickets = mysqli_prepare($con, $query_tickets);
+        mysqli_stmt_bind_param($stmt_tickets, "i", $solicitudId);
+        
+        if (!mysqli_stmt_execute($stmt_tickets)) {
+            throw new Exception("Error al verificar tickets generados: " . mysqli_stmt_error($stmt_tickets));
+        }
+        
+        $result_tickets = mysqli_stmt_get_result($stmt_tickets);
+        $row_tickets = mysqli_fetch_assoc($result_tickets);
+        $tickets_generados = (int) $row_tickets['total'];
+        
+        mysqli_stmt_close($stmt_tickets);
+        
+        // 3. Verificar límite (2 tickets por solicitud)
+        if ($tickets_generados >= 2) {
+            // No informar directamente sobre el límite, mostrar un mensaje genérico
+            throw new Exception("No se puede generar el ticket en este momento");
+        }
     }
     
     // 4. Registrar el nuevo ticket generado
@@ -140,7 +165,7 @@ try {
     
     // 5. Generar el contenido del ticket
 $timestamp = time();
-$folio = "SP-{$solicitudId}-{$timestamp}";
+$folio = "SP-{$solicitudId}";
 $fecha_actual = date('d/m/Y H:i');
 
 // Contenido centrado con espacios adicionales para mantener alineación
@@ -155,9 +180,7 @@ $contenido_ticket .= "PROVEEDOR: {$solicitud['proveedor']}\n";
 $contenido_ticket .= "SERVICIO: {$solicitud['tipo_servicio']}\n";
 $contenido_ticket .= "CUENTA/NÚMERO: {$solicitud['cuenta']}\n";
 $contenido_ticket .= "MONTO: $" . number_format($solicitud['monto'], 2) . "\n";
-$contenido_ticket .= "---------------------------------------\n";
-$contenido_ticket .= "ESTADO: {$solicitud['estado_solicitud']}\n";
-$contenido_ticket .= "FECHA REGISTRO: " . date('d/m/Y H:i', strtotime($solicitud['fecha_creacion'])) . "\n";
+
 $contenido_ticket .= "====================================\n";
 $contenido_ticket .= "**COMPROBANTE NO FISCAL**\n";
 $contenido_ticket .= "GRACIAS POR SU PREFERENCIA\n";

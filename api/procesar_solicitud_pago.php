@@ -1,5 +1,5 @@
 <?php
-// api/procesar_solicitud_pago.php - VERSIÓN CORREGIDA PARA ADMIN + VENDEDOR INTERNO
+// api/procesar_solicitud_pago.php - VERSIÓN CORREGIDA CON FLUJO CORRECTO
 header('Content-Type: application/json; charset=UTF-8');
 require_once 'db_connect.php';
 
@@ -21,7 +21,7 @@ try {
     $idSolicitud = (int) $input['id_solicitud'];
     $uid = $input['uid'];
     $role = $input['role'];
-    $accion = $input['accion']; // 'iniciar' o 'completar'
+    $accion = $input['accion']; // 'iniciar', 'completar' o 'rechazar'
     
     // Log inicial
     error_log("Procesando solicitud: ID=$idSolicitud, UID=$uid, Role=$role, Accion=$accion");
@@ -73,14 +73,14 @@ try {
         if ($solicitud['estado_solicitud'] !== 'pendiente') {
             throw new Exception("La solicitud ya ha sido procesada o no está en estado pendiente");
         }
-    } elseif ($accion === 'completar') {
+    } elseif ($accion === 'completar' || $accion === 'rechazar') {
         if ($solicitud['estado_solicitud'] !== 'procesando') {
-            throw new Exception("La solicitud debe estar en estado 'procesando' para completarla");
+            throw new Exception("La solicitud debe estar en estado 'procesando' para completarla o rechazarla");
         }
         
         // Validar que se incluyan comentarios
         if (!isset($input['comentarios']) || trim($input['comentarios']) === '') {
-            throw new Exception("Los comentarios son requeridos para completar la solicitud");
+            throw new Exception("Los comentarios son requeridos para completar o rechazar la solicitud");
         }
     } else {
         throw new Exception("Acción no válida");
@@ -88,6 +88,8 @@ try {
     
     // Procesar según la acción
     if ($accion === 'iniciar') {
+        // INICIAR: Descontar saldo y cambiar a procesando
+        
         // Verificar si es solicitud propia
         $esSolicitudPropia = ($solicitud['user_id'] === $uid);
         
@@ -97,7 +99,7 @@ try {
         $saldoActual = null;
         $nuevoSaldo = null;
         $montoSolicitud = (float) $solicitud['monto'];
-        $debeDescontarSaldo = true; // Nueva variable para controlar descuento
+        $debeDescontarSaldo = true;
         
         error_log("Solicitud propia: " . ($esSolicitudPropia ? 'SI' : 'NO'));
         
@@ -222,10 +224,9 @@ try {
                 }
                 mysqli_stmt_close($stmt_update_saldo);
                 
-                error_log("Saldo actualizado: $saldoActual -> $nuevoSaldo");
+                error_log("Saldo descontado: $saldoActual -> $nuevoSaldo");
             } else {
                 error_log("Saltando descuento de saldo por política admin-vendedor interno");
-                // Para efectos de respuesta, mantener valores informativos
                 $saldoActual = 0;
                 $nuevoSaldo = 0;
             }
@@ -258,11 +259,12 @@ try {
             $mensaje = "Solicitud iniciada y saldo descontado correctamente";
         }
         
-        // Respuesta exitosa
+        // Respuesta exitosa para INICIAR
         echo json_encode([
             "success" => true,
             "message" => $mensaje,
             "nuevo_estado" => "procesando",
+            "abrir_modal" => true, // Indicar al frontend que abra la modal
             "saldo_descontado" => $debeDescontarSaldo,
             "detalles" => [
                 "tienda_id" => $tiendaId,
@@ -277,6 +279,8 @@ try {
         ]);
         
     } elseif ($accion === 'completar') {
+        // COMPLETAR: Solo cambiar estado (el saldo ya está descontado)
+        
         $comentarios = trim($input['comentarios']);
         
         error_log("Completando solicitud con comentarios: " . substr($comentarios, 0, 100));
@@ -298,7 +302,7 @@ try {
         
         error_log("Solicitud completada exitosamente");
         
-        // Respuesta exitosa
+        // Respuesta exitosa para COMPLETAR
         echo json_encode([
             "success" => true,
             "message" => "Solicitud completada exitosamente",
@@ -307,6 +311,137 @@ try {
                 "comentarios_agregados" => strlen($comentarios) . " caracteres",
                 "procesada_por" => $uid,
                 "fecha_actualizacion" => date('Y-m-d H:i:s')
+            ]
+        ]);
+        
+    } elseif ($accion === 'rechazar') {
+        // RECHAZAR: Regresar el saldo descontado y cambiar estado
+        
+        $comentarios = trim($input['comentarios']);
+        
+        error_log("Rechazando solicitud con comentarios: " . substr($comentarios, 0, 100));
+        
+        // PASO 1: Buscar la tienda para regresar el saldo (mismo método que en iniciar)
+        $esSolicitudPropia = ($solicitud['user_id'] === $uid);
+        $tiendaId = null;
+        $montoSolicitud = (float) $solicitud['monto'];
+        $debeRegresarSaldo = true;
+        
+        if (!$esSolicitudPropia) {
+            // Buscar tienda usando los mismos métodos que en iniciar
+            
+            // Método 1: pdv_supervendedor_relacion
+            $query_pdv = "SELECT pdv_id FROM pdv_supervendedor_relacion 
+                         WHERE supervendedor_id = ? COLLATE utf8mb4_general_ci";
+            $stmt_pdv = mysqli_prepare($con, $query_pdv);
+            mysqli_stmt_bind_param($stmt_pdv, "s", $solicitud['user_id']);
+            mysqli_stmt_execute($stmt_pdv);
+            $result_pdv = mysqli_stmt_get_result($stmt_pdv);
+            
+            if (mysqli_num_rows($result_pdv) > 0) {
+                $row_pdv = mysqli_fetch_assoc($result_pdv);
+                $tiendaId = $row_pdv['pdv_id'];
+            }
+            mysqli_stmt_close($stmt_pdv);
+            
+            // Método 2: vendedor_tienda_relacion
+            if (!$tiendaId) {
+                $query_vendedor = "SELECT tienda_id FROM vendedor_tienda_relacion 
+                                  WHERE vendedor_id = ? COLLATE utf8mb4_general_ci";
+                $stmt_vendedor = mysqli_prepare($con, $query_vendedor);
+                mysqli_stmt_bind_param($stmt_vendedor, "s", $solicitud['user_id']);
+                mysqli_stmt_execute($stmt_vendedor);
+                $result_vendedor = mysqli_stmt_get_result($stmt_vendedor);
+                
+                if (mysqli_num_rows($result_vendedor) > 0) {
+                    $row_vendedor = mysqli_fetch_assoc($result_vendedor);
+                    $tiendaId = $row_vendedor['tienda_id'];
+                }
+                mysqli_stmt_close($stmt_vendedor);
+            }
+            
+            // Método 3: sucursal directa
+            if (!$tiendaId && is_numeric($solicitud['user_id'])) {
+                $query_sucursal_directa = "SELECT id FROM sucursales WHERE id = ? AND estado = 1";
+                $stmt_sucursal = mysqli_prepare($con, $query_sucursal_directa);
+                $user_id_as_int = intval($solicitud['user_id']);
+                mysqli_stmt_bind_param($stmt_sucursal, "i", $user_id_as_int);
+                mysqli_stmt_execute($stmt_sucursal);
+                $result_sucursal = mysqli_stmt_get_result($stmt_sucursal);
+                
+                if (mysqli_num_rows($result_sucursal) > 0) {
+                    $tiendaId = $user_id_as_int;
+                }
+                mysqli_stmt_close($stmt_sucursal);
+            }
+            
+            // Verificar política de admin para vendedores internos
+            if ($role === 'admin') {
+                $query_tipo_solicitante = "SELECT tipo_relacion FROM vendedor_tienda_relacion 
+                                          WHERE vendedor_id = ? COLLATE utf8mb4_general_ci";
+                $stmt_tipo_sol = mysqli_prepare($con, $query_tipo_solicitante);
+                mysqli_stmt_bind_param($stmt_tipo_sol, "s", $solicitud['user_id']);
+                mysqli_stmt_execute($stmt_tipo_sol);
+                $result_tipo_sol = mysqli_stmt_get_result($stmt_tipo_sol);
+                
+                if (mysqli_num_rows($result_tipo_sol) > 0) {
+                    $row_tipo_sol = mysqli_fetch_assoc($result_tipo_sol);
+                    if ($row_tipo_sol['tipo_relacion'] === 'interno') {
+                        $debeRegresarSaldo = false;
+                        error_log("Admin rechazando vendedor interno - SIN regreso de saldo");
+                    }
+                }
+                mysqli_stmt_close($stmt_tipo_sol);
+            }
+            
+            // PASO 2: Regresar el saldo si es necesario
+            if ($debeRegresarSaldo && $tiendaId) {
+                $query_regresar_saldo = "UPDATE bolsas SET saldo_actual = saldo_actual + ? WHERE id_sucursal = ?";
+                $stmt_regresar_saldo = mysqli_prepare($con, $query_regresar_saldo);
+                mysqli_stmt_bind_param($stmt_regresar_saldo, "di", $montoSolicitud, $tiendaId);
+                
+                if (!mysqli_stmt_execute($stmt_regresar_saldo)) {
+                    throw new Exception("Error al regresar el saldo: " . mysqli_stmt_error($stmt_regresar_saldo));
+                }
+                mysqli_stmt_close($stmt_regresar_saldo);
+                
+                error_log("Saldo regresado: +$montoSolicitud a tienda $tiendaId");
+            }
+            
+        } else {
+            $debeRegresarSaldo = false;
+            error_log("Solicitud propia rechazada, no se requiere regreso de saldo");
+        }
+        
+        // PASO 3: Actualizar solicitud a "rechazada"
+        $query_rechazar = "UPDATE sol_pagoservicios 
+                          SET estado_solicitud = 'rechazada',
+                              comentarios = ?,
+                              procesada_por = ?,
+                              fecha_actualizacion = CURRENT_TIMESTAMP
+                          WHERE id = ?";
+        $stmt_rechazar = mysqli_prepare($con, $query_rechazar);
+        mysqli_stmt_bind_param($stmt_rechazar, "ssi", $comentarios, $uid, $idSolicitud);
+        
+        if (!mysqli_stmt_execute($stmt_rechazar)) {
+            throw new Exception("Error al rechazar la solicitud: " . mysqli_stmt_error($stmt_rechazar));
+        }
+        mysqli_stmt_close($stmt_rechazar);
+        
+        error_log("Solicitud rechazada exitosamente");
+        
+        // Respuesta exitosa para RECHAZAR
+        echo json_encode([
+            "success" => true,
+            "message" => "Solicitud rechazada exitosamente" . ($debeRegresarSaldo ? " y saldo regresado" : ""),
+            "nuevo_estado" => "rechazada",
+            "saldo_regresado" => $debeRegresarSaldo,
+            "detalles" => [
+                "comentarios_agregados" => strlen($comentarios) . " caracteres",
+                "procesada_por" => $uid,
+                "fecha_actualizacion" => date('Y-m-d H:i:s'),
+                "monto_regresado" => $debeRegresarSaldo ? $montoSolicitud : 0,
+                "tienda_id" => $tiendaId
             ]
         ]);
     }
@@ -334,8 +469,6 @@ try {
             "accion" => $accion ?? null,
             "es_solicitud_propia" => isset($esSolicitudPropia) ? $esSolicitudPropia : null,
             "tienda_encontrada" => isset($tiendaId) ? $tiendaId : null,
-            "metodo_tienda" => isset($metodo_tienda) ? $metodo_tienda : null,
-            "debe_descontar_saldo" => isset($debeDescontarSaldo) ? $debeDescontarSaldo : null,
             "procesador_role" => $role ?? null,
             "timestamp" => date('Y-m-d H:i:s')
         ]
