@@ -18,64 +18,65 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
-            /* Variables CSS esenciales */
-    :root {
-        /* Colores principales */
-        --primary-color: #303498 !important;    /* Azul oscuro / principal */
-        --primary-dark: #282b7a !important;     /* Azul más oscuro para hover */
-        --accent-color: #dc3545 !important;     /* Rojo para acentos y alertas */
-        --text-color: #333333 !important;       /* Color de texto principal */
-        --text-light: #666666 !important;       /* Color de texto secundario */
+        /* Variables CSS esenciales */
+        :root {
+            /* Colores principales */
+            --primary-color: #303498 !important;    /* Azul oscuro / principal */
+            --primary-dark: #282b7a !important;     /* Azul más oscuro para hover */
+            --accent-color: #dc3545 !important;     /* Rojo para acentos y alertas */
+            --text-color: #333333 !important;       /* Color de texto principal */
+            --text-light: #666666 !important;       /* Color de texto secundario */
+            
+            /* Colores de fondo */
+            --background-color: #f5f7fa !important; /* Fondo general de la app */
+            --sidebar-bg: #ffffff !important;       /* Fondo del menú lateral */
+            --sidebar-text: #555555 !important;     /* Color de texto del menú */
+            --sidebar-hover: #f0f2f5 !important;    /* Color de fondo al hover en menú */
+            --sidebar-active: #ebeef5 !important;   /* Color de fondo del ítem activo */
+            
+            /* Elementos UI */
+            --border-radius: 12px !important;       /* Bordes redondeados */
+            --box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important; /* Sombra estándar */
+            --border-color: #e0e0e0 !important;     /* Color para bordes */
+        }
         
-        /* Colores de fondo */
-        --background-color: #f5f7fa !important; /* Fondo general de la app */
-        --sidebar-bg: #ffffff !important;       /* Fondo del menú lateral */
-        --sidebar-text: #555555 !important;     /* Color de texto del menú */
-        --sidebar-hover: #f0f2f5 !important;    /* Color de fondo al hover en menú */
-        --sidebar-active: #ebeef5 !important;   /* Color de fondo del ítem activo */
+        /* Estilos críticos que deben ser aplicados siempre */
+        .menu-icon, .content-title, .content-title i {
+            color: #303498 !important;
+        }
         
-        /* Elementos UI */
-        --border-radius: 12px !important;       /* Bordes redondeados */
-        --box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important; /* Sombra estándar */
-        --border-color: #e0e0e0 !important;     /* Color para bordes */
-    }
-    
-    /* Estilos críticos que deben ser aplicados siempre */
-    .menu-icon, .content-title, .content-title i {
-        color: #303498 !important;
-    }
-    
-    .menu-item.active {
-        color: #303498 !important;
-        border-left-color: #303498 !important;
-    }
-    
-    .card {
-        border-radius: 12px !important;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;
-    }
-    
-    /* Asegurar que los botones tengan el color correcto */
-    .btn-primary {
-        background-color: #303498 !important;
-        color: white !important;
-    }
-    
-    .btn-primary:hover {
-        background-color: #282b7a !important;
-    }
-    
-    /* Forzar colores en elementos de paginación */
-    .page-number.active {
-        background-color: #303498 !important;
-        border-color: #303498 !important;
-        color: white !important;
-    }
-    
-    .pagination-btn:hover:not(:disabled) {
-        background-color: #303498 !important;
-        color: white !important;
-    }
+        .menu-item.active {
+            color: #303498 !important;
+            border-left-color: #303498 !important;
+        }
+        
+        .card {
+            border-radius: 12px !important;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;
+        }
+        
+        /* Asegurar que los botones tengan el color correcto */
+        .btn-primary {
+            background-color: #303498 !important;
+            color: white !important;
+        }
+        
+        .btn-primary:hover {
+            background-color: #282b7a !important;
+        }
+        
+        /* Forzar colores en elementos de paginación */
+        .page-number.active {
+            background-color: #303498 !important;
+            border-color: #303498 !important;
+            color: white !important;
+        }
+        
+        .pagination-btn:hover:not(:disabled) {
+            background-color: #303498 !important;
+            color: white !important;
+        }
+        
         /* Ajustes adicionales para el header */
         .header-logo img {
             height: 30px; /* Logo más pequeño */
@@ -91,6 +92,56 @@
         .user-name {
             color: white;
             font-weight: 500;
+        }
+
+        /* Estilos mejorados para el loader */
+        .loading-content {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 20px;
+            text-align: center;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(63, 81, 181, 0.1);
+            border-radius: 50%;
+            border-top-color: #3f51b5;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-content p {
+            color: #666;
+            font-size: 1rem;
+            margin: 0;
+        }
+
+        /* Estado de error mejorado */
+        .error-content {
+            background-color: #fdecea;
+            border: 1px solid #fadad7;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px;
+            text-align: center;
+        }
+
+        .error-content h3 {
+            color: #ea4335;
+            margin-top: 0;
+        }
+
+        .error-content p {
+            color: #721c24;
+            margin-bottom: 0;
         }
     </style>
 </head>
@@ -158,6 +209,8 @@
     <script src="../js/firebase-config.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            console.log('🚀 Iniciando Dashboard Root...');
+            
             // Verificar si hay datos en sessionStorage
             const userEmail = sessionStorage.getItem('userEmail');
             const userUID = sessionStorage.getItem('userUID');
@@ -218,6 +271,13 @@
             document.getElementById('logout-btn').addEventListener('click', () => {
                 console.log('Cerrando sesión...');
                 
+                // Ejecutar limpieza del módulo actual si existe
+                if (window.moduleCleanup && typeof window.moduleCleanup === 'function') {
+                    console.log('Ejecutando limpieza antes del logout...');
+                    window.moduleCleanup();
+                    window.moduleCleanup = null;
+                }
+                
                 // Limpiar datos de sesión
                 sessionStorage.clear();
                 
@@ -251,14 +311,39 @@
                 sessionStorage.setItem('userUid', userUID);
             }
             
-            // Función mejorada para cargar módulos con validación en servidor
+            // =============================================
+            // FUNCIÓN MEJORADA PARA CARGAR MÓDULOS
+            // =============================================
             async function loadModule(moduleName) {
-                // Mostrar loader
+                console.log(`📄 Cargando módulo: ${moduleName}`);
+                
+                // Mostrar loader inmediatamente
                 loadingContent.style.display = 'flex';
-                mainContent.innerHTML = '';
                 
                 try {
+                    // ✅ NUEVO: Limpiar cualquier timer/interval activo antes de cambiar módulos
+                    if (window.moduleCleanup && typeof window.moduleCleanup === 'function') {
+                        console.log('🧹 Ejecutando limpieza del módulo anterior...');
+                        try {
+                            window.moduleCleanup();
+                        } catch (cleanupError) {
+                            console.warn('⚠️ Error durante la limpieza del módulo:', cleanupError);
+                        }
+                        window.moduleCleanup = null;
+                    }
+                    
+                    // Limpiar contenido anterior
+                    mainContent.innerHTML = '';
+                    
+                    // Validar el módulo localmente antes de hacer la petición al servidor
+                    const allowedModules = ['bienvenida', 'dashboard', 'tiendas', 'solicitudes', 'vendedores', 
+                                           'atencion_clientes', 'bolsa_saldo'];
+                    if (!allowedModules.includes(moduleName)) {
+                        throw new Error(`El módulo "${moduleName}" no está disponible para usuarios root`);
+                    }
+                    
                     // Usar el endpoint PHP para obtener el módulo con validación de seguridad
+                    console.log(`🌐 Solicitando módulo del servidor: ${moduleName}`);
                     const response = await fetch(`../api/get_module.php?name=${moduleName}&role=${userRole}&uid=${userUID}`);
                     
                     // Manejar respuestas de error
@@ -297,78 +382,111 @@
                     
                     // Obtener el HTML del módulo
                     const moduleHTML = await response.text();
+                    console.log(`📦 HTML del módulo recibido: ${moduleHTML.length} caracteres`);
                     
                     // Insertar el HTML en el contenido principal
                     mainContent.innerHTML = moduleHTML;
                     
-                    // Procesar scripts después de insertar contenido
+                    // ✅ MEJORADO: Procesar scripts de forma más robusta
                     const scripts = mainContent.querySelectorAll('script');
-                    const scriptPromises = [];
                     
-                    scripts.forEach(oldScript => {
-                        const newScript = document.createElement('script');
+                    if (scripts.length > 0) {
+                        console.log(`⚙️ Procesando ${scripts.length} scripts para el módulo ${moduleName}`);
                         
-                        // Transferir atributos
-                        Array.from(oldScript.attributes).forEach(attr => {
-                            newScript.setAttribute(attr.name, attr.value);
-                        });
-                        
-                        // Crear una promesa para saber cuándo se carga el script
-                        const scriptPromise = new Promise((resolve, reject) => {
-                            newScript.onload = resolve;
-                            newScript.onerror = reject;
-                        });
-                        
-                        // Transferir contenido
-                        newScript.textContent = oldScript.textContent;
-                        
-                        // Reemplazar el script viejo con el nuevo
-                        oldScript.parentNode.replaceChild(newScript, oldScript);
-                        
-                        // Si es un script inline, resolverlo inmediatamente
-                        if (!newScript.src) {
-                            scriptPromises.push(Promise.resolve());
-                        } else {
-                            scriptPromises.push(scriptPromise);
+                        // Ejecutar scripts secuencialmente para evitar conflictos
+                        for (let i = 0; i < scripts.length; i++) {
+                            const oldScript = scripts[i];
+                            const newScript = document.createElement('script');
+                            
+                            // Transferir atributos
+                            Array.from(oldScript.attributes).forEach(attr => {
+                                newScript.setAttribute(attr.name, attr.value);
+                            });
+                            
+                            // Transferir contenido y ejecutar
+                            if (oldScript.src) {
+                                // Script externo
+                                console.log(`📥 Cargando script externo ${i + 1}: ${oldScript.src}`);
+                                await new Promise((resolve, reject) => {
+                                    newScript.onload = () => {
+                                        console.log(`✅ Script externo ${i + 1} cargado`);
+                                        resolve();
+                                    };
+                                    newScript.onerror = (error) => {
+                                        console.error(`❌ Error al cargar script externo ${i + 1}:`, error);
+                                        reject(error);
+                                    };
+                                    newScript.src = oldScript.src;
+                                    document.head.appendChild(newScript);
+                                });
+                            } else {
+                                // Script inline
+                                try {
+                                    console.log(`⚡ Ejecutando script inline ${i + 1}`);
+                                    newScript.textContent = oldScript.textContent;
+                                    oldScript.parentNode.replaceChild(newScript, oldScript);
+                                    console.log(`✅ Script inline ${i + 1} ejecutado correctamente`);
+                                } catch (scriptError) {
+                                    console.error(`❌ Error al ejecutar script inline ${i + 1}:`, scriptError);
+                                    // No lanzar el error para no romper la carga del módulo
+                                }
+                            }
                         }
-                    });
+                    }
                     
-                    // Esperar a que todos los scripts se procesen antes de ocultar el loader
-                    await Promise.all(scriptPromises);
+                    // ✅ NUEVO: Dar tiempo adicional para que el módulo se inicialice completamente
+                    await new Promise(resolve => setTimeout(resolve, 100));
                     
-                    // Ocultar loader después de que todos los scripts estén cargados
-                    loadingContent.style.display = 'none';
+                    console.log(`✅ Módulo ${moduleName} cargado exitosamente`);
                     
                 } catch (error) {
-                    console.error('Error al cargar el módulo:', error);
-                    loadingContent.style.display = 'none';
+                    console.error('❌ Error al cargar el módulo:', error);
                     
                     // Mensaje personalizado según el tipo de error
-                    mainContent.innerHTML = `<div class="card">
-                        <h2 class="content-title">
-                            <i class="fas fa-exclamation-triangle"></i> Error
-                        </h2>
-                        <p>${error.message}</p>
-                        <p>Por favor, selecciona otro módulo del menú lateral o contacta con soporte.</p>
-                    </div>`;
+                    mainContent.innerHTML = `
+                        <div class="error-content">
+                            <h3><i class="fas fa-exclamation-triangle"></i> Error al cargar el módulo</h3>
+                            <p>${error.message}</p>
+                            <p>Por favor, selecciona otro módulo del menú lateral o contacta con soporte técnico.</p>
+                        </div>
+                    `;
+                } finally {
+                    // ✅ CRÍTICO: ASEGURAR que el loader SIEMPRE se oculte
+                    loadingContent.style.display = 'none';
+                    console.log('🎯 Loader ocultado');
                 }
             }
+            
+            // =============================================
+            // CONFIGURACIÓN DE EVENT LISTENERS DEL MENÚ
+            // =============================================
             
             // Configurar menú
             menuItems.forEach(item => {
                 item.addEventListener('click', () => {
+                    console.log(`🖱️ Clic en menú: ${item.dataset.module}`);
+                    
                     // Marcar ítem activo
                     menuItems.forEach(i => i.classList.remove('active'));
                     item.classList.add('active');
                     
                     // Cargar el módulo correspondiente
                     const module = item.dataset.module;
-                    loadModule(module);
+                    if (module) {
+                        loadModule(module);
+                    }
                 });
             });
             
+            // =============================================
+            // INICIALIZACIÓN
+            // =============================================
+            
+            console.log('🏠 Cargando módulo inicial: bienvenida');
             // Cargar el módulo inicial (Bienvenida)
             loadModule('bienvenida');
+            
+            console.log('✅ Dashboard Root inicializado correctamente');
         });
     </script>
 </body>
