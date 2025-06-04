@@ -731,121 +731,276 @@
 </style>
 
 <script>
-    // Elementos del DOM
-    const loadingElement = document.getElementById('solicitudes-loading');
-    const errorElement = document.getElementById('solicitudes-error');
-    const errorMessageElement = document.getElementById('error-message');
-    const solicitudesContainer = document.getElementById('solicitudes-container');
-    const solicitudesTbody = document.getElementById('solicitudes-tbody');
-    const emptyState = document.getElementById('empty-state');
-    const emptyMessage = document.getElementById('empty-message');
-    const estadisticasContainer = document.getElementById('estadisticas-container');
+(function() {
+    'use strict';
     
-    // Elementos de estadísticas
-    const statTotal = document.getElementById('stat-total');
-    const statPendientes = document.getElementById('stat-pendientes');
-    const statProcesando = document.getElementById('stat-procesando');
-    const statCompletadas = document.getElementById('stat-completadas');
-    const statRechazadas = document.getElementById('stat-rechazadas');
-    const statCanceladas = document.getElementById('stat-canceladas');
+    console.log('🚀 Iniciando módulo de pagos de servicios...');
     
-    // Elementos de filtro
-    const filtroEstado = document.getElementById('filtro-estado');
-    const filtroOrigen = document.getElementById('filtro-origen');
-    const filtroProveedor = document.getElementById('filtro-proveedor');
-    const busquedaInput = document.getElementById('busqueda');
-    const btnRefresh = document.getElementById('btn-refresh');
+    // =============================================
+    // SISTEMA DE LIMPIEZA PARA NAVEGACIÓN SPA
+    // =============================================
     
-    // Elementos de paginación
-    const prevPageBtn = document.getElementById('prev-page');
-    const nextPageBtn = document.getElementById('next-page');
-    const currentPageElement = document.getElementById('current-page');
-    const totalPagesElement = document.getElementById('total-pages');
+    let cleanupFunctions = [];
+    let activeEventListeners = [];
+    let moduleData = {
+        allSolicitudes: [],
+        filteredSolicitudes: [],
+        solicitudActual: null,
+        currentPage: 1,
+        totalPages: 1
+    };
     
-    // Modal detalles
-    const modal = document.getElementById('modal-detalles');
-    const modalTitle = document.getElementById('modal-title');
-    const modalContent = document.getElementById('modal-content');
-    const closeModal = document.querySelector('.close-modal');
-
-    // Modal completar
-    const modalCompletar = document.getElementById('modal-completar');
-    const modalCompletarTitle = document.getElementById('modal-completar-title');
-    const solicitudInfoCompletar = document.getElementById('solicitud-info-completar');
-    const comentariosCompletar = document.getElementById('comentarios-completar');
-    const btnCancelarCompletar = document.getElementById('btn-cancelar-completar');
-    const btnConfirmarCompletar = document.getElementById('btn-confirmar-completar');
-    const btnRechazarSolicitud = document.getElementById('btn-rechazar-solicitud');
-    const closeModalCompletar = document.querySelector('.close-modal-completar');
+    // Función para agregar event listeners con limpieza automática
+    function addEventListenerWithCleanup(element, event, handler) {
+        if (element && typeof element.addEventListener === 'function') {
+            element.addEventListener(event, handler);
+            activeEventListeners.push({
+                element: element,
+                event: event,
+                handler: handler
+            });
+        }
+    }
     
-    // Obtener datos del usuario
+    // Función para agregar funciones de limpieza
+    function addCleanupFunction(func) {
+        if (typeof func === 'function') {
+            cleanupFunctions.push(func);
+        }
+    }
+    
+    // Función principal de limpieza del módulo
+    function cleanupModule() {
+        console.log('🧹 Limpiando módulo de pagos de servicios...');
+        
+        // Limpiar event listeners
+        activeEventListeners.forEach(listener => {
+            if (listener.element && typeof listener.element.removeEventListener === 'function') {
+                listener.element.removeEventListener(listener.event, listener.handler);
+            }
+        });
+        activeEventListeners = [];
+        
+        // Ejecutar funciones de limpieza personalizadas
+        cleanupFunctions.forEach(func => {
+            try {
+                func();
+            } catch (error) {
+                console.error('Error en función de limpieza:', error);
+            }
+        });
+        cleanupFunctions = [];
+        
+        // Limpiar variables globales del módulo
+        moduleData = {
+            allSolicitudes: [],
+            filteredSolicitudes: [],
+            solicitudActual: null,
+            currentPage: 1,
+            totalPages: 1
+        };
+        
+        // Limpiar funciones globales del módulo
+        if (window.verDetalles) delete window.verDetalles;
+        if (window.iniciarSolicitud) delete window.iniciarSolicitud;
+        if (window.mostrarModalCompletar) delete window.mostrarModalCompletar;
+        if (window.generarTicket) delete window.generarTicket;
+        if (window.imprimirTicket) delete window.imprimirTicket;
+        
+        console.log('✅ Módulo de pagos de servicios limpiado correctamente');
+    }
+    
+    // Registrar la función de limpieza globalmente para el dashboard
+    window.moduleCleanup = cleanupModule;
+    
+    // =============================================
+    // INICIALIZACIÓN SEGURA DE ELEMENTOS DOM
+    // =============================================
+    
+    let elements = {};
+    
+    function initializeElements() {
+        try {
+            elements = {
+                loading: document.getElementById('solicitudes-loading'),
+                error: document.getElementById('solicitudes-error'),
+                errorMessage: document.getElementById('error-message'),
+                container: document.getElementById('solicitudes-container'),
+                tbody: document.getElementById('solicitudes-tbody'),
+                emptyState: document.getElementById('empty-state'),
+                emptyMessage: document.getElementById('empty-message'),
+                estadisticasContainer: document.getElementById('estadisticas-container'),
+                
+                // Estadísticas
+                statTotal: document.getElementById('stat-total'),
+                statPendientes: document.getElementById('stat-pendientes'),
+                statProcesando: document.getElementById('stat-procesando'),
+                statCompletadas: document.getElementById('stat-completadas'),
+                statRechazadas: document.getElementById('stat-rechazadas'),
+                statCanceladas: document.getElementById('stat-canceladas'),
+                
+                // Filtros
+                filtroEstado: document.getElementById('filtro-estado'),
+                filtroOrigen: document.getElementById('filtro-origen'),
+                filtroProveedor: document.getElementById('filtro-proveedor'),
+                busquedaInput: document.getElementById('busqueda'),
+                btnRefresh: document.getElementById('btn-refresh'),
+                
+                // Paginación
+                prevPageBtn: document.getElementById('prev-page'),
+                nextPageBtn: document.getElementById('next-page'),
+                currentPageElement: document.getElementById('current-page'),
+                totalPagesElement: document.getElementById('total-pages'),
+                
+                // Modal detalles
+                modal: document.getElementById('modal-detalles'),
+                modalTitle: document.getElementById('modal-title'),
+                modalContent: document.getElementById('modal-content'),
+                closeModal: document.querySelector('.close-modal'),
+                
+                // Modal completar
+                modalCompletar: document.getElementById('modal-completar'),
+                modalCompletarTitle: document.getElementById('modal-completar-title'),
+                solicitudInfoCompletar: document.getElementById('solicitud-info-completar'),
+                comentariosCompletar: document.getElementById('comentarios-completar'),
+                btnCancelarCompletar: document.getElementById('btn-cancelar-completar'),
+                btnConfirmarCompletar: document.getElementById('btn-confirmar-completar'),
+                btnRechazarSolicitud: document.getElementById('btn-rechazar-solicitud'),
+                closeModalCompletar: document.querySelector('.close-modal-completar')
+            };
+            
+            // Verificar elementos críticos
+            const criticalElements = ['loading', 'error', 'container', 'tbody'];
+            for (let key of criticalElements) {
+                if (!elements[key]) {
+                    throw new Error(`Elemento crítico no encontrado: ${key}`);
+                }
+            }
+            
+            console.log('✅ Elementos DOM inicializados correctamente');
+            return true;
+            
+        } catch (error) {
+            console.error('❌ Error al inicializar elementos DOM:', error);
+            return false;
+        }
+    }
+    
+    // =============================================
+    // CONFIGURACIÓN DE EVENT LISTENERS
+    // =============================================
+    
+    function setupEventListeners() {
+        try {
+            // Filtros
+            if (elements.filtroEstado) {
+                addEventListenerWithCleanup(elements.filtroEstado, 'change', () => {
+                    moduleData.currentPage = 1;
+                    aplicarFiltros();
+                });
+            }
+            
+            if (elements.filtroOrigen) {
+                addEventListenerWithCleanup(elements.filtroOrigen, 'change', () => {
+                    moduleData.currentPage = 1;
+                    aplicarFiltros();
+                });
+            }
+            
+            if (elements.filtroProveedor) {
+                addEventListenerWithCleanup(elements.filtroProveedor, 'change', () => {
+                    moduleData.currentPage = 1;
+                    aplicarFiltros();
+                });
+            }
+            
+            if (elements.busquedaInput) {
+                addEventListenerWithCleanup(elements.busquedaInput, 'keyup', (e) => {
+                    if (e.key === 'Enter') {
+                        moduleData.currentPage = 1;
+                        aplicarFiltros();
+                    }
+                });
+            }
+            
+            if (elements.btnRefresh) {
+                addEventListenerWithCleanup(elements.btnRefresh, 'click', loadSolicitudesPagoservicios);
+            }
+            
+            // Paginación
+            if (elements.prevPageBtn) {
+                addEventListenerWithCleanup(elements.prevPageBtn, 'click', () => {
+                    if (moduleData.currentPage > 1) {
+                        moduleData.currentPage--;
+                        renderizarPagina();
+                    }
+                });
+            }
+            
+            if (elements.nextPageBtn) {
+                addEventListenerWithCleanup(elements.nextPageBtn, 'click', () => {
+                    if (moduleData.currentPage < moduleData.totalPages) {
+                        moduleData.currentPage++;
+                        renderizarPagina();
+                    }
+                });
+            }
+            
+            // Modal detalles
+            if (elements.closeModal) {
+                addEventListenerWithCleanup(elements.closeModal, 'click', () => {
+                    if (elements.modal) elements.modal.style.display = 'none';
+                });
+            }
+            
+            addEventListenerWithCleanup(window, 'click', (e) => {
+                if (e.target === elements.modal && elements.modal) {
+                    elements.modal.style.display = 'none';
+                }
+            });
+            
+            // Modal completar
+            if (elements.closeModalCompletar) {
+                addEventListenerWithCleanup(elements.closeModalCompletar, 'click', () => {
+                    if (elements.modalCompletar) elements.modalCompletar.style.display = 'none';
+                });
+            }
+            
+            if (elements.btnCancelarCompletar) {
+                addEventListenerWithCleanup(elements.btnCancelarCompletar, 'click', () => {
+                    if (elements.modalCompletar) elements.modalCompletar.style.display = 'none';
+                });
+            }
+            
+            if (elements.btnConfirmarCompletar) {
+                addEventListenerWithCleanup(elements.btnConfirmarCompletar, 'click', () => procesarSolicitud('completar'));
+            }
+            
+            if (elements.btnRechazarSolicitud) {
+                addEventListenerWithCleanup(elements.btnRechazarSolicitud, 'click', () => procesarSolicitud('rechazar'));
+            }
+            
+            addEventListenerWithCleanup(window, 'click', (e) => {
+                if (e.target === elements.modalCompletar && elements.modalCompletar) {
+                    elements.modalCompletar.style.display = 'none';
+                }
+            });
+            
+            console.log('✅ Event listeners configurados correctamente');
+            
+        } catch (error) {
+            console.error('❌ Error al configurar event listeners:', error);
+        }
+    }
+    
+    // =============================================
+    // FUNCIONES PRINCIPALES DEL MÓDULO
+    // =============================================
+    
+    // Obtener datos del usuario de forma segura
     const userUID = sessionStorage.getItem('userUID') || '';
     const userRole = sessionStorage.getItem('userRole') || 'admin';
-    
-    // Variables para almacenar datos
-    let allSolicitudes = [];
-    let filteredSolicitudes = [];
-    let solicitudActual = null; // Para el modal de procesar
-    
-    // Variables para paginación
-    let currentPage = 1;
     const itemsPerPage = 5;
-    let totalPages = 1;
-    
-    // Event listeners
-    filtroEstado.addEventListener('change', () => {
-        currentPage = 1;
-        aplicarFiltros();
-    });
-    
-    filtroOrigen.addEventListener('change', () => {
-        currentPage = 1;
-        aplicarFiltros();
-    });
-    
-    filtroProveedor.addEventListener('change', () => {
-        currentPage = 1;
-        aplicarFiltros();
-    });
-    
-    busquedaInput.addEventListener('keyup', (e) => {
-        if (e.key === 'Enter') {
-            currentPage = 1;
-            aplicarFiltros();
-        }
-    });
-    
-    btnRefresh.addEventListener('click', loadSolicitudesPagoservicios);
-    
-    // Event listeners de paginación
-    prevPageBtn.addEventListener('click', () => {
-        if (currentPage > 1) {
-            currentPage--;
-            renderizarPagina();
-        }
-    });
-    
-    nextPageBtn.addEventListener('click', () => {
-        if (currentPage < totalPages) {
-            currentPage++;
-            renderizarPagina();
-        }
-    });
-    
-    // Event listeners del modal de detalles
-    closeModal.addEventListener('click', () => modal.style.display = 'none');
-    window.addEventListener('click', (e) => {
-        if (e.target === modal) modal.style.display = 'none';
-    });
-
-    // Event listeners del modal de completar
-    closeModalCompletar.addEventListener('click', () => modalCompletar.style.display = 'none');
-    btnCancelarCompletar.addEventListener('click', () => modalCompletar.style.display = 'none');
-    btnConfirmarCompletar.addEventListener('click', () => procesarSolicitud('completar'));
-    btnRechazarSolicitud.addEventListener('click', () => procesarSolicitud('rechazar'));
-    window.addEventListener('click', (e) => {
-        if (e.target === modalCompletar) modalCompletar.style.display = 'none';
-    });
     
     // Función para normalizar estados según los valores de la base de datos
     function normalizarEstado(estadoOriginal) {
@@ -865,9 +1020,6 @@
             default: return 'pendiente';
         }
     }
-    
-    // Inicialización
-    loadSolicitudesPagoservicios();
     
     // Función para cargar solicitudes desde la API
     async function loadSolicitudesPagoservicios() {
@@ -893,14 +1045,14 @@
                 throw new Error(data.error || "Error desconocido en la respuesta");
             }
             
-            allSolicitudes = data.solicitudes || [];
+            moduleData.allSolicitudes = data.solicitudes || [];
             
             updateEstadisticas(data.estadisticas);
             
-            console.log('Solicitudes recibidas:', allSolicitudes.length);
+            console.log('Solicitudes recibidas:', moduleData.allSolicitudes.length);
             
             // Normalizar estados
-            allSolicitudes.forEach(solicitud => {
+            moduleData.allSolicitudes.forEach(solicitud => {
                 solicitud.estado_solicitud = normalizarEstado(solicitud.estado_solicitud);
             });
             
@@ -914,24 +1066,29 @@
     
     // Función para actualizar las estadísticas
     function updateEstadisticas(estadisticas) {
-        if (estadisticas) {
-            statTotal.textContent = estadisticas.total || 0;
-            statPendientes.textContent = estadisticas.pendientes || 0;
-            statProcesando.textContent = estadisticas.procesando || 0;
-            statCompletadas.textContent = estadisticas.completadas || 0;
-            statRechazadas.textContent = estadisticas.rechazadas || 0;
-            statCanceladas.textContent = estadisticas.canceladas || 0;
+        if (estadisticas && elements.statTotal) {
+            elements.statTotal.textContent = estadisticas.total || 0;
+            if (elements.statPendientes) elements.statPendientes.textContent = estadisticas.pendientes || 0;
+            if (elements.statProcesando) elements.statProcesando.textContent = estadisticas.procesando || 0;
+            if (elements.statCompletadas) elements.statCompletadas.textContent = estadisticas.completadas || 0;
+            if (elements.statRechazadas) elements.statRechazadas.textContent = estadisticas.rechazadas || 0;
+            if (elements.statCanceladas) elements.statCanceladas.textContent = estadisticas.canceladas || 0;
         }
     }
     
     // Función para aplicar filtros
     function aplicarFiltros() {
-        const estado = filtroEstado.value;
-        const origen = filtroOrigen.value;
-        const proveedor = filtroProveedor.value;
-        const termino = busquedaInput.value.trim().toLowerCase();
+        if (!elements.filtroEstado || !elements.filtroOrigen || !elements.busquedaInput) {
+            console.warn('Elementos de filtro no disponibles');
+            return;
+        }
         
-        filteredSolicitudes = allSolicitudes.filter(solicitud => {
+        const estado = elements.filtroEstado.value;
+        const origen = elements.filtroOrigen.value;
+        const proveedor = elements.filtroProveedor.value;
+        const termino = elements.busquedaInput.value.trim().toLowerCase();
+        
+        moduleData.filteredSolicitudes = moduleData.allSolicitudes.filter(solicitud => {
             if (estado && solicitud.estado_solicitud !== estado) {
                 return false;
             }
@@ -974,35 +1131,35 @@
             return true;
         });
         
-        totalPages = Math.max(1, Math.ceil(filteredSolicitudes.length / itemsPerPage));
+        moduleData.totalPages = Math.max(1, Math.ceil(moduleData.filteredSolicitudes.length / itemsPerPage));
         
-        if (currentPage > totalPages) {
-            currentPage = totalPages;
+        if (moduleData.currentPage > moduleData.totalPages) {
+            moduleData.currentPage = moduleData.totalPages;
         }
         
-        currentPageElement.textContent = currentPage;
-        totalPagesElement.textContent = totalPages;
+        if (elements.currentPageElement) elements.currentPageElement.textContent = moduleData.currentPage;
+        if (elements.totalPagesElement) elements.totalPagesElement.textContent = moduleData.totalPages;
         
         renderizarPagina();
     }
     
     // Función para renderizar la página actual
     function renderizarPagina() {
-        prevPageBtn.disabled = currentPage <= 1;
-        nextPageBtn.disabled = currentPage >= totalPages;
+        if (elements.prevPageBtn) elements.prevPageBtn.disabled = moduleData.currentPage <= 1;
+        if (elements.nextPageBtn) elements.nextPageBtn.disabled = moduleData.currentPage >= moduleData.totalPages;
         
-        currentPageElement.textContent = currentPage;
-        totalPagesElement.textContent = totalPages;
+        if (elements.currentPageElement) elements.currentPageElement.textContent = moduleData.currentPage;
+        if (elements.totalPagesElement) elements.totalPagesElement.textContent = moduleData.totalPages;
         
-        if (filteredSolicitudes.length === 0) {
+        if (moduleData.filteredSolicitudes.length === 0) {
             showEmptyState('No se encontraron solicitudes con los filtros seleccionados');
             return;
         }
         
-        const startIndex = (currentPage - 1) * itemsPerPage;
-        const endIndex = Math.min(startIndex + itemsPerPage, filteredSolicitudes.length);
+        const startIndex = (moduleData.currentPage - 1) * itemsPerPage;
+        const endIndex = Math.min(startIndex + itemsPerPage, moduleData.filteredSolicitudes.length);
         
-        const solicitudesPagina = filteredSolicitudes.slice(startIndex, endIndex);
+        const solicitudesPagina = moduleData.filteredSolicitudes.slice(startIndex, endIndex);
         
         renderSolicitudes(solicitudesPagina);
         showContent();
@@ -1010,7 +1167,12 @@
     
     // Función para renderizar solicitudes
     function renderSolicitudes(solicitudes) {
-        solicitudesTbody.innerHTML = '';
+        if (!elements.tbody) {
+            console.error('Elemento tbody no disponible');
+            return;
+        }
+        
+        elements.tbody.innerHTML = '';
         
         solicitudes.forEach(solicitud => {
             let estadoClass = '';
@@ -1062,10 +1224,10 @@
 
             // Generar botones de acción según el estado
             let accionesHTML = `
-                <button class="action-btn" title="Ver detalles" onclick="verDetalles('${solicitud.id}')">
+                <button class="action-btn" title="Ver detalles" onclick="window.verDetalles('${solicitud.id}')">
                     <i class="fas fa-eye"></i>
                 </button>
-                <button class="action-btn" title="Generar Ticket" onclick="generarTicket('${solicitud.id}')">
+                <button class="action-btn" title="Generar Ticket" onclick="window.generarTicket('${solicitud.id}')">
                     <i class="fas fa-receipt"></i>
                 </button>
             `;
@@ -1073,13 +1235,13 @@
             // Agregar botones de procesamiento
             if (estado === 'pendiente') {
                 accionesHTML += `
-                    <button class="action-btn action-btn-warning" title="Iniciar procesamiento" onclick="iniciarSolicitud('${solicitud.id}')">
+                    <button class="action-btn action-btn-warning" title="Iniciar procesamiento" onclick="window.iniciarSolicitud('${solicitud.id}')">
                         <i class="fas fa-play"></i>
                     </button>
                 `;
             } else if (estado === 'procesando') {
                 accionesHTML += `
-                    <button class="action-btn action-btn-success" title="Completar/Rechazar solicitud" onclick="mostrarModalCompletar('${solicitud.id}')">
+                    <button class="action-btn action-btn-success" title="Completar/Rechazar solicitud" onclick="window.mostrarModalCompletar('${solicitud.id}')">
                         <i class="fas fa-check"></i>
                     </button>
                 `;
@@ -1101,12 +1263,12 @@
                 <td>${accionesHTML}</td>
             `;
             
-            solicitudesTbody.appendChild(row);
+            elements.tbody.appendChild(row);
         });
     }
 
     // Función para INICIAR solicitud (pendiente → procesando → abrir modal)
-    window.iniciarSolicitud = async function(id) {
+    async function iniciarSolicitud(id) {
         try {
             showLoading();
             
@@ -1153,18 +1315,18 @@
         } finally {
             hideLoading();
         }
-    };
+    }
 
     // Función para mostrar el modal de procesar solicitud (procesando → completar/rechazar)
-    window.mostrarModalCompletar = function(id) {
-        const solicitud = allSolicitudes.find(s => String(s.id) === String(id));
+    function mostrarModalCompletar(id) {
+        const solicitud = moduleData.allSolicitudes.find(s => String(s.id) === String(id));
         
         if (!solicitud) {
             alert('No se encontró la solicitud');
             return;
         }
 
-        solicitudActual = solicitud;
+        moduleData.solicitudActual = solicitud;
         
         // Formatear información de la solicitud
         let montoFormateado = 'No disponible';
@@ -1176,61 +1338,74 @@
             }
         }
 
-        modalCompletarTitle.textContent = `Procesar Pago de Servicio #${solicitud.id}`;
+        if (elements.modalCompletarTitle) {
+            elements.modalCompletarTitle.textContent = `Procesar Pago de Servicio #${solicitud.id}`;
+        }
         
-        solicitudInfoCompletar.innerHTML = `
-            <div class="detail-item">
-                <div class="detail-label">Cliente:</div>
-                <div class="detail-value">${solicitud.nombre_cliente || 'No disponible'}</div>
-            </div>
-            <div class="detail-item">
-                <div class="detail-label">Origen:</div>
-                <div class="detail-value">${solicitud.user_name || 'No disponible'}</div>
-            </div>
-            <div class="detail-item">
-                <div class="detail-label">Proveedor:</div>
-                <div class="detail-value">${solicitud.proveedor || 'No disponible'}</div>
-            </div>
-            <div class="detail-item">
-                <div class="detail-label">Tipo de servicio:</div>
-                <div class="detail-value">${solicitud.tipo_servicio || 'No disponible'}</div>
-            </div>
-            <div class="detail-item">
-                <div class="detail-label">Cuenta/Número:</div>
-                <div class="detail-value">${solicitud.cuenta || 'No disponible'}</div>
-            </div>
-            <div class="detail-item">
-                <div class="detail-label">Monto:</div>
-                <div class="detail-value">${montoFormateado}</div>
-            </div>
-            <div class="detail-item">
-                <div class="detail-label">Estado actual:</div>
-                <div class="detail-value">
-                    <span class="status-badge ${getEstadoClass(solicitud.estado_solicitud)}">
-                        ${solicitud.estado_solicitud}
-                    </span>
+        if (elements.solicitudInfoCompletar) {
+            elements.solicitudInfoCompletar.innerHTML = `
+                <div class="detail-item">
+                    <div class="detail-label">Cliente:</div>
+                    <div class="detail-value">${solicitud.nombre_cliente || 'No disponible'}</div>
                 </div>
-            </div>
-        `;
+                <div class="detail-item">
+                    <div class="detail-label">Origen:</div>
+                    <div class="detail-value">${solicitud.user_name || 'No disponible'}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Proveedor:</div>
+                    <div class="detail-value">${solicitud.proveedor || 'No disponible'}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Tipo de servicio:</div>
+                    <div class="detail-value">${solicitud.tipo_servicio || 'No disponible'}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Cuenta/Número:</div>
+                    <div class="detail-value">${solicitud.cuenta || 'No disponible'}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Monto:</div>
+                    <div class="detail-value">${montoFormateado}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Estado actual:</div>
+                    <div class="detail-value">
+                        <span class="status-badge ${getEstadoClass(solicitud.estado_solicitud)}">
+                            ${solicitud.estado_solicitud}
+                        </span>
+                    </div>
+                </div>
+            `;
+        }
 
         // Limpiar comentarios
-        comentariosCompletar.value = '';
+        if (elements.comentariosCompletar) {
+            elements.comentariosCompletar.value = '';
+        }
         
-        modalCompletar.style.display = 'block';
-    };
+        if (elements.modalCompletar) {
+            elements.modalCompletar.style.display = 'block';
+        }
+    }
 
     // Función universal para procesar solicitudes (completar/rechazar)
     async function procesarSolicitud(accion) {
         try {
-            const comentarios = comentariosCompletar.value.trim();
+            if (!elements.comentariosCompletar) {
+                alert('Error: Elemento de comentarios no disponible');
+                return;
+            }
+            
+            const comentarios = elements.comentariosCompletar.value.trim();
             
             if (!comentarios) {
                 alert('Los comentarios son obligatorios');
-                comentariosCompletar.focus();
+                elements.comentariosCompletar.focus();
                 return;
             }
 
-            if (!solicitudActual) {
+            if (!moduleData.solicitudActual) {
                 alert('Error: No se ha seleccionado ninguna solicitud');
                 return;
             }
@@ -1247,12 +1422,12 @@
             }
 
             showLoading();
-            modalCompletar.style.display = 'none';
+            if (elements.modalCompletar) elements.modalCompletar.style.display = 'none';
             
-            console.log(`${accion.charAt(0).toUpperCase() + accion.slice(1)} solicitud ID:`, solicitudActual.id);
+            console.log(`${accion.charAt(0).toUpperCase() + accion.slice(1)} solicitud ID:`, moduleData.solicitudActual.id);
             
             const data = {
-                id_solicitud: parseInt(solicitudActual.id),
+                id_solicitud: parseInt(moduleData.solicitudActual.id),
                 uid: userUID,
                 role: userRole,
                 accion: accion,
@@ -1283,15 +1458,15 @@
             alert(`❌ Error: ${error.message}`);
         } finally {
             hideLoading();
-            solicitudActual = null;
+            moduleData.solicitudActual = null;
         }
     }
     
-    // Función para ver detalles (debe ser global)
-    window.verDetalles = function(id) {
+    // Función para ver detalles
+    function verDetalles(id) {
         console.log('Buscando solicitud con ID:', id);
         
-        const solicitud = allSolicitudes.find(s => String(s.id) === String(id));
+        const solicitud = moduleData.allSolicitudes.find(s => String(s.id) === String(id));
         
         if (!solicitud) {
             console.error('No se encontró la solicitud con ID:', id);
@@ -1320,7 +1495,9 @@
             }
         }
         
-        modalTitle.textContent = `Pago de Servicio #${solicitud.id} (${estado})`;
+        if (elements.modalTitle) {
+            elements.modalTitle.textContent = `Pago de Servicio #${solicitud.id} (${estado})`;
+        }
         
         let comentariosHtml = '';
         if (solicitud.comentarios && solicitud.comentarios.trim() !== '') {
@@ -1349,73 +1526,77 @@
             etiquetasEspeciales += ' <span class="tienda-externa-badge">EXTERNA</span>';
         }
         
-        modalContent.innerHTML = `
-            <div class="detail-group">
-                <h4>Información del Cliente</h4>
-                <div class="detail-item">
-                    <div class="detail-label">Cliente:</div>
-                    <div class="detail-value">${solicitud.nombre_cliente || 'No disponible'}</div>
-                </div>
-                <div class="detail-item">
-                    <div class="detail-label">Origen/Tienda:</div>
-                    <div class="detail-value">${solicitud.user_name || 'No disponible'}</div>
-                </div>
-                <div class="detail-item">
-                    <div class="detail-label">Número de contacto:</div>
-                    <div class="detail-value">${solicitud.numero_contacto || 'No disponible'}</div>
-                </div>
-            </div>
-            
-            <div class="detail-group">
-                <h4>Información del Servicio</h4>
-                <div class="detail-item">
-                    <div class="detail-label">Proveedor:</div>
-                    <div class="detail-value">${solicitud.proveedor || 'No disponible'}</div>
-                </div>
-                <div class="detail-item">
-                    <div class="detail-label">Tipo de servicio:</div>
-                    <div class="detail-value">${solicitud.tipo_servicio || 'No disponible'}</div>
-                </div>
-                <div class="detail-item">
-                    <div class="detail-label">Cuenta/Número:</div>
-                    <div class="detail-value">${solicitud.cuenta || 'No disponible'}</div>
-                </div>
-                <div class="detail-item">
-                    <div class="detail-label">Monto a pagar:</div>
-                    <div class="detail-value">${montoFormateado}</div>
-                </div>
-            </div>
-            
-            <div class="detail-group">
-                <h4>Información de la Solicitud</h4>
-                <div class="detail-item">
-                    <div class="detail-label">Estado:</div>
-                    <div class="detail-value">
-                        <span class="status-badge ${getEstadoClass(estado)}">
-                            ${estado}
-                        </span>
+        if (elements.modalContent) {
+            elements.modalContent.innerHTML = `
+                <div class="detail-group">
+                    <h4>Información del Cliente</h4>
+                    <div class="detail-item">
+                        <div class="detail-label">Cliente:</div>
+                        <div class="detail-value">${solicitud.nombre_cliente || 'No disponible'}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Origen/Tienda:</div>
+                        <div class="detail-value">${solicitud.user_name || 'No disponible'}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Número de contacto:</div>
+                        <div class="detail-value">${solicitud.numero_contacto || 'No disponible'}</div>
                     </div>
                 </div>
-                <div class="detail-item">
-                    <div class="detail-label">Fecha de creación:</div>
-                    <div class="detail-value">${fechaFormateada}</div>
-                </div>
-                <div class="detail-item">
-                    <div class="detail-label">Tienda:</div>
-                    <div class="detail-value">
-                        ${tiendaDisplayModal}
-                        ${etiquetasEspeciales}
+                
+                <div class="detail-group">
+                    <h4>Información del Servicio</h4>
+                    <div class="detail-item">
+                        <div class="detail-label">Proveedor:</div>
+                        <div class="detail-value">${solicitud.proveedor || 'No disponible'}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Tipo de servicio:</div>
+                        <div class="detail-value">${solicitud.tipo_servicio || 'No disponible'}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Cuenta/Número:</div>
+                        <div class="detail-value">${solicitud.cuenta || 'No disponible'}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Monto a pagar:</div>
+                        <div class="detail-value">${montoFormateado}</div>
                     </div>
                 </div>
-                ${comentariosHtml}
-            </div>
-        `;
+                
+                <div class="detail-group">
+                    <h4>Información de la Solicitud</h4>
+                    <div class="detail-item">
+                        <div class="detail-label">Estado:</div>
+                        <div class="detail-value">
+                            <span class="status-badge ${getEstadoClass(estado)}">
+                                ${estado}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Fecha de creación:</div>
+                        <div class="detail-value">${fechaFormateada}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Tienda:</div>
+                        <div class="detail-value">
+                            ${tiendaDisplayModal}
+                            ${etiquetasEspeciales}
+                        </div>
+                    </div>
+                    ${comentariosHtml}
+                </div>
+            `;
+        }
         
-        modal.style.display = 'block';
-    };
+        if (elements.modal) {
+            elements.modal.style.display = 'block';
+        }
+    }
     
-    // Función para generar ticket (debe ser global)
-    window.generarTicket = async function(id) {
+    // Función para generar ticket
+    async function generarTicket(id) {
         try {
             showLoading();
             
@@ -1449,7 +1630,7 @@
         } finally {
             hideLoading();
         }
-    };
+    }
 
     // Función para mostrar el ticket en un modal
     function mostrarTicketModal(ticket, folio) {
@@ -1468,7 +1649,7 @@
                     <pre>${ticketHtml}</pre>
                 </div>
                 <div class="ticket-actions">
-                    <button class="btn btn-primary" onclick="imprimirTicket('${folio}')">
+                    <button class="btn btn-primary" onclick="window.imprimirTicket('${folio}')">
                         <i class="fas fa-print"></i> Imprimir
                     </button>
                 </div>
@@ -1490,7 +1671,7 @@
     }
 
     // Función para imprimir el ticket
-    window.imprimirTicket = function(folio, ticketContent) {
+    function imprimirTicket(folio, ticketContent) {
         const printFrame = document.createElement('iframe');
         printFrame.style.position = 'fixed';
         printFrame.style.right = '0';
@@ -1553,7 +1734,7 @@
                 alert("El ticket se ha enviado a la impresora");
             }, 500);
         }, 250);
-    };
+    }
     
     // Función para obtener clase CSS según estado
     function getEstadoClass(estado) {
@@ -1569,43 +1750,76 @@
     
     // Funciones de utilidad para mostrar/ocultar elementos
     function showLoading() {
-        loadingElement.style.display = 'flex';
-        errorElement.style.display = 'none';
-        solicitudesContainer.style.display = 'none';
-        emptyState.style.display = 'none';
-        estadisticasContainer.style.display = 'none';
+        if (elements.loading) elements.loading.style.display = 'flex';
+        if (elements.error) elements.error.style.display = 'none';
+        if (elements.container) elements.container.style.display = 'none';
+        if (elements.emptyState) elements.emptyState.style.display = 'none';
+        if (elements.estadisticasContainer) elements.estadisticasContainer.style.display = 'none';
     }
     
     function showError(message) {
-        loadingElement.style.display = 'none';
-        errorElement.style.display = 'block';
-        solicitudesContainer.style.display = 'none';
-        emptyState.style.display = 'none';
-        estadisticasContainer.style.display = 'none';
-        errorMessageElement.textContent = message;
+        if (elements.loading) elements.loading.style.display = 'none';
+        if (elements.error) elements.error.style.display = 'block';
+        if (elements.container) elements.container.style.display = 'none';
+        if (elements.emptyState) elements.emptyState.style.display = 'none';
+        if (elements.estadisticasContainer) elements.estadisticasContainer.style.display = 'none';
+        if (elements.errorMessage) elements.errorMessage.textContent = message;
     }
     
     function showContent() {
-        loadingElement.style.display = 'none';
-        errorElement.style.display = 'none';
-        solicitudesContainer.style.display = 'block';
-        emptyState.style.display = 'none';
-        estadisticasContainer.style.display = 'flex';
+        if (elements.loading) elements.loading.style.display = 'none';
+        if (elements.error) elements.error.style.display = 'none';
+        if (elements.container) elements.container.style.display = 'block';
+        if (elements.emptyState) elements.emptyState.style.display = 'none';
+        if (elements.estadisticasContainer) elements.estadisticasContainer.style.display = 'flex';
     }
     
     function showEmptyState(message) {
-        loadingElement.style.display = 'none';
-        errorElement.style.display = 'none';
-        solicitudesContainer.style.display = 'none';
-        emptyState.style.display = 'block';
-        estadisticasContainer.style.display = 'flex';
-        emptyMessage.textContent = message;
+        if (elements.loading) elements.loading.style.display = 'none';
+        if (elements.error) elements.error.style.display = 'none';
+        if (elements.container) elements.container.style.display = 'none';
+        if (elements.emptyState) elements.emptyState.style.display = 'block';
+        if (elements.estadisticasContainer) elements.estadisticasContainer.style.display = 'flex';
+        if (elements.emptyMessage) elements.emptyMessage.textContent = message;
     }
     
     function hideLoading() {
-        loadingElement.style.display = 'none';
-        if (estadisticasContainer.style.display === 'none' && solicitudesContainer.style.display === 'none' && emptyState.style.display === 'none') {
+        if (elements.loading) elements.loading.style.display = 'none';
+        if (elements.estadisticasContainer && elements.estadisticasContainer.style.display === 'none' && 
+            elements.container && elements.container.style.display === 'none' && 
+            elements.emptyState && elements.emptyState.style.display === 'none') {
             showContent();
         }
     }
+    
+    // =============================================
+    // INICIALIZACIÓN DEL MÓDULO
+    // =============================================
+    
+    // Exponer funciones globales necesarias
+    window.verDetalles = verDetalles;
+    window.iniciarSolicitud = iniciarSolicitud;
+    window.mostrarModalCompletar = mostrarModalCompletar;
+    window.generarTicket = generarTicket;
+    window.imprimirTicket = imprimirTicket;
+    
+    // Función principal de inicialización
+    function initPagosModule() {
+        console.log('🔧 Inicializando módulo de pagos de servicios...');
+        
+        if (!initializeElements()) {
+            console.error('❌ Falló la inicialización de elementos DOM');
+            return;
+        }
+        
+        setupEventListeners();
+        loadSolicitudesPagoservicios();
+        
+        console.log('✅ Módulo de pagos de servicios inicializado correctamente');
+    }
+    
+    // Inicializar el módulo
+    initPagosModule();
+    
+})();
 </script>

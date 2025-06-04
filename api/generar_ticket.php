@@ -180,7 +180,9 @@ $contenido_ticket .= "PROVEEDOR: {$solicitud['proveedor']}\n";
 $contenido_ticket .= "SERVICIO: {$solicitud['tipo_servicio']}\n";
 $contenido_ticket .= "CUENTA/NÚMERO: {$solicitud['cuenta']}\n";
 $contenido_ticket .= "MONTO: $" . number_format($solicitud['monto'], 2) . "\n";
-
+$contenido_ticket .= "---------------------------------------\n";
+$contenido_ticket .= "Para dudas y/o aclaraciones marca\n";
+$contenido_ticket .= "**7151594658**\n";
 $contenido_ticket .= "====================================\n";
 $contenido_ticket .= "**COMPROBANTE NO FISCAL**\n";
 $contenido_ticket .= "GRACIAS POR SU PREFERENCIA\n";

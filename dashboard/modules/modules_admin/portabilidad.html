@@ -207,6 +207,7 @@
     </div>
 </div>
 
+<!-- Los estilos CSS se mantienen igual -->
 <style>
     /* Estadísticas */
     .statistics-container {
@@ -871,175 +872,335 @@
 </style>
 
 <script>
-    // Elementos del DOM
-    const loadingElement = document.getElementById('solicitudes-loading');
-    const errorElement = document.getElementById('solicitudes-error');
-    const errorMessageElement = document.getElementById('error-message');
-    const solicitudesContainer = document.getElementById('solicitudes-container');
-    const solicitudesTbody = document.getElementById('solicitudes-tbody');
-    const emptyState = document.getElementById('empty-state');
-    const emptyMessage = document.getElementById('empty-message');
-    const vendedorTipoBadge = document.getElementById('vendedor-tipo-badge');
-    const estadisticasContainer = document.getElementById('estadisticas-container');
+(function() {
+    'use strict';
     
-    // Elementos de estadísticas
-    const statTotal = document.getElementById('stat-total');
-    const statPendientes = document.getElementById('stat-pendientes');
-    const statProcesando = document.getElementById('stat-procesando');
-    const statCompletadas = document.getElementById('stat-completadas');
-    const statRechazadas = document.getElementById('stat-rechazadas');
-    const statCanceladas = document.getElementById('stat-canceladas');
+    console.log('🚀 Iniciando módulo de portabilidad...');
     
-    // Elementos de filtro
-    const filtroEstado = document.getElementById('filtro-estado');
-    const filtroOrigen = document.getElementById('filtro-origen');
-    const busquedaInput = document.getElementById('busqueda');
-    const btnRefresh = document.getElementById('btn-refresh');
+    // =============================================
+    // SISTEMA DE LIMPIEZA PARA NAVEGACIÓN SPA
+    // =============================================
     
-    // Elementos de paginación
-    const prevPageBtn = document.getElementById('prev-page');
-    const nextPageBtn = document.getElementById('next-page');
-    const currentPageElement = document.getElementById('current-page');
-    const totalPagesElement = document.getElementById('total-pages');
+    let cleanupFunctions = [];
+    let activeEventListeners = [];
+    let moduleData = {
+        allSolicitudes: [],
+        filteredSolicitudes: [],
+        solicitudActual: null,
+        currentPage: 1,
+        totalPages: 1,
+        zoomLevel: 1
+    };
     
-    // Modal detalles
-    const modal = document.getElementById('modal-detalles');
-    const modalTitle = document.getElementById('modal-title');
-    const modalContent = document.getElementById('modal-content');
-    const closeModal = document.querySelector('.close-modal');
-
-    // Modal procesar
-    const modalProcesar = document.getElementById('modal-procesar');
-    const modalProcesarTitle = document.getElementById('modal-procesar-title');
-    const solicitudInfoProcesar = document.getElementById('solicitud-info-procesar');
-    const comentariosProcesar = document.getElementById('comentarios-procesar');
-    const btnCancelarProcesar = document.getElementById('btn-cancelar-procesar');
-    const btnCompletarPortabilidad = document.getElementById('btn-completar-portabilidad');
-    const btnRechazarPortabilidad = document.getElementById('btn-rechazar-portabilidad');
-    const closeModalProcesar = document.querySelector('.close-modal-procesar');
-
-    // Modal zoom
-    const modalZoom = document.getElementById('modal-zoom');
-    const imagenZoom = document.getElementById('imagen-zoom');
-    const closeZoom = document.querySelector('.close-zoom');
-    const zoomInBtn = document.getElementById('zoom-in');
-    const zoomOutBtn = document.getElementById('zoom-out');
-    const zoomResetBtn = document.getElementById('zoom-reset');
-    
-    // Obtener datos del usuario
-    const userUID = sessionStorage.getItem('userUID') || '';
-    const userRole = sessionStorage.getItem('userRole') || 'admin';
-    
-    // Variables para almacenar datos
-    let allSolicitudes = [];
-    let filteredSolicitudes = [];
-    let solicitudActual = null; // Para el modal de procesar
-    
-    // Variables para paginación
-    let currentPage = 1;
-    const itemsPerPage = 5;
-    let totalPages = 1;
-
-    // Variables para zoom
-    let zoomLevel = 1;
-    
-    // Función para actualizar la UI según el tipo de vendedor
-    function updateVendedorTypeUI(tipo) {
-        if (tipo === 'interno') {
-            vendedorTipoBadge.style.display = 'inline-block';
-            console.log('Mostrando badge de vendedor interno');
-        } else {
-            vendedorTipoBadge.style.display = 'none';
-            console.log('Ocultando badge - vendedor externo');
+    // Función para agregar event listeners con limpieza automática
+    function addEventListenerWithCleanup(element, event, handler) {
+        if (element && typeof element.addEventListener === 'function') {
+            element.addEventListener(event, handler);
+            activeEventListeners.push({
+                element: element,
+                event: event,
+                handler: handler
+            });
         }
     }
     
-    // Event listeners
-    filtroEstado.addEventListener('change', () => {
-        currentPage = 1;
-        aplicarFiltros();
-    });
-    
-    filtroOrigen.addEventListener('change', () => {
-        currentPage = 1;
-        aplicarFiltros();
-    });
-    
-    busquedaInput.addEventListener('keyup', (e) => {
-        if (e.key === 'Enter') {
-            currentPage = 1;
-            aplicarFiltros();
+    // Función para agregar funciones de limpieza
+    function addCleanupFunction(func) {
+        if (typeof func === 'function') {
+            cleanupFunctions.push(func);
         }
-    });
+    }
     
-    btnRefresh.addEventListener('click', loadSolicitudesPortabilidad);
+    // Función principal de limpieza del módulo
+    function cleanupModule() {
+        console.log('🧹 Limpiando módulo de portabilidad...');
+        
+        // Limpiar event listeners
+        activeEventListeners.forEach(listener => {
+            if (listener.element && typeof listener.element.removeEventListener === 'function') {
+                listener.element.removeEventListener(listener.event, listener.handler);
+            }
+        });
+        activeEventListeners = [];
+        
+        // Ejecutar funciones de limpieza personalizadas
+        cleanupFunctions.forEach(func => {
+            try {
+                func();
+            } catch (error) {
+                console.error('Error en función de limpieza:', error);
+            }
+        });
+        cleanupFunctions = [];
+        
+        // Limpiar variables globales del módulo
+        moduleData = {
+            allSolicitudes: [],
+            filteredSolicitudes: [],
+            solicitudActual: null,
+            currentPage: 1,
+            totalPages: 1,
+            zoomLevel: 1
+        };
+        
+        // Limpiar funciones globales del módulo
+        if (window.verDetalles) delete window.verDetalles;
+        if (window.iniciarSolicitud) delete window.iniciarSolicitud;
+        if (window.mostrarModalProcesar) delete window.mostrarModalProcesar;
+        if (window.abrirZoom) delete window.abrirZoom;
+        
+        console.log('✅ Módulo de portabilidad limpiado correctamente');
+    }
     
-    // Event listeners de paginación
-    prevPageBtn.addEventListener('click', () => {
-        if (currentPage > 1) {
-            currentPage--;
-            renderizarPagina();
+    // Registrar la función de limpieza globalmente para el dashboard
+    window.moduleCleanup = cleanupModule;
+    
+    // =============================================
+    // INICIALIZACIÓN SEGURA DE ELEMENTOS DOM
+    // =============================================
+    
+    let elements = {};
+    
+    function initializeElements() {
+        try {
+            elements = {
+                loading: document.getElementById('solicitudes-loading'),
+                error: document.getElementById('solicitudes-error'),
+                errorMessage: document.getElementById('error-message'),
+                container: document.getElementById('solicitudes-container'),
+                tbody: document.getElementById('solicitudes-tbody'),
+                emptyState: document.getElementById('empty-state'),
+                emptyMessage: document.getElementById('empty-message'),
+                vendedorTipoBadge: document.getElementById('vendedor-tipo-badge'),
+                estadisticasContainer: document.getElementById('estadisticas-container'),
+                
+                // Estadísticas
+                statTotal: document.getElementById('stat-total'),
+                statPendientes: document.getElementById('stat-pendientes'),
+                statProcesando: document.getElementById('stat-procesando'),
+                statCompletadas: document.getElementById('stat-completadas'),
+                statRechazadas: document.getElementById('stat-rechazadas'),
+                statCanceladas: document.getElementById('stat-canceladas'),
+                
+                // Filtros
+                filtroEstado: document.getElementById('filtro-estado'),
+                filtroOrigen: document.getElementById('filtro-origen'),
+                busquedaInput: document.getElementById('busqueda'),
+                btnRefresh: document.getElementById('btn-refresh'),
+                
+                // Paginación
+                prevPageBtn: document.getElementById('prev-page'),
+                nextPageBtn: document.getElementById('next-page'),
+                currentPageElement: document.getElementById('current-page'),
+                totalPagesElement: document.getElementById('total-pages'),
+                
+                // Modal detalles
+                modal: document.getElementById('modal-detalles'),
+                modalTitle: document.getElementById('modal-title'),
+                modalContent: document.getElementById('modal-content'),
+                closeModal: document.querySelector('.close-modal'),
+                
+                // Modal procesar
+                modalProcesar: document.getElementById('modal-procesar'),
+                modalProcesarTitle: document.getElementById('modal-procesar-title'),
+                solicitudInfoProcesar: document.getElementById('solicitud-info-procesar'),
+                comentariosProcesar: document.getElementById('comentarios-procesar'),
+                btnCancelarProcesar: document.getElementById('btn-cancelar-procesar'),
+                btnCompletarPortabilidad: document.getElementById('btn-completar-portabilidad'),
+                btnRechazarPortabilidad: document.getElementById('btn-rechazar-portabilidad'),
+                closeModalProcesar: document.querySelector('.close-modal-procesar'),
+                
+                // Modal zoom
+                modalZoom: document.getElementById('modal-zoom'),
+                imagenZoom: document.getElementById('imagen-zoom'),
+                closeZoom: document.querySelector('.close-zoom'),
+                zoomInBtn: document.getElementById('zoom-in'),
+                zoomOutBtn: document.getElementById('zoom-out'),
+                zoomResetBtn: document.getElementById('zoom-reset')
+            };
+            
+            // Verificar elementos críticos
+            const criticalElements = ['loading', 'error', 'container', 'tbody'];
+            for (let key of criticalElements) {
+                if (!elements[key]) {
+                    throw new Error(`Elemento crítico no encontrado: ${key}`);
+                }
+            }
+            
+            console.log('✅ Elementos DOM inicializados correctamente');
+            return true;
+            
+        } catch (error) {
+            console.error('❌ Error al inicializar elementos DOM:', error);
+            return false;
         }
-    });
+    }
     
-    nextPageBtn.addEventListener('click', () => {
-        if (currentPage < totalPages) {
-            currentPage++;
-            renderizarPagina();
+    // =============================================
+    // CONFIGURACIÓN DE EVENT LISTENERS
+    // =============================================
+    
+    function setupEventListeners() {
+        try {
+            // Filtros
+            if (elements.filtroEstado) {
+                addEventListenerWithCleanup(elements.filtroEstado, 'change', () => {
+                    moduleData.currentPage = 1;
+                    aplicarFiltros();
+                });
+            }
+            
+            if (elements.filtroOrigen) {
+                addEventListenerWithCleanup(elements.filtroOrigen, 'change', () => {
+                    moduleData.currentPage = 1;
+                    aplicarFiltros();
+                });
+            }
+            
+            if (elements.busquedaInput) {
+                addEventListenerWithCleanup(elements.busquedaInput, 'keyup', (e) => {
+                    if (e.key === 'Enter') {
+                        moduleData.currentPage = 1;
+                        aplicarFiltros();
+                    }
+                });
+            }
+            
+            if (elements.btnRefresh) {
+                addEventListenerWithCleanup(elements.btnRefresh, 'click', loadSolicitudesPortabilidad);
+            }
+            
+            // Paginación
+            if (elements.prevPageBtn) {
+                addEventListenerWithCleanup(elements.prevPageBtn, 'click', () => {
+                    if (moduleData.currentPage > 1) {
+                        moduleData.currentPage--;
+                        renderizarPagina();
+                    }
+                });
+            }
+            
+            if (elements.nextPageBtn) {
+                addEventListenerWithCleanup(elements.nextPageBtn, 'click', () => {
+                    if (moduleData.currentPage < moduleData.totalPages) {
+                        moduleData.currentPage++;
+                        renderizarPagina();
+                    }
+                });
+            }
+            
+            // Modal detalles
+            if (elements.closeModal) {
+                addEventListenerWithCleanup(elements.closeModal, 'click', () => {
+                    if (elements.modal) elements.modal.style.display = 'none';
+                });
+            }
+            
+            addEventListenerWithCleanup(window, 'click', (e) => {
+                if (e.target === elements.modal && elements.modal) {
+                    elements.modal.style.display = 'none';
+                }
+            });
+            
+            // Modal procesar
+            if (elements.closeModalProcesar) {
+                addEventListenerWithCleanup(elements.closeModalProcesar, 'click', () => {
+                    if (elements.modalProcesar) elements.modalProcesar.style.display = 'none';
+                });
+            }
+            
+            if (elements.btnCancelarProcesar) {
+                addEventListenerWithCleanup(elements.btnCancelarProcesar, 'click', () => {
+                    if (elements.modalProcesar) elements.modalProcesar.style.display = 'none';
+                });
+            }
+            
+            if (elements.btnCompletarPortabilidad) {
+                addEventListenerWithCleanup(elements.btnCompletarPortabilidad, 'click', () => procesarSolicitud('completar'));
+            }
+            
+            if (elements.btnRechazarPortabilidad) {
+                addEventListenerWithCleanup(elements.btnRechazarPortabilidad, 'click', () => procesarSolicitud('rechazar'));
+            }
+            
+            addEventListenerWithCleanup(window, 'click', (e) => {
+                if (e.target === elements.modalProcesar && elements.modalProcesar) {
+                    elements.modalProcesar.style.display = 'none';
+                }
+            });
+            
+            // Modal zoom
+            if (elements.closeZoom) {
+                addEventListenerWithCleanup(elements.closeZoom, 'click', () => {
+                    if (elements.modalZoom) {
+                        elements.modalZoom.style.display = 'none';
+                        moduleData.zoomLevel = 1;
+                    }
+                });
+            }
+            
+            if (elements.zoomInBtn) {
+                addEventListenerWithCleanup(elements.zoomInBtn, 'click', () => {
+                    moduleData.zoomLevel = Math.min(moduleData.zoomLevel * 1.2, 3);
+                    if (elements.imagenZoom) {
+                        elements.imagenZoom.style.transform = `scale(${moduleData.zoomLevel})`;
+                    }
+                });
+            }
+            
+            if (elements.zoomOutBtn) {
+                addEventListenerWithCleanup(elements.zoomOutBtn, 'click', () => {
+                    moduleData.zoomLevel = Math.max(moduleData.zoomLevel / 1.2, 0.5);
+                    if (elements.imagenZoom) {
+                        elements.imagenZoom.style.transform = `scale(${moduleData.zoomLevel})`;
+                    }
+                });
+            }
+            
+            if (elements.zoomResetBtn) {
+                addEventListenerWithCleanup(elements.zoomResetBtn, 'click', () => {
+                    moduleData.zoomLevel = 1;
+                    if (elements.imagenZoom) {
+                        elements.imagenZoom.style.transform = `scale(${moduleData.zoomLevel})`;
+                    }
+                });
+            }
+            
+            addEventListenerWithCleanup(window, 'click', (e) => {
+                if (e.target === elements.modalZoom && elements.modalZoom) {
+                    elements.modalZoom.style.display = 'none';
+                    moduleData.zoomLevel = 1;
+                }
+            });
+            
+            console.log('✅ Event listeners configurados correctamente');
+            
+        } catch (error) {
+            console.error('❌ Error al configurar event listeners:', error);
         }
-    });
+    }
     
-    // Event listeners del modal de detalles
-    closeModal.addEventListener('click', () => modal.style.display = 'none');
-    window.addEventListener('click', (e) => {
-        if (e.target === modal) modal.style.display = 'none';
-    });
-
-    // Event listeners del modal de procesar
-    closeModalProcesar.addEventListener('click', () => modalProcesar.style.display = 'none');
-    btnCancelarProcesar.addEventListener('click', () => modalProcesar.style.display = 'none');
-    btnCompletarPortabilidad.addEventListener('click', () => procesarSolicitud('completar'));
-    btnRechazarPortabilidad.addEventListener('click', () => procesarSolicitud('rechazar'));
-    window.addEventListener('click', (e) => {
-        if (e.target === modalProcesar) modalProcesar.style.display = 'none';
-    });
-
-    // Event listeners del modal de zoom
-    closeZoom.addEventListener('click', () => {
-        modalZoom.style.display = 'none';
-        zoomLevel = 1;
-    });
+    // =============================================
+    // FUNCIONES PRINCIPALES DEL MÓDULO
+    // =============================================
     
-    zoomInBtn.addEventListener('click', () => {
-        zoomLevel = Math.min(zoomLevel * 1.2, 3);
-        imagenZoom.style.transform = `scale(${zoomLevel})`;
-    });
+    // Obtener datos del usuario de forma segura
+    const userUID = sessionStorage.getItem('userUID') || '';
+    const userRole = sessionStorage.getItem('userRole') || 'admin';
+    const itemsPerPage = 5;
     
-    zoomOutBtn.addEventListener('click', () => {
-        zoomLevel = Math.max(zoomLevel / 1.2, 0.5);
-        imagenZoom.style.transform = `scale(${zoomLevel})`;
-    });
-    
-    zoomResetBtn.addEventListener('click', () => {
-        zoomLevel = 1;
-        imagenZoom.style.transform = `scale(${zoomLevel})`;
-    });
-    
-    window.addEventListener('click', (e) => {
-        if (e.target === modalZoom) {
-            modalZoom.style.display = 'none';
-            zoomLevel = 1;
+    // Función para actualizar la UI según el tipo de vendedor
+    function updateVendedorTypeUI(tipo) {
+        if (elements.vendedorTipoBadge) {
+            if (tipo === 'interno') {
+                elements.vendedorTipoBadge.style.display = 'inline-block';
+                console.log('Mostrando badge de vendedor interno');
+            } else {
+                elements.vendedorTipoBadge.style.display = 'none';
+                console.log('Ocultando badge - vendedor externo');
+            }
         }
-    });
-
-    // Función para abrir imagen en zoom
-    window.abrirZoom = function(src, alt) {
-        imagenZoom.src = src;
-        imagenZoom.alt = alt;
-        zoomLevel = 1;
-        imagenZoom.style.transform = `scale(${zoomLevel})`;
-        modalZoom.style.display = 'block';
-    };
+    }
     
     // Función para normalizar estados
     function normalizarEstado(estadoOriginal) {
@@ -1059,9 +1220,6 @@
             default: return 'pendiente';
         }
     }
-    
-    // Inicialización
-    loadSolicitudesPortabilidad();
     
     // Función principal para cargar solicitudes
     async function loadSolicitudesPortabilidad() {
@@ -1092,18 +1250,18 @@
                 updateVendedorTypeUI(data.tipo_vendedor);
             }
             
-            allSolicitudes = data.solicitudes || [];
+            moduleData.allSolicitudes = data.solicitudes || [];
             
             // Actualizar estadísticas
             updateEstadisticas(data.estadisticas);
             
-            console.log('Solicitudes recibidas:', allSolicitudes.length);
+            console.log('Solicitudes recibidas:', moduleData.allSolicitudes.length);
             if (data.tipo_vendedor) {
                 console.log('Tipo de vendedor:', data.tipo_vendedor);
             }
             
             // Normalizar estados
-            allSolicitudes.forEach(solicitud => {
+            moduleData.allSolicitudes.forEach(solicitud => {
                 solicitud.estado_solicitud = normalizarEstado(solicitud.estado_solicitud);
             });
             
@@ -1117,23 +1275,28 @@
     
     // Función para actualizar las estadísticas
     function updateEstadisticas(estadisticas) {
-        if (estadisticas) {
-            statTotal.textContent = estadisticas.total || 0;
-            statPendientes.textContent = estadisticas.pendientes || 0;
-            statProcesando.textContent = estadisticas.procesando || 0;
-            statCompletadas.textContent = estadisticas.completadas || 0;
-            statRechazadas.textContent = estadisticas.rechazadas || 0;
-            statCanceladas.textContent = estadisticas.canceladas || 0;
+        if (estadisticas && elements.statTotal) {
+            elements.statTotal.textContent = estadisticas.total || 0;
+            if (elements.statPendientes) elements.statPendientes.textContent = estadisticas.pendientes || 0;
+            if (elements.statProcesando) elements.statProcesando.textContent = estadisticas.procesando || 0;
+            if (elements.statCompletadas) elements.statCompletadas.textContent = estadisticas.completadas || 0;
+            if (elements.statRechazadas) elements.statRechazadas.textContent = estadisticas.rechazadas || 0;
+            if (elements.statCanceladas) elements.statCanceladas.textContent = estadisticas.canceladas || 0;
         }
     }
     
     // Función para aplicar filtros
     function aplicarFiltros() {
-        const estado = filtroEstado.value;
-        const origen = filtroOrigen.value;
-        const termino = busquedaInput.value.trim().toLowerCase();
+        if (!elements.filtroEstado || !elements.filtroOrigen || !elements.busquedaInput) {
+            console.warn('Elementos de filtro no disponibles');
+            return;
+        }
         
-        filteredSolicitudes = allSolicitudes.filter(solicitud => {
+        const estado = elements.filtroEstado.value;
+        const origen = elements.filtroOrigen.value;
+        const termino = elements.busquedaInput.value.trim().toLowerCase();
+        
+        moduleData.filteredSolicitudes = moduleData.allSolicitudes.filter(solicitud => {
             if (estado && solicitud.estado_solicitud !== estado) {
                 return false;
             }
@@ -1165,35 +1328,35 @@
             return true;
         });
         
-        totalPages = Math.max(1, Math.ceil(filteredSolicitudes.length / itemsPerPage));
+        moduleData.totalPages = Math.max(1, Math.ceil(moduleData.filteredSolicitudes.length / itemsPerPage));
         
-        if (currentPage > totalPages) {
-            currentPage = totalPages;
+        if (moduleData.currentPage > moduleData.totalPages) {
+            moduleData.currentPage = moduleData.totalPages;
         }
         
-        currentPageElement.textContent = currentPage;
-        totalPagesElement.textContent = totalPages;
+        if (elements.currentPageElement) elements.currentPageElement.textContent = moduleData.currentPage;
+        if (elements.totalPagesElement) elements.totalPagesElement.textContent = moduleData.totalPages;
         
         renderizarPagina();
     }
     
     // Función para renderizar la página actual
     function renderizarPagina() {
-        prevPageBtn.disabled = currentPage <= 1;
-        nextPageBtn.disabled = currentPage >= totalPages;
+        if (elements.prevPageBtn) elements.prevPageBtn.disabled = moduleData.currentPage <= 1;
+        if (elements.nextPageBtn) elements.nextPageBtn.disabled = moduleData.currentPage >= moduleData.totalPages;
         
-        currentPageElement.textContent = currentPage;
-        totalPagesElement.textContent = totalPages;
+        if (elements.currentPageElement) elements.currentPageElement.textContent = moduleData.currentPage;
+        if (elements.totalPagesElement) elements.totalPagesElement.textContent = moduleData.totalPages;
         
-        if (filteredSolicitudes.length === 0) {
+        if (moduleData.filteredSolicitudes.length === 0) {
             showEmptyState('No se encontraron solicitudes con los filtros seleccionados');
             return;
         }
         
-        const startIndex = (currentPage - 1) * itemsPerPage;
-        const endIndex = Math.min(startIndex + itemsPerPage, filteredSolicitudes.length);
+        const startIndex = (moduleData.currentPage - 1) * itemsPerPage;
+        const endIndex = Math.min(startIndex + itemsPerPage, moduleData.filteredSolicitudes.length);
         
-        const solicitudesPagina = filteredSolicitudes.slice(startIndex, endIndex);
+        const solicitudesPagina = moduleData.filteredSolicitudes.slice(startIndex, endIndex);
         
         renderSolicitudes(solicitudesPagina);
         showContent();
@@ -1201,9 +1364,14 @@
     
     // Función para renderizar solicitudes
     function renderSolicitudes(solicitudes) {
+        if (!elements.tbody) {
+            console.error('Elemento tbody no disponible');
+            return;
+        }
+        
         console.log("Renderizando solicitudes con IDs:", solicitudes.map(s => s.id));
         
-        solicitudesTbody.innerHTML = '';
+        elements.tbody.innerHTML = '';
         
         solicitudes.forEach(solicitud => {
             let estadoClass = '';
@@ -1248,7 +1416,7 @@
 
             // Generar botones de acción según el estado
             let accionesHTML = `
-                <button class="action-btn" title="Ver detalles" onclick="verDetalles('${idOriginal}')">
+                <button class="action-btn" title="Ver detalles" onclick="window.verDetalles('${idOriginal}')">
                     <i class="fas fa-eye"></i>
                 </button>
             `;
@@ -1256,13 +1424,13 @@
             // Agregar botones de procesamiento
             if (estado === 'pendiente') {
                 accionesHTML += `
-                    <button class="action-btn action-btn-warning" title="Iniciar procesamiento" onclick="iniciarSolicitud('${idOriginal}')">
+                    <button class="action-btn action-btn-warning" title="Iniciar procesamiento" onclick="window.iniciarSolicitud('${idOriginal}')">
                         <i class="fas fa-play"></i>
                     </button>
                 `;
             } else if (estado === 'procesando') {
                 accionesHTML += `
-                    <button class="action-btn action-btn-success" title="Completar/Rechazar solicitud" onclick="mostrarModalProcesar('${idOriginal}')">
+                    <button class="action-btn action-btn-success" title="Completar/Rechazar solicitud" onclick="window.mostrarModalProcesar('${idOriginal}')">
                         <i class="fas fa-check"></i>
                     </button>
                 `;
@@ -1281,12 +1449,12 @@
                 <td>${accionesHTML}</td>
             `;
             
-            solicitudesTbody.appendChild(row);
+            elements.tbody.appendChild(row);
         });
     }
 
     // Función para INICIAR solicitud (pendiente → procesando → abrir modal)
-    window.iniciarSolicitud = async function(id) {
+    async function iniciarSolicitud(id) {
         try {
             showLoading();
             
@@ -1333,66 +1501,79 @@
         } finally {
             hideLoading();
         }
-    };
+    }
 
     // Función para mostrar el modal de procesar solicitud (procesando → completar/rechazar)
-    window.mostrarModalProcesar = function(id) {
-        const solicitud = allSolicitudes.find(s => String(s.id) === String(id));
+    function mostrarModalProcesar(id) {
+        const solicitud = moduleData.allSolicitudes.find(s => String(s.id) === String(id));
         
         if (!solicitud) {
             alert('No se encontró la solicitud');
             return;
         }
 
-        solicitudActual = solicitud;
+        moduleData.solicitudActual = solicitud;
         
-        modalProcesarTitle.textContent = `Procesar Portabilidad #${solicitud.id}`;
+        if (elements.modalProcesarTitle) {
+            elements.modalProcesarTitle.textContent = `Procesar Portabilidad #${solicitud.id}`;
+        }
         
-        solicitudInfoProcesar.innerHTML = `
-            <div class="detail-item">
-                <div class="detail-label">Cliente:</div>
-                <div class="detail-value">${solicitud.nombre_completo || 'No disponible'}</div>
-            </div>
-            <div class="detail-item">
-                <div class="detail-label">Número a portar:</div>
-                <div class="detail-value">${solicitud.numero_portar || 'No disponible'}</div>
-            </div>
-            <div class="detail-item">
-                <div class="detail-label">NIP:</div>
-                <div class="detail-value">${solicitud.nip_portabilidad || 'No disponible'}</div>
-            </div>
-            <div class="detail-item">
-                <div class="detail-label">Operador destino:</div>
-                <div class="detail-value">${solicitud.operador_destino || 'No disponible'}</div>
-            </div>
-            <div class="detail-item">
-                <div class="detail-label">Estado actual:</div>
-                <div class="detail-value">
-                    <span class="status-badge ${getEstadoClass(solicitud.estado_solicitud)}">
-                        ${solicitud.estado_solicitud}
-                    </span>
+        if (elements.solicitudInfoProcesar) {
+            elements.solicitudInfoProcesar.innerHTML = `
+                <div class="detail-item">
+                    <div class="detail-label">Cliente:</div>
+                    <div class="detail-value">${solicitud.nombre_completo || 'No disponible'}</div>
                 </div>
-            </div>
-        `;
+                <div class="detail-item">
+                    <div class="detail-label">Número a portar:</div>
+                    <div class="detail-value">${solicitud.numero_portar || 'No disponible'}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">NIP:</div>
+                    <div class="detail-value">${solicitud.nip_portabilidad || 'No disponible'}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Operador destino:</div>
+                    <div class="detail-value">${solicitud.operador_destino || 'No disponible'}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Estado actual:</div>
+                    <div class="detail-value">
+                        <span class="status-badge ${getEstadoClass(solicitud.estado_solicitud)}">
+                            ${solicitud.estado_solicitud}
+                        </span>
+                    </div>
+                </div>
+            `;
+        }
 
         // Limpiar comentarios
-        comentariosProcesar.value = '';
+        if (elements.comentariosProcesar) {
+            elements.comentariosProcesar.value = '';
+        }
         
-        modalProcesar.style.display = 'block';
-    };
+        if (elements.modalProcesar) {
+            elements.modalProcesar.style.display = 'block';
+        }
+    }
 
     // Función universal para procesar solicitudes (completar/rechazar)
     async function procesarSolicitud(accion) {
         try {
-            const comentarios = comentariosProcesar.value.trim();
+            if (!elements.comentariosProcesar) {
+                alert('Error: Elemento de comentarios no disponible');
+                return;
+            }
+            
+            const comentarios = elements.comentariosProcesar.value.trim();
             
             if (!comentarios) {
                 alert('Los comentarios son obligatorios');
-                comentariosProcesar.focus();
+                elements.comentariosProcesar.focus();
                 return;
             }
 
-            if (!solicitudActual) {
+            if (!moduleData.solicitudActual) {
                 alert('Error: No se ha seleccionado ninguna solicitud');
                 return;
             }
@@ -1409,12 +1590,12 @@
             }
 
             showLoading();
-            modalProcesar.style.display = 'none';
+            if (elements.modalProcesar) elements.modalProcesar.style.display = 'none';
             
-            console.log(`${accion.charAt(0).toUpperCase() + accion.slice(1)} solicitud ID:`, solicitudActual.id);
+            console.log(`${accion.charAt(0).toUpperCase() + accion.slice(1)} solicitud ID:`, moduleData.solicitudActual.id);
             
             const data = {
-                id_solicitud: parseInt(solicitudActual.id),
+                id_solicitud: parseInt(moduleData.solicitudActual.id),
                 uid: userUID,
                 role: userRole,
                 accion: accion,
@@ -1445,15 +1626,15 @@
             alert(`❌ Error: ${error.message}`);
         } finally {
             hideLoading();
-            solicitudActual = null;
+            moduleData.solicitudActual = null;
         }
     }
     
     // Función para ver detalles (global)
-    window.verDetalles = function(id) {
+    function verDetalles(id) {
         console.log('Buscando solicitud con ID:', id, 'Tipo:', typeof id);
         
-        const solicitud = allSolicitudes.find(s => String(s.id) == String(id));
+        const solicitud = moduleData.allSolicitudes.find(s => String(s.id) == String(id));
         
         if (!solicitud) {
             console.error('No se encontró la solicitud con ID:', id);
@@ -1475,7 +1656,9 @@
             }
         }
         
-        modalTitle.textContent = `Solicitud de Portabilidad #${solicitud.id} (${estado})`;
+        if (elements.modalTitle) {
+            elements.modalTitle.textContent = `Solicitud de Portabilidad #${solicitud.id} (${estado})`;
+        }
         
         let comentariosHtml = '';
         if (solicitud.comentarios && solicitud.comentarios.trim() !== '') {
@@ -1504,94 +1687,109 @@
             etiquetasEspeciales += ' <span class="tienda-externa-badge">EXTERNA</span>';
         }
         
-        modalContent.innerHTML = `
-            <div class="detail-group">
-                <h4>Información del Cliente</h4>
-                <div class="detail-item">
-                    <div class="detail-label">Nombre completo:</div>
-                    <div class="detail-value">${solicitud.nombre_completo || 'No disponible'}</div>
-                </div>
-                <div class="detail-item">
-                    <div class="detail-label">Teléfono:</div>
-                    <div class="detail-value">${solicitud.numero_contacto || 'No disponible'}</div>
-                </div>
-                <div class="detail-item">
-                    <div class="detail-label">CURP:</div>
-                    <div class="detail-value">${solicitud.curp || 'No disponible'}</div>
-                </div>
-                <div class="detail-item">
-                    <div class="detail-label">Fecha de nacimiento:</div>
-                    <div class="detail-value">${solicitud.fecha_nacimiento || 'No disponible'}</div>
-                </div>
-            </div>
-            
-            <div class="detail-group">
-                <h4>Información de Portabilidad</h4>
-                <div class="detail-item">
-                    <div class="detail-label">Número a portar:</div>
-                    <div class="detail-value">${solicitud.numero_portar || 'No disponible'}</div>
-                </div>
-                <div class="detail-item">
-                    <div class="detail-label">NIP:</div>
-                    <div class="detail-value">${solicitud.nip_portabilidad || 'No disponible'}</div>
-                </div>
-                <div class="detail-item">
-                    <div class="detail-label">Operador origen:</div>
-                    <div class="detail-value">${solicitud.operador_destino || 'No disponible'}</div>
-                </div>
-                <div class="detail-item">
-                    <div class="detail-label">ICC ID:</div>
-                    <div class="detail-value">${solicitud.iccid || 'No disponible'}</div>
-                </div>
-            </div>
-            
-            <div class="detail-group">
-                <h4>Información de la Solicitud</h4>
-                <div class="detail-item">
-                    <div class="detail-label">Estado:</div>
-                    <div class="detail-value">
-                        <span class="status-badge ${getEstadoClass(estado)}">
-                            ${estado}
-                        </span>
+        if (elements.modalContent) {
+            elements.modalContent.innerHTML = `
+                <div class="detail-group">
+                    <h4>Información del Cliente</h4>
+                    <div class="detail-item">
+                        <div class="detail-label">Nombre completo:</div>
+                        <div class="detail-value">${solicitud.nombre_completo || 'No disponible'}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Teléfono:</div>
+                        <div class="detail-value">${solicitud.numero_contacto || 'No disponible'}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">CURP:</div>
+                        <div class="detail-value">${solicitud.curp || 'No disponible'}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Fecha de nacimiento:</div>
+                        <div class="detail-value">${solicitud.fecha_nacimiento || 'No disponible'}</div>
                     </div>
                 </div>
-                <div class="detail-item">
-                    <div class="detail-label">Fecha de creación:</div>
-                    <div class="detail-value">${fechaFormateada}</div>
-                </div>
-                <div class="detail-item">
-                    <div class="detail-label">Tienda:</div>
-                    <div class="detail-value">
-                        ${tiendaDisplayModal}
-                        ${etiquetasEspeciales}
+                
+                <div class="detail-group">
+                    <h4>Información de Portabilidad</h4>
+                    <div class="detail-item">
+                        <div class="detail-label">Número a portar:</div>
+                        <div class="detail-value">${solicitud.numero_portar || 'No disponible'}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">NIP:</div>
+                        <div class="detail-value">${solicitud.nip_portabilidad || 'No disponible'}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Operador origen:</div>
+                        <div class="detail-value">${solicitud.operador_destino || 'No disponible'}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">ICC ID:</div>
+                        <div class="detail-value">${solicitud.iccid || 'No disponible'}</div>
                     </div>
                 </div>
-                ${comentariosHtml}
-            </div>
-            
-            <div class="detail-group">
-                <h4>Documentación</h4>
-                <div class="ine-container">
-                    <div class="ine-image">
-                        <h5>INE Frontal</h5>
-                        <img src="../api/get_imagen_ine.php?id=${solicitud.id}&tipo=frontal&t=${new Date().getTime()}" 
-                             alt="INE Frontal" 
-                             onclick="abrirZoom(this.src, this.alt)"
-                             onerror="this.onerror=null; this.parentElement.innerHTML='<h5>INE Frontal</h5><div class=\\'no-image\\'>Imagen no disponible</div>';">
+                
+                <div class="detail-group">
+                    <h4>Información de la Solicitud</h4>
+                    <div class="detail-item">
+                        <div class="detail-label">Estado:</div>
+                        <div class="detail-value">
+                            <span class="status-badge ${getEstadoClass(estado)}">
+                                ${estado}
+                            </span>
+                        </div>
                     </div>
-                    <div class="ine-image">
-                        <h5>INE Trasera</h5>
-                        <img src="../api/get_imagen_ine.php?id=${solicitud.id}&tipo=trasera&t=${new Date().getTime()}" 
-                             alt="INE Trasera" 
-                             onclick="abrirZoom(this.src, this.alt)"
-                             onerror="this.onerror=null; this.parentElement.innerHTML='<h5>INE Trasera</h5><div class=\\'no-image\\'>Imagen no disponible</div>';">
+                    <div class="detail-item">
+                        <div class="detail-label">Fecha de creación:</div>
+                        <div class="detail-value">${fechaFormateada}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Tienda:</div>
+                        <div class="detail-value">
+                            ${tiendaDisplayModal}
+                            ${etiquetasEspeciales}
+                        </div>
+                    </div>
+                    ${comentariosHtml}
+                </div>
+                
+                <div class="detail-group">
+                    <h4>Documentación</h4>
+                    <div class="ine-container">
+                        <div class="ine-image">
+                            <h5>INE Frontal</h5>
+                            <img src="../api/get_imagen_ine.php?id=${solicitud.id}&tipo=frontal&t=${new Date().getTime()}" 
+                                 alt="INE Frontal" 
+                                 onclick="window.abrirZoom(this.src, this.alt)"
+                                 onerror="this.onerror=null; this.parentElement.innerHTML='<h5>INE Frontal</h5><div class=\\'no-image\\'>Imagen no disponible</div>';">
+                        </div>
+                        <div class="ine-image">
+                            <h5>INE Trasera</h5>
+                            <img src="../api/get_imagen_ine.php?id=${solicitud.id}&tipo=trasera&t=${new Date().getTime()}" 
+                                 alt="INE Trasera" 
+                                 onclick="window.abrirZoom(this.src, this.alt)"
+                                 onerror="this.onerror=null; this.parentElement.innerHTML='<h5>INE Trasera</h5><div class=\\'no-image\\'>Imagen no disponible</div>';">
+                        </div>
                     </div>
                 </div>
-            </div>
-        `;
+            `;
+        }
         
-        modal.style.display = 'block';
-    };
+        if (elements.modal) {
+            elements.modal.style.display = 'block';
+        }
+    }
+
+    // Función para abrir imagen en zoom
+    function abrirZoom(src, alt) {
+        if (!elements.imagenZoom || !elements.modalZoom) return;
+        
+        elements.imagenZoom.src = src;
+        elements.imagenZoom.alt = alt;
+        moduleData.zoomLevel = 1;
+        elements.imagenZoom.style.transform = `scale(${moduleData.zoomLevel})`;
+        elements.modalZoom.style.display = 'block';
+    }
     
     // Función para obtener clase CSS según estado
     function getEstadoClass(estado) {
@@ -1607,40 +1805,70 @@
     
     // Funciones de utilidad para mostrar/ocultar elementos
     function showLoading() {
-        loadingElement.style.display = 'flex';
-        errorElement.style.display = 'none';
-        solicitudesContainer.style.display = 'none';
-        emptyState.style.display = 'none';
-        estadisticasContainer.style.display = 'none';
+        if (elements.loading) elements.loading.style.display = 'flex';
+        if (elements.error) elements.error.style.display = 'none';
+        if (elements.container) elements.container.style.display = 'none';
+        if (elements.emptyState) elements.emptyState.style.display = 'none';
+        if (elements.estadisticasContainer) elements.estadisticasContainer.style.display = 'none';
     }
     
     function showError(message) {
-        loadingElement.style.display = 'none';
-        errorElement.style.display = 'block';
-        solicitudesContainer.style.display = 'none';
-        emptyState.style.display = 'none';
-        estadisticasContainer.style.display = 'none';
-        errorMessageElement.textContent = message;
+        if (elements.loading) elements.loading.style.display = 'none';
+        if (elements.error) elements.error.style.display = 'block';
+        if (elements.container) elements.container.style.display = 'none';
+        if (elements.emptyState) elements.emptyState.style.display = 'none';
+        if (elements.estadisticasContainer) elements.estadisticasContainer.style.display = 'none';
+        if (elements.errorMessage) elements.errorMessage.textContent = message;
     }
     
     function showContent() {
-        loadingElement.style.display = 'none';
-        errorElement.style.display = 'none';
-        solicitudesContainer.style.display = 'block';
-        emptyState.style.display = 'none';
-        estadisticasContainer.style.display = 'flex';
+        if (elements.loading) elements.loading.style.display = 'none';
+        if (elements.error) elements.error.style.display = 'none';
+        if (elements.container) elements.container.style.display = 'block';
+        if (elements.emptyState) elements.emptyState.style.display = 'none';
+        if (elements.estadisticasContainer) elements.estadisticasContainer.style.display = 'flex';
     }
     
     function showEmptyState(message) {
-        loadingElement.style.display = 'none';
-        errorElement.style.display = 'none';
-        solicitudesContainer.style.display = 'none';
-        emptyState.style.display = 'block';
-        estadisticasContainer.style.display = 'flex';
-        emptyMessage.textContent = message;
+        if (elements.loading) elements.loading.style.display = 'none';
+        if (elements.error) elements.error.style.display = 'none';
+        if (elements.container) elements.container.style.display = 'none';
+        if (elements.emptyState) elements.emptyState.style.display = 'block';
+        if (elements.estadisticasContainer) elements.estadisticasContainer.style.display = 'flex';
+        if (elements.emptyMessage) elements.emptyMessage.textContent = message;
     }
 
     function hideLoading() {
-        loadingElement.style.display = 'none';
+        if (elements.loading) elements.loading.style.display = 'none';
     }
+    
+    // =============================================
+    // INICIALIZACIÓN DEL MÓDULO
+    // =============================================
+    
+    // Exponer funciones globales necesarias
+    window.verDetalles = verDetalles;
+    window.iniciarSolicitud = iniciarSolicitud;
+    window.mostrarModalProcesar = mostrarModalProcesar;
+    window.abrirZoom = abrirZoom;
+    
+    // Función principal de inicialización
+    function initPortabilidadModule() {
+        console.log('🔧 Inicializando módulo de portabilidad...');
+        
+        if (!initializeElements()) {
+            console.error('❌ Falló la inicialización de elementos DOM');
+            return;
+        }
+        
+        setupEventListeners();
+        loadSolicitudesPortabilidad();
+        
+        console.log('✅ Módulo de portabilidad inicializado correctamente');
+    }
+    
+    // Inicializar el módulo
+    initPortabilidadModule();
+    
+})();
 </script>
