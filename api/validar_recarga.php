@@ -1,5 +1,5 @@
 <?php
-// api/validar_recarga.php
+// api/validar_recarga.php - VERSIÓN CORREGIDA PARA EVITAR DOBLE PROCESAMIENTO
 header('Content-Type: application/json; charset=UTF-8');
 require_once 'db_connect.php';
 
@@ -25,8 +25,9 @@ try {
     $uid = $input['uid'];
     $role = $input['role'];
     
-    // Log para depuración
-    error_log("Validando recarga - ID: $idMovimiento, Decisión: $decision, UID: $uid, Role: $role");
+    // Log para depuración con timestamp
+    $timestamp = date('Y-m-d H:i:s');
+    error_log("[$timestamp] 🔧 VALIDANDO RECARGA - ID: $idMovimiento, Decisión: $decision, UID: $uid, Role: $role");
     
     // Validar decisión
     if (!in_array($decision, ['aprobado', 'rechazado'])) {
@@ -83,12 +84,14 @@ try {
         // Preparar la fecha actual
         $fechaAprobacion = date('Y-m-d H:i:s');
         
-        // Actualizar el movimiento
+        // *** SOLUCIÓN: ACTUALIZAR CON procesado_saldo = 1 ***
         $query_actualizar = "UPDATE movimientos 
                             SET estado = ?, 
                                 fecha_aprobacion = ?, 
                                 aprobado_por = ?, 
-                                comentario = ? 
+                                comentario = ?,
+                                procesado_saldo = 1,
+                                fecha_procesado_saldo = NOW()
                             WHERE id_movimiento = ?";
         
         $stmt_actualizar = mysqli_prepare($con, $query_actualizar);
@@ -106,10 +109,14 @@ try {
             throw new Exception("No se pudo actualizar el movimiento");
         }
         
+        error_log("[$timestamp] ✅ Movimiento actualizado y marcado como procesado: ID=$idMovimiento, Estado=$decision");
+        
         // Si la decisión es "aprobado", actualizar el saldo de la bolsa
         if ($decision === 'aprobado') {
             $monto = (float) $movimiento['monto'];
             $userId = $movimiento['user_id'];
+            
+            error_log("[$timestamp] 💰 PROCESANDO APROBACIÓN - Monto: $monto, User: $userId");
             
             // Buscar la tienda del usuario para actualizar su bolsa
             $tiendaId = null;
@@ -125,7 +132,7 @@ try {
             if (mysqli_num_rows($result_pdv) > 0) {
                 $row_pdv = mysqli_fetch_assoc($result_pdv);
                 $tiendaId = $row_pdv['pdv_id'];
-                error_log("Tienda encontrada via PDV: $tiendaId");
+                error_log("[$timestamp] Tienda encontrada via PDV: $tiendaId");
             }
             mysqli_stmt_close($stmt_pdv);
             
@@ -141,7 +148,7 @@ try {
                 if (mysqli_num_rows($result_vendedor) > 0) {
                     $row_vendedor = mysqli_fetch_assoc($result_vendedor);
                     $tiendaId = $row_vendedor['tienda_id'];
-                    error_log("Tienda encontrada via vendedor_tienda_relacion: $tiendaId");
+                    error_log("[$timestamp] Tienda encontrada via vendedor_tienda_relacion: $tiendaId");
                 }
                 mysqli_stmt_close($stmt_vendedor);
             }
@@ -157,12 +164,27 @@ try {
                 
                 if (mysqli_num_rows($result_sucursal) > 0) {
                     $tiendaId = $user_id_as_int;
-                    error_log("Tienda encontrada via sucursal directa: $tiendaId");
+                    error_log("[$timestamp] Tienda encontrada via sucursal directa: $tiendaId");
                 }
                 mysqli_stmt_close($stmt_sucursal);
             }
             
             if ($tiendaId) {
+                // Obtener saldo actual para logging
+                $query_saldo_actual = "SELECT saldo_actual FROM bolsas WHERE id_sucursal = ?";
+                $stmt_saldo_actual = mysqli_prepare($con, $query_saldo_actual);
+                mysqli_stmt_bind_param($stmt_saldo_actual, "i", $tiendaId);
+                mysqli_stmt_execute($stmt_saldo_actual);
+                $result_saldo_actual = mysqli_stmt_get_result($stmt_saldo_actual);
+                
+                $saldoAnterior = 0;
+                if ($row_saldo = mysqli_fetch_assoc($result_saldo_actual)) {
+                    $saldoAnterior = $row_saldo['saldo_actual'];
+                }
+                mysqli_stmt_close($stmt_saldo_actual);
+                
+                error_log("[$timestamp] ANTES DE SUMAR - Tienda: $tiendaId, Saldo actual: $saldoAnterior, Monto a sumar: $monto");
+                
                 // Actualizar el saldo de la bolsa
                 $query_bolsa = "UPDATE bolsas 
                                SET saldo_actual = saldo_actual + ? 
@@ -189,14 +211,17 @@ try {
                     }
                     mysqli_stmt_close($stmt_crear_bolsa);
                     
-                    error_log("Bolsa creada para tienda $tiendaId con saldo inicial $monto");
+                    error_log("[$timestamp] ✅ Bolsa creada para tienda $tiendaId con saldo inicial $monto");
                 } else {
-                    error_log("Saldo actualizado para tienda $tiendaId, monto agregado: $monto");
+                    $nuevoSaldo = $saldoAnterior + $monto;
+                    error_log("[$timestamp] ✅ Saldo actualizado para tienda $tiendaId: $saldoAnterior + $monto = $nuevoSaldo");
                 }
             } else {
-                error_log("ADVERTENCIA: No se pudo determinar la tienda para el usuario $userId");
+                error_log("[$timestamp] ⚠️ ADVERTENCIA: No se pudo determinar la tienda para el usuario $userId");
                 // No lanzar error, solo registrar advertencia
             }
+        } else {
+            error_log("[$timestamp] ❌ Recarga RECHAZADA - No se actualiza saldo");
         }
         
         // Confirmar transacción
@@ -206,7 +231,7 @@ try {
         mysqli_close($con);
         
         // Log de éxito
-        error_log("Recarga validada exitosamente - ID: $idMovimiento, Decisión: $decision, Por: $uid");
+        error_log("[$timestamp] ✅ RECARGA VALIDADA EXITOSAMENTE - ID: $idMovimiento, Decisión: $decision, Por: $uid, procesado_saldo: 1");
         
         // Respuesta exitosa
         echo json_encode([
@@ -218,7 +243,9 @@ try {
                 "fecha_aprobacion" => $fechaAprobacion,
                 "aprobado_por" => $uid,
                 "comentarios" => $comentarios,
-                "saldo_actualizado" => ($decision === 'aprobado' && isset($tiendaId))
+                "saldo_actualizado" => ($decision === 'aprobado' && isset($tiendaId)),
+                "procesado_saldo_marcado" => true, // *** CONFIRMACIÓN DE LA SOLUCIÓN ***
+                "tienda_id" => $tiendaId ?? null
             ]
         ]);
         
@@ -230,7 +257,8 @@ try {
     
 } catch (Exception $e) {
     // Log del error
-    error_log("Error en validar_recarga.php: " . $e->getMessage());
+    $timestamp = date('Y-m-d H:i:s');
+    error_log("[$timestamp] ❌ ERROR en validar_recarga.php: " . $e->getMessage());
     
     // Cerrar conexión si existe
     if (isset($con)) {
