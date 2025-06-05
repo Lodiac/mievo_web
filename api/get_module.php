@@ -28,10 +28,10 @@ if (empty($requestedRole)) {
 
 // Mapeo de roles a módulos permitidos
 $allowedModules = [
-    'root' => ['bienvenida', 'dashboard', 'tiendas', 'solicitudes', 'vendedores','atencion_clientes','bolsa_saldo'],
-    'admin' => ['bienvenida', 'dashboard', 'tiendas', 'solicitudes','vendedores','portabilidad','pagos'],
-    'subdistribuidor' => ['bienvenida', 'dashboard', 'tiendas', 'solicitudes', 'vendedores','portabilidad','pagos'],
-    'vendedor' => ['bienvenida', 'dashboard','solicitudes', 'portabilidad','pagos']
+    'root' => [ 'dashboard', 'tiendas', 'solicitudes', 'vendedores','atencion_clientes','bolsa_saldo'],
+    'admin' => [ 'dashboard', 'tiendas', 'solicitudes','vendedores','portabilidad','pagos'],
+    'subdistribuidor' => [ 'dashboard', 'tiendas', 'solicitudes', 'vendedores','portabilidad','pagos'],
+    'vendedor' => [ 'dashboard','solicitudes', 'portabilidad','pagos']
 ];
 
 // Verificar si el rol existe en nuestra configuración

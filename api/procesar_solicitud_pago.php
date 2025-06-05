@@ -1,7 +1,53 @@
 <?php
-// api/procesar_solicitud_pago.php - VERSIÓN CORREGIDA CON FLUJO CORRECTO
+// api/procesar_solicitud_pago.php - VERSIÓN CORREGIDA CON SOLUCIÓN AL PROBLEMA DE SALDO
 header('Content-Type: application/json; charset=UTF-8');
 require_once 'db_connect.php';
+
+/**
+ * Marcar movimientos relacionados como procesados para evitar doble procesamiento del evento automático
+ */
+function marcarMovimientoComoProcesado($con, $user_id, $monto, $solicitud_id, $accion) {
+    try {
+        $timestamp = date('Y-m-d H:i:s');
+        error_log("[$timestamp] 🔧 Marcando movimiento como procesado - User: $user_id, Monto: $monto, Acción: $accion");
+        
+        // Buscar el movimiento relacionado con esta solicitud
+        $query = "UPDATE movimientos 
+                 SET procesado_saldo = 1, 
+                     fecha_procesado_saldo = NOW(),
+                     comentario = CONCAT(
+                         IFNULL(comentario, ''), 
+                         ' | PAGO_SERVICIO_', ?, '_ID_', ?, ' - ', NOW()
+                     )
+                 WHERE user_id = ? COLLATE utf8mb4_general_ci
+                   AND tipo = 'RECARGA' 
+                   AND estado = 'aprobado' 
+                   AND procesado_saldo = 0
+                   AND ABS(monto - ?) < 0.01
+                   AND fecha_aprobacion >= DATE_SUB(NOW(), INTERVAL 1 DAY)
+                 ORDER BY fecha_aprobacion DESC 
+                 LIMIT 1";
+        
+        $stmt = mysqli_prepare($con, $query);
+        mysqli_stmt_bind_param($stmt, "sisd", $accion, $solicitud_id, $user_id, $monto);
+        
+        if (mysqli_stmt_execute($stmt)) {
+            $filasAfectadas = mysqli_stmt_affected_rows($stmt);
+            if ($filasAfectadas > 0) {
+                error_log("[$timestamp] ✅ Movimiento marcado como procesado exitosamente. Filas afectadas: $filasAfectadas");
+            } else {
+                error_log("[$timestamp] ℹ️ No se encontró movimiento para marcar (puede ser normal si no hay movimiento relacionado)");
+            }
+        } else {
+            error_log("[$timestamp] ❌ Error al marcar movimiento como procesado: " . mysqli_stmt_error($stmt));
+        }
+        
+        mysqli_stmt_close($stmt);
+        
+    } catch (Exception $e) {
+        error_log("[$timestamp] ❌ Error en marcarMovimientoComoProcesado: " . $e->getMessage());
+    }
+}
 
 try {
     // Verificar método
@@ -23,8 +69,9 @@ try {
     $role = $input['role'];
     $accion = $input['accion']; // 'iniciar', 'completar' o 'rechazar'
     
-    // Log inicial
-    error_log("Procesando solicitud: ID=$idSolicitud, UID=$uid, Role=$role, Accion=$accion");
+    // Log inicial con timestamp
+    $timestamp = date('Y-m-d H:i:s');
+    error_log("[$timestamp] 🚀 INICIO - Procesando solicitud: ID=$idSolicitud, UID=$uid, Role=$role, Accion=$accion");
     
     // Verificar permisos - solo admin y vendedores internos
     if ($role !== 'admin') {
@@ -66,7 +113,7 @@ try {
     $solicitud = mysqli_fetch_assoc($result_solicitud);
     mysqli_stmt_close($stmt_solicitud);
     
-    error_log("Solicitud encontrada: user_id={$solicitud['user_id']}, estado={$solicitud['estado_solicitud']}, monto={$solicitud['monto']}");
+    error_log("[$timestamp] Solicitud encontrada: user_id={$solicitud['user_id']}, estado={$solicitud['estado_solicitud']}, monto={$solicitud['monto']}");
     
     // Verificar que la solicitud esté en el estado correcto según la acción
     if ($accion === 'iniciar') {
@@ -101,7 +148,7 @@ try {
         $montoSolicitud = (float) $solicitud['monto'];
         $debeDescontarSaldo = true;
         
-        error_log("Solicitud propia: " . ($esSolicitudPropia ? 'SI' : 'NO'));
+        error_log("[$timestamp] INICIAR - Solicitud propia: " . ($esSolicitudPropia ? 'SI' : 'NO') . ", Monto: $montoSolicitud");
         
         if (!$esSolicitudPropia) {
             // BÚSQUEDA OPTIMIZADA DE TIENDA usando múltiples métodos
@@ -118,7 +165,7 @@ try {
                 $row_pdv = mysqli_fetch_assoc($result_pdv);
                 $tiendaId = $row_pdv['pdv_id'];
                 $metodo_tienda = 'pdv_supervendedor_relacion';
-                error_log("Tienda encontrada via PDV: $tiendaId");
+                error_log("[$timestamp] Tienda encontrada via PDV: $tiendaId");
             }
             mysqli_stmt_close($stmt_pdv);
             
@@ -135,7 +182,7 @@ try {
                     $row_vendedor = mysqli_fetch_assoc($result_vendedor);
                     $tiendaId = $row_vendedor['tienda_id'];
                     $metodo_tienda = 'vendedor_tienda_relacion';
-                    error_log("Tienda encontrada via vendedor_tienda_relacion: $tiendaId");
+                    error_log("[$timestamp] Tienda encontrada via vendedor_tienda_relacion: $tiendaId");
                 }
                 mysqli_stmt_close($stmt_vendedor);
             }
@@ -152,7 +199,7 @@ try {
                 if (mysqli_num_rows($result_sucursal) > 0) {
                     $tiendaId = $user_id_as_int;
                     $metodo_tienda = 'sucursal_directa';
-                    error_log("Tienda encontrada via sucursal directa: $tiendaId");
+                    error_log("[$timestamp] Tienda encontrada via sucursal directa: $tiendaId");
                 }
                 mysqli_stmt_close($stmt_sucursal);
             }
@@ -163,7 +210,7 @@ try {
             
             // NUEVA LÓGICA: Verificar si admin debe descontar saldo
             if ($role === 'admin') {
-                error_log("Verificando si admin debe descontar saldo para user_id: {$solicitud['user_id']}");
+                error_log("[$timestamp] Verificando si admin debe descontar saldo para user_id: {$solicitud['user_id']}");
                 
                 // Verificar si el solicitante es vendedor interno
                 $query_tipo_solicitante = "SELECT tipo_relacion FROM vendedor_tienda_relacion 
@@ -178,12 +225,12 @@ try {
                     if ($row_tipo_sol['tipo_relacion'] === 'interno') {
                         $debeDescontarSaldo = false;
                         $metodo_tienda = 'admin_vendedor_interno';
-                        error_log("Admin procesando vendedor interno - SIN descuento de saldo");
+                        error_log("[$timestamp] Admin procesando vendedor interno - SIN descuento de saldo");
                     } else {
-                        error_log("Admin procesando vendedor externo - CON descuento de saldo");
+                        error_log("[$timestamp] Admin procesando vendedor externo - CON descuento de saldo");
                     }
                 } else {
-                    error_log("Admin procesando usuario no-vendedor - CON descuento de saldo");
+                    error_log("[$timestamp] Admin procesando usuario no-vendedor - CON descuento de saldo");
                 }
                 mysqli_stmt_close($stmt_tipo_sol);
             }
@@ -205,7 +252,7 @@ try {
                 $saldoActual = (float) $row_saldo['saldo_actual'];
                 mysqli_stmt_close($stmt_saldo);
                 
-                error_log("Saldo actual: $saldoActual, Monto requerido: $montoSolicitud");
+                error_log("[$timestamp] Saldo actual: $saldoActual, Monto requerido: $montoSolicitud");
                 
                 // Validar que el saldo sea suficiente
                 if ($saldoActual < $montoSolicitud) {
@@ -224,9 +271,9 @@ try {
                 }
                 mysqli_stmt_close($stmt_update_saldo);
                 
-                error_log("Saldo descontado: $saldoActual -> $nuevoSaldo");
+                error_log("[$timestamp] Saldo descontado: $saldoActual -> $nuevoSaldo");
             } else {
-                error_log("Saltando descuento de saldo por política admin-vendedor interno");
+                error_log("[$timestamp] Saltando descuento de saldo por política admin-vendedor interno");
                 $saldoActual = 0;
                 $nuevoSaldo = 0;
             }
@@ -234,7 +281,7 @@ try {
         } else {
             $metodo_tienda = 'solicitud_propia';
             $debeDescontarSaldo = false;
-            error_log("Solicitud propia, no se requiere descuento de saldo");
+            error_log("[$timestamp] Solicitud propia, no se requiere descuento de saldo");
         }
         
         // Actualizar solicitud a "procesando"
@@ -283,7 +330,7 @@ try {
         
         $comentarios = trim($input['comentarios']);
         
-        error_log("Completando solicitud con comentarios: " . substr($comentarios, 0, 100));
+        error_log("[$timestamp] COMPLETAR - Completando solicitud con comentarios: " . substr($comentarios, 0, 100));
         
         // Actualizar solicitud a "completada" con comentarios y procesada_por
         $query_completar = "UPDATE sol_pagoservicios 
@@ -300,7 +347,10 @@ try {
         }
         mysqli_stmt_close($stmt_completar);
         
-        error_log("Solicitud completada exitosamente");
+        error_log("[$timestamp] Solicitud completada exitosamente");
+        
+        // *** SOLUCIÓN AL PROBLEMA: Marcar movimiento como procesado ***
+        marcarMovimientoComoProcesado($con, $solicitud['user_id'], $solicitud['monto'], $idSolicitud, 'COMPLETADO');
         
         // Respuesta exitosa para COMPLETAR
         echo json_encode([
@@ -310,7 +360,8 @@ try {
             "detalles" => [
                 "comentarios_agregados" => strlen($comentarios) . " caracteres",
                 "procesada_por" => $uid,
-                "fecha_actualizacion" => date('Y-m-d H:i:s')
+                "fecha_actualizacion" => date('Y-m-d H:i:s'),
+                "movimiento_marcado_procesado" => true // Confirmación de la solución
             ]
         ]);
         
@@ -319,7 +370,8 @@ try {
         
         $comentarios = trim($input['comentarios']);
         
-        error_log("Rechazando solicitud con comentarios: " . substr($comentarios, 0, 100));
+        error_log("[$timestamp] RECHAZAR - Regresando saldo y cambiando estado");
+        error_log("[$timestamp] Rechazando solicitud con comentarios: " . substr($comentarios, 0, 100));
         
         // PASO 1: Buscar la tienda para regresar el saldo (mismo método que en iniciar)
         $esSolicitudPropia = ($solicitud['user_id'] === $uid);
@@ -388,7 +440,7 @@ try {
                     $row_tipo_sol = mysqli_fetch_assoc($result_tipo_sol);
                     if ($row_tipo_sol['tipo_relacion'] === 'interno') {
                         $debeRegresarSaldo = false;
-                        error_log("Admin rechazando vendedor interno - SIN regreso de saldo");
+                        error_log("[$timestamp] Admin rechazando vendedor interno - SIN regreso de saldo");
                     }
                 }
                 mysqli_stmt_close($stmt_tipo_sol);
@@ -405,12 +457,12 @@ try {
                 }
                 mysqli_stmt_close($stmt_regresar_saldo);
                 
-                error_log("Saldo regresado: +$montoSolicitud a tienda $tiendaId");
+                error_log("[$timestamp] Saldo regresado: +$montoSolicitud a tienda $tiendaId");
             }
             
         } else {
             $debeRegresarSaldo = false;
-            error_log("Solicitud propia rechazada, no se requiere regreso de saldo");
+            error_log("[$timestamp] Solicitud propia rechazada, no se requiere regreso de saldo");
         }
         
         // PASO 3: Actualizar solicitud a "rechazada"
@@ -428,7 +480,10 @@ try {
         }
         mysqli_stmt_close($stmt_rechazar);
         
-        error_log("Solicitud rechazada exitosamente");
+        error_log("[$timestamp] Solicitud rechazada exitosamente");
+        
+        // *** SOLUCIÓN AL PROBLEMA: Marcar movimiento como procesado ***
+        marcarMovimientoComoProcesado($con, $solicitud['user_id'], $solicitud['monto'], $idSolicitud, 'RECHAZADO');
         
         // Respuesta exitosa para RECHAZAR
         echo json_encode([
@@ -441,7 +496,8 @@ try {
                 "procesada_por" => $uid,
                 "fecha_actualizacion" => date('Y-m-d H:i:s'),
                 "monto_regresado" => $debeRegresarSaldo ? $montoSolicitud : 0,
-                "tienda_id" => $tiendaId
+                "tienda_id" => $tiendaId,
+                "movimiento_marcado_procesado" => true // Confirmación de la solución
             ]
         ]);
     }
@@ -451,7 +507,8 @@ try {
     
 } catch (Exception $e) {
     // Log del error
-    error_log("Error en procesar_solicitud_pago: " . $e->getMessage());
+    $timestamp = date('Y-m-d H:i:s');
+    error_log("[$timestamp] ❌ ERROR en procesar_solicitud_pago: " . $e->getMessage());
     
     // En caso de error, revertir cambios si es necesario
     if (isset($con)) {
