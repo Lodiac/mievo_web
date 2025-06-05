@@ -1,9 +1,9 @@
 <div class="card">
     <h2 class="content-title" id="module-title">
-        <i class="fas fa-money-bill-wave"></i> Mis Pagos de Servicios
+        <i class="fas fa-money-bill-wave"></i> Gestión de Pagos de Servicios
         <span id="vendedor-tipo-badge" class="vendedor-interno-badge" style="display: none;">INTERNO</span>
     </h2>
-    <p id="module-description">Gestiona tus solicitudes de pago de servicios.</p>
+    <p id="module-description">Gestiona las solicitudes de pago de servicios de tu red de vendedores y tiendas conectadas.</p>
     
     <!-- Información del vendedor interno -->
     <div id="vendor-info" class="vendor-info-card" style="display: none;">
@@ -19,7 +19,7 @@
             <div class="col">
                 <div class="form-group">
                     <label for="filtro-estado">Estado:</label>
-                    <select id="filtro-estado" class="form-control">
+                     <select id="filtro-estado" class="form-control">
                         <option value="">Todos</option>
                         <option value="pendiente" selected>Pendiente</option>
                         <option value="procesando">Procesando</option>
@@ -29,13 +29,13 @@
                     </select>
                 </div>
             </div>
-            <div class="col" id="filtro-origen-container" style="display: none;">
+            <div class="col">
                 <div class="form-group">
                     <label for="filtro-origen">Origen:</label>
                     <select id="filtro-origen" class="form-control">
                         <option value="">Todos</option>
                         <option value="1">Mis solicitudes</option>
-                        <option value="0">Otras tiendas</option>
+                        <option value="0">Red de vendedores</option>
                     </select>
                 </div>
             </div>
@@ -53,7 +53,7 @@
             <div class="col">
                 <div class="search-input-container">
                     <i class="fas fa-search search-icon"></i>
-                    <input type="text" id="busqueda" class="search-input" placeholder="Buscar por nombre, número, cuenta...">
+                    <input type="text" id="busqueda" class="search-input" placeholder="Buscar por cliente, origen, cuenta...">
                 </div>
             </div>
             <div class="col actions">
@@ -129,13 +129,14 @@
                     <tr>
                         <th>ID</th>
                         <th>Cliente</th>
+                        <th>Origen</th>
                         <th>Proveedor</th>
                         <th>Tipo Servicio</th>
                         <th>Cuenta</th>
                         <th>Monto</th>
                         <th>Contacto</th>
                         <th>Fecha</th>
-                        <th class="tienda-column" style="display: none;">Tienda</th>
+                        <th>Tienda</th>
                         <th>Estado</th>
                         <th>Acciones</th>
                     </tr>
@@ -160,7 +161,6 @@
     <div id="empty-state" class="empty-state" style="display: none;">
         <i class="fas fa-file-invoice-dollar"></i>
         <h3 id="empty-message">No se encontraron solicitudes</h3>
-        <p id="empty-subtitle">Aún no tienes solicitudes de pago de servicios.</p>
     </div>
     
     <!-- Modal de detalles -->
@@ -170,6 +170,41 @@
             <h3 id="modal-title">Detalles del Pago de Servicio</h3>
             <div id="modal-content" class="modal-body">
                 <!-- Contenido dinámico -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para procesar solicitud -->
+    <div id="modal-completar" class="modal">
+        <div class="modal-content">
+            <span class="close-modal-completar">&times;</span>
+            <h3 id="modal-completar-title">Procesar Pago de Servicio</h3>
+            <div class="modal-body">
+                <div class="detail-group">
+                    <h4>Información de la Solicitud</h4>
+                    <div id="solicitud-info-completar">
+                        <!-- Información de la solicitud -->
+                    </div>
+                </div>
+                
+                <div class="detail-group">
+                    <h4>Comentarios del Procesamiento</h4>
+                    <div class="form-group">
+                        <label for="comentarios-completar">Comentarios (obligatorio):</label>
+                        <textarea id="comentarios-completar" class="form-control" rows="4" 
+                                placeholder="Describe el procesamiento realizado, número de confirmación, observaciones, etc."></textarea>
+                    </div>
+                </div>
+                
+                <div class="modal-actions">
+                    <button id="btn-cancelar-completar" class="btn btn-outline">Cancelar</button>
+                    <button id="btn-rechazar-solicitud" class="btn btn-danger">
+                        <i class="fas fa-times"></i> Rechazar Solicitud
+                    </button>
+                    <button id="btn-confirmar-completar" class="btn btn-success">
+                        <i class="fas fa-check"></i> Completar Solicitud
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -353,11 +388,27 @@
         font-size: 0.95rem;
         cursor: pointer;
         border: none;
+        transition: all 0.2s ease;
     }
     
     .btn-primary {
         background-color: var(--primary-color);
         color: white;
+    }
+
+    .btn-success {
+        background-color: #28a745;
+        color: white;
+    }
+
+    .btn-danger {
+        background-color: #dc3545;
+        color: white;
+    }
+
+    .btn-warning {
+        background-color: #ffc107;
+        color: #212529;
     }
     
     .btn-outline {
@@ -373,6 +424,11 @@
     .btn:disabled {
         opacity: 0.5;
         cursor: not-allowed;
+    }
+
+    .btn:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
     
     /* Loader y estados */
@@ -425,11 +481,6 @@
     .empty-state h3 {
         font-size: 1.2rem;
         margin-bottom: 10px;
-    }
-
-    .empty-state p {
-        font-size: 0.9rem;
-        color: #888;
     }
     
     /* Tabla de datos */
@@ -511,10 +562,32 @@
         cursor: pointer;
         margin-right: 5px;
         font-size: 1rem;
+        padding: 4px;
+        border-radius: 4px;
+        transition: all 0.2s ease;
     }
     
     .action-btn:hover {
         color: var(--primary-dark);
+        background-color: rgba(2, 136, 209, 0.1);
+    }
+
+    .action-btn-success {
+        color: #28a745;
+    }
+
+    .action-btn-success:hover {
+        color: #1e7e34;
+        background-color: rgba(40, 167, 69, 0.1);
+    }
+
+    .action-btn-warning {
+        color: #ffc107;
+    }
+
+    .action-btn-warning:hover {
+        color: #e0a800;
+        background-color: rgba(255, 193, 7, 0.1);
     }
     
     /* Paginación */
@@ -556,7 +629,7 @@
         overflow-y: auto;
     }
     
-    .close-modal {
+    .close-modal, .close-modal-completar {
         position: absolute;
         top: 15px;
         right: 20px;
@@ -566,11 +639,11 @@
         cursor: pointer;
     }
     
-    .close-modal:hover {
+    .close-modal:hover, .close-modal-completar:hover {
         color: #333;
     }
     
-    #modal-title {
+    #modal-title, #modal-completar-title {
         margin-top: 0;
         margin-bottom: 20px;
         color: var(--primary-color);
@@ -636,6 +709,23 @@
     .comentarios-content {
         font-style: italic;
     }
+
+    /* Modal actions */
+    .modal-actions {
+        grid-column: 1 / -1;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid #ddd;
+    }
+
+    /* Textarea */
+    textarea.form-control {
+        resize: vertical;
+        min-height: 100px;
+    }
     
     /* Estilos para el ticket */
     .ticket-modal {
@@ -682,12 +772,6 @@
 
     /* Responsividad */
     @media (max-width: 768px) {
-        .vendedor-interno-badge {
-            font-size: 0.7rem;
-            padding: 3px 8px;
-            margin-left: 5px;
-        }
-        
         .filter-controls .row {
             flex-direction: column;
         }
@@ -709,162 +793,284 @@
         .modal-body {
             grid-template-columns: 1fr;
         }
+
+        .modal-actions {
+            flex-direction: column;
+        }
     }
 </style>
 
 <script>
-    // Variables globales
-    let tipoVendedor = 'externo'; // Default
+(function() {
+    'use strict';
     
-    // Elementos del DOM
-    const loadingElement = document.getElementById('solicitudes-loading');
-    const errorElement = document.getElementById('solicitudes-error');
-    const errorMessageElement = document.getElementById('error-message');
-    const solicitudesContainer = document.getElementById('solicitudes-container');
-    const solicitudesTbody = document.getElementById('solicitudes-tbody');
-    const emptyState = document.getElementById('empty-state');
-    const emptyMessage = document.getElementById('empty-message');
-    const emptySubtitle = document.getElementById('empty-subtitle');
-    const estadisticasContainer = document.getElementById('estadisticas-container');
-    const vendedorTipoBadge = document.getElementById('vendedor-tipo-badge');
-    const moduleTitle = document.getElementById('module-title');
-    const moduleDescription = document.getElementById('module-description');
-    const vendorInfo = document.getElementById('vendor-info');
-    const vendorInfoText = document.getElementById('vendor-info-text');
-    const filtroOrigenContainer = document.getElementById('filtro-origen-container');
-    const tiendaColumns = document.querySelectorAll('.tienda-column');
+    console.log('🚀 Iniciando módulo de pagos de servicios para subdistribuidores...');
     
-    // Elementos de estadísticas
-    const statTotal = document.getElementById('stat-total');
-    const statPendientes = document.getElementById('stat-pendientes');
-    const statProcesando = document.getElementById('stat-procesando');
-    const statCompletadas = document.getElementById('stat-completadas');
-    const statRechazadas = document.getElementById('stat-rechazadas');
-    const statCanceladas = document.getElementById('stat-canceladas');
+    // =============================================
+    // SISTEMA DE LIMPIEZA PARA NAVEGACIÓN SPA
+    // =============================================
     
-    // Elementos de filtro
-    const filtroEstado = document.getElementById('filtro-estado');
-    const filtroOrigen = document.getElementById('filtro-origen');
-    const filtroProveedor = document.getElementById('filtro-proveedor');
-    const busquedaInput = document.getElementById('busqueda');
-    const btnRefresh = document.getElementById('btn-refresh');
+    let cleanupFunctions = [];
+    let activeEventListeners = [];
+    let moduleData = {
+        allSolicitudes: [],
+        filteredSolicitudes: [],
+        solicitudActual: null,
+        currentPage: 1,
+        totalPages: 1
+    };
     
-    // Elementos de paginación
-    const prevPageBtn = document.getElementById('prev-page');
-    const nextPageBtn = document.getElementById('next-page');
-    const currentPageElement = document.getElementById('current-page');
-    const totalPagesElement = document.getElementById('total-pages');
-    
-    // Modal
-    const modal = document.getElementById('modal-detalles');
-    const modalTitle = document.getElementById('modal-title');
-    const modalContent = document.getElementById('modal-content');
-    const closeModal = document.querySelector('.close-modal');
-    
-    // Obtener datos del usuario
-    const userUID = sessionStorage.getItem('userUID') || '';
-    const userRole = sessionStorage.getItem('userRole') || 'vendedor';
-    
-    // Variables para almacenar datos
-    let allSolicitudes = [];
-    let filteredSolicitudes = [];
-    
-    // Variables para paginación
-    let currentPage = 1;
-    const itemsPerPage = 5;
-    let totalPages = 1;
-    
-    // Función para actualizar la UI según el tipo de vendedor
-    function updateVendedorTypeUI(tipo, debug = null) {
-        tipoVendedor = tipo;
-        
-        if (tipo === 'interno') {
-            // Mostrar badge de vendedor interno
-            vendedorTipoBadge.style.display = 'inline-block';
-            
-            // Actualizar título y descripción
-            moduleTitle.innerHTML = '<i class="fas fa-money-bill-wave"></i> Mis Pagos de Servicios <span class="vendedor-interno-badge">INTERNO</span>';
-            moduleDescription.textContent = 'Gestiona tus solicitudes de pago de servicios. Como vendedor interno, puedes ver solicitudes adicionales.';
-            
-            // Mostrar información adicional
-            if (debug && debug.total_usuarios_incluidos > 1) {
-                vendorInfo.style.display = 'block';
-                vendorInfoText.textContent = `Acceso interno activo - Viendo ${debug.total_usuarios_incluidos} fuentes de datos`;
-            } else {
-                vendorInfo.style.display = 'block';
-            }
-            
-            // Mostrar filtro de origen para vendedores internos
-            filtroOrigenContainer.style.display = 'block';
-            
-            // Mostrar columna de tienda para vendedores internos
-            tiendaColumns.forEach(col => col.style.display = 'table-cell');
-            
-            console.log('UI actualizada para vendedor interno', debug);
-        } else {
-            // Vendedor externo
-            vendedorTipoBadge.style.display = 'none';
-            vendorInfo.style.display = 'none';
-            
-            // Mantener título simple
-            moduleTitle.innerHTML = '<i class="fas fa-money-bill-wave"></i> Mis Pagos de Servicios';
-            moduleDescription.textContent = 'Gestiona tus solicitudes de pago de servicios.';
-            
-            // Ocultar filtro de origen para vendedores externos
-            filtroOrigenContainer.style.display = 'none';
-            
-            // Ocultar columna de tienda para vendedores externos
-            tiendaColumns.forEach(col => col.style.display = 'none');
-            
-            console.log('UI actualizada para vendedor externo');
+    // Función para agregar event listeners con limpieza automática
+    function addEventListenerWithCleanup(element, event, handler) {
+        if (element && typeof element.addEventListener === 'function') {
+            element.addEventListener(event, handler);
+            activeEventListeners.push({
+                element: element,
+                event: event,
+                handler: handler
+            });
         }
     }
     
-    // Event listeners
-    filtroEstado.addEventListener('change', () => {
-        currentPage = 1;
-        aplicarFiltros();
-    });
-    
-    filtroOrigen.addEventListener('change', () => {
-        currentPage = 1;
-        aplicarFiltros();
-    });
-    
-    filtroProveedor.addEventListener('change', () => {
-        currentPage = 1;
-        aplicarFiltros();
-    });
-    
-    busquedaInput.addEventListener('keyup', (e) => {
-        if (e.key === 'Enter') {
-            currentPage = 1;
-            aplicarFiltros();
+    // Función para agregar funciones de limpieza
+    function addCleanupFunction(func) {
+        if (typeof func === 'function') {
+            cleanupFunctions.push(func);
         }
-    });
+    }
     
-    btnRefresh.addEventListener('click', loadSolicitudesPagoservicios);
+    // Función principal de limpieza del módulo
+    function cleanupModule() {
+        console.log('🧹 Limpiando módulo de pagos de servicios...');
+        
+        // Limpiar event listeners
+        activeEventListeners.forEach(listener => {
+            if (listener.element && typeof listener.element.removeEventListener === 'function') {
+                listener.element.removeEventListener(listener.event, listener.handler);
+            }
+        });
+        activeEventListeners = [];
+        
+        // Ejecutar funciones de limpieza personalizadas
+        cleanupFunctions.forEach(func => {
+            try {
+                func();
+            } catch (error) {
+                console.error('Error en función de limpieza:', error);
+            }
+        });
+        cleanupFunctions = [];
+        
+        // Limpiar variables globales del módulo
+        moduleData = {
+            allSolicitudes: [],
+            filteredSolicitudes: [],
+            solicitudActual: null,
+            currentPage: 1,
+            totalPages: 1
+        };
+        
+        // Limpiar funciones globales del módulo
+        if (window.verDetalles) delete window.verDetalles;
+        if (window.iniciarSolicitud) delete window.iniciarSolicitud;
+        if (window.mostrarModalCompletar) delete window.mostrarModalCompletar;
+        if (window.generarTicket) delete window.generarTicket;
+        if (window.imprimirTicket) delete window.imprimirTicket;
+        
+        console.log('✅ Módulo de pagos de servicios limpiado correctamente');
+    }
     
-    // Event listeners de paginación
-    prevPageBtn.addEventListener('click', () => {
-        if (currentPage > 1) {
-            currentPage--;
-            renderizarPagina();
+    // Registrar la función de limpieza globalmente para el dashboard
+    window.moduleCleanup = cleanupModule;
+    
+    // =============================================
+    // INICIALIZACIÓN SEGURA DE ELEMENTOS DOM
+    // =============================================
+    
+    let elements = {};
+    
+    function initializeElements() {
+        try {
+            elements = {
+                loading: document.getElementById('solicitudes-loading'),
+                error: document.getElementById('solicitudes-error'),
+                errorMessage: document.getElementById('error-message'),
+                container: document.getElementById('solicitudes-container'),
+                tbody: document.getElementById('solicitudes-tbody'),
+                emptyState: document.getElementById('empty-state'),
+                emptyMessage: document.getElementById('empty-message'),
+                estadisticasContainer: document.getElementById('estadisticas-container'),
+                
+                // Estadísticas
+                statTotal: document.getElementById('stat-total'),
+                statPendientes: document.getElementById('stat-pendientes'),
+                statProcesando: document.getElementById('stat-procesando'),
+                statCompletadas: document.getElementById('stat-completadas'),
+                statRechazadas: document.getElementById('stat-rechazadas'),
+                statCanceladas: document.getElementById('stat-canceladas'),
+                
+                // Filtros
+                filtroEstado: document.getElementById('filtro-estado'),
+                filtroOrigen: document.getElementById('filtro-origen'),
+                filtroProveedor: document.getElementById('filtro-proveedor'),
+                busquedaInput: document.getElementById('busqueda'),
+                btnRefresh: document.getElementById('btn-refresh'),
+                
+                // Paginación
+                prevPageBtn: document.getElementById('prev-page'),
+                nextPageBtn: document.getElementById('next-page'),
+                currentPageElement: document.getElementById('current-page'),
+                totalPagesElement: document.getElementById('total-pages'),
+                
+                // Modal detalles
+                modal: document.getElementById('modal-detalles'),
+                modalTitle: document.getElementById('modal-title'),
+                modalContent: document.getElementById('modal-content'),
+                closeModal: document.querySelector('.close-modal'),
+                
+                // Modal completar
+                modalCompletar: document.getElementById('modal-completar'),
+                modalCompletarTitle: document.getElementById('modal-completar-title'),
+                solicitudInfoCompletar: document.getElementById('solicitud-info-completar'),
+                comentariosCompletar: document.getElementById('comentarios-completar'),
+                btnCancelarCompletar: document.getElementById('btn-cancelar-completar'),
+                btnConfirmarCompletar: document.getElementById('btn-confirmar-completar'),
+                btnRechazarSolicitud: document.getElementById('btn-rechazar-solicitud'),
+                closeModalCompletar: document.querySelector('.close-modal-completar')
+            };
+            
+            // Verificar elementos críticos
+            const criticalElements = ['loading', 'error', 'container', 'tbody'];
+            for (let key of criticalElements) {
+                if (!elements[key]) {
+                    throw new Error(`Elemento crítico no encontrado: ${key}`);
+                }
+            }
+            
+            console.log('✅ Elementos DOM inicializados correctamente');
+            return true;
+            
+        } catch (error) {
+            console.error('❌ Error al inicializar elementos DOM:', error);
+            return false;
         }
-    });
+    }
     
-    nextPageBtn.addEventListener('click', () => {
-        if (currentPage < totalPages) {
-            currentPage++;
-            renderizarPagina();
+    // =============================================
+    // CONFIGURACIÓN DE EVENT LISTENERS
+    // =============================================
+    
+    function setupEventListeners() {
+        try {
+            // Filtros
+            if (elements.filtroEstado) {
+                addEventListenerWithCleanup(elements.filtroEstado, 'change', () => {
+                    moduleData.currentPage = 1;
+                    aplicarFiltros();
+                });
+            }
+            
+            if (elements.filtroOrigen) {
+                addEventListenerWithCleanup(elements.filtroOrigen, 'change', () => {
+                    moduleData.currentPage = 1;
+                    aplicarFiltros();
+                });
+            }
+            
+            if (elements.filtroProveedor) {
+                addEventListenerWithCleanup(elements.filtroProveedor, 'change', () => {
+                    moduleData.currentPage = 1;
+                    aplicarFiltros();
+                });
+            }
+            
+            if (elements.busquedaInput) {
+                addEventListenerWithCleanup(elements.busquedaInput, 'keyup', (e) => {
+                    if (e.key === 'Enter') {
+                        moduleData.currentPage = 1;
+                        aplicarFiltros();
+                    }
+                });
+            }
+            
+            if (elements.btnRefresh) {
+                addEventListenerWithCleanup(elements.btnRefresh, 'click', loadSolicitudesPagoservicios);
+            }
+            
+            // Paginación
+            if (elements.prevPageBtn) {
+                addEventListenerWithCleanup(elements.prevPageBtn, 'click', () => {
+                    if (moduleData.currentPage > 1) {
+                        moduleData.currentPage--;
+                        renderizarPagina();
+                    }
+                });
+            }
+            
+            if (elements.nextPageBtn) {
+                addEventListenerWithCleanup(elements.nextPageBtn, 'click', () => {
+                    if (moduleData.currentPage < moduleData.totalPages) {
+                        moduleData.currentPage++;
+                        renderizarPagina();
+                    }
+                });
+            }
+            
+            // Modal detalles
+            if (elements.closeModal) {
+                addEventListenerWithCleanup(elements.closeModal, 'click', () => {
+                    if (elements.modal) elements.modal.style.display = 'none';
+                });
+            }
+            
+            addEventListenerWithCleanup(window, 'click', (e) => {
+                if (e.target === elements.modal && elements.modal) {
+                    elements.modal.style.display = 'none';
+                }
+            });
+            
+            // Modal completar
+            if (elements.closeModalCompletar) {
+                addEventListenerWithCleanup(elements.closeModalCompletar, 'click', () => {
+                    if (elements.modalCompletar) elements.modalCompletar.style.display = 'none';
+                });
+            }
+            
+            if (elements.btnCancelarCompletar) {
+                addEventListenerWithCleanup(elements.btnCancelarCompletar, 'click', () => {
+                    if (elements.modalCompletar) elements.modalCompletar.style.display = 'none';
+                });
+            }
+            
+            if (elements.btnConfirmarCompletar) {
+                addEventListenerWithCleanup(elements.btnConfirmarCompletar, 'click', () => procesarSolicitud('completar'));
+            }
+            
+            if (elements.btnRechazarSolicitud) {
+                addEventListenerWithCleanup(elements.btnRechazarSolicitud, 'click', () => procesarSolicitud('rechazar'));
+            }
+            
+            addEventListenerWithCleanup(window, 'click', (e) => {
+                if (e.target === elements.modalCompletar && elements.modalCompletar) {
+                    elements.modalCompletar.style.display = 'none';
+                }
+            });
+            
+            console.log('✅ Event listeners configurados correctamente');
+            
+        } catch (error) {
+            console.error('❌ Error al configurar event listeners:', error);
         }
-    });
+    }
     
-    // Event listeners del modal
-    closeModal.addEventListener('click', () => modal.style.display = 'none');
-    window.addEventListener('click', (e) => {
-        if (e.target === modal) modal.style.display = 'none';
-    });
+    // =============================================
+    // FUNCIONES PRINCIPALES DEL MÓDULO
+    // =============================================
+    
+    // Obtener datos del usuario de forma segura
+    const userUID = sessionStorage.getItem('userUID') || '';
+    const userRole = sessionStorage.getItem('userRole') || 'subdistribuidor';
+    const itemsPerPage = 5;
     
     // Función para normalizar estados según los valores de la base de datos
     function normalizarEstado(estadoOriginal) {
@@ -884,9 +1090,6 @@
             default: return 'pendiente';
         }
     }
-    
-    // Inicialización
-    loadSolicitudesPagoservicios();
     
     // Función para cargar solicitudes desde la API
     async function loadSolicitudesPagoservicios() {
@@ -912,20 +1115,14 @@
                 throw new Error(data.error || "Error desconocido en la respuesta");
             }
             
-            // Actualizar UI según el tipo de vendedor
-            if (data.tipo_vendedor) {
-                updateVendedorTypeUI(data.tipo_vendedor, data.debug_info);
-            }
-            
-            allSolicitudes = data.solicitudes || [];
+            moduleData.allSolicitudes = data.solicitudes || [];
             
             updateEstadisticas(data.estadisticas);
             
-            console.log('Solicitudes recibidas:', allSolicitudes.length);
-            console.log('Tipo de vendedor:', data.tipo_vendedor);
+            console.log('Solicitudes recibidas:', moduleData.allSolicitudes.length);
             
             // Normalizar estados
-            allSolicitudes.forEach(solicitud => {
+            moduleData.allSolicitudes.forEach(solicitud => {
                 solicitud.estado_solicitud = normalizarEstado(solicitud.estado_solicitud);
             });
             
@@ -939,37 +1136,40 @@
     
     // Función para actualizar las estadísticas
     function updateEstadisticas(estadisticas) {
-        if (estadisticas) {
-            statTotal.textContent = estadisticas.total || 0;
-            statPendientes.textContent = estadisticas.pendientes || 0;
-            statProcesando.textContent = estadisticas.procesando || 0;
-            statCompletadas.textContent = estadisticas.completadas || 0;
-            statRechazadas.textContent = estadisticas.rechazadas || 0;
-            statCanceladas.textContent = estadisticas.canceladas || 0;
+        if (estadisticas && elements.statTotal) {
+            elements.statTotal.textContent = estadisticas.total || 0;
+            if (elements.statPendientes) elements.statPendientes.textContent = estadisticas.pendientes || 0;
+            if (elements.statProcesando) elements.statProcesando.textContent = estadisticas.procesando || 0;
+            if (elements.statCompletadas) elements.statCompletadas.textContent = estadisticas.completadas || 0;
+            if (elements.statRechazadas) elements.statRechazadas.textContent = estadisticas.rechazadas || 0;
+            if (elements.statCanceladas) elements.statCanceladas.textContent = estadisticas.canceladas || 0;
         }
     }
     
     // Función para aplicar filtros
     function aplicarFiltros() {
-        const estado = filtroEstado.value;
-        const origen = filtroOrigen.value;
-        const proveedor = filtroProveedor.value;
-        const termino = busquedaInput.value.trim().toLowerCase();
+        if (!elements.filtroEstado || !elements.filtroOrigen || !elements.busquedaInput) {
+            console.warn('Elementos de filtro no disponibles');
+            return;
+        }
         
-        filteredSolicitudes = allSolicitudes.filter(solicitud => {
+        const estado = elements.filtroEstado.value;
+        const origen = elements.filtroOrigen.value;
+        const proveedor = elements.filtroProveedor.value;
+        const termino = elements.busquedaInput.value.trim().toLowerCase();
+        
+        moduleData.filteredSolicitudes = moduleData.allSolicitudes.filter(solicitud => {
             if (estado && solicitud.estado_solicitud !== estado) {
                 return false;
             }
             
-            // Solo aplicar filtro de origen si el vendedor es interno
-            if (tipoVendedor === 'interno' && origen !== '') {
+            if (origen !== '') {
                 const esPropia = parseInt(solicitud.es_propia) === 1;
                 if ((origen === '1' && !esPropia) || (origen === '0' && esPropia)) {
                     return false;
                 }
             }
             
-            // Aplicar filtro de proveedor
             if (proveedor && solicitud.proveedor) {
                 const proveedorSolicitud = solicitud.proveedor.toLowerCase();
                 if (!proveedorSolicitud.includes(proveedor.toLowerCase())) {
@@ -978,7 +1178,9 @@
             }
             
             if (termino) {
-                const coincideNombre = solicitud.user_name && 
+                const coincideCliente = solicitud.nombre_cliente && 
+                                      solicitud.nombre_cliente.toLowerCase().includes(termino);
+                const coincideOrigen = solicitud.user_name && 
                                      solicitud.user_name.toLowerCase().includes(termino);
                 const coincideCuenta = solicitud.cuenta && 
                                      solicitud.cuenta.toLowerCase().includes(termino);
@@ -991,7 +1193,7 @@
                 const coincideTienda = solicitud.nombre_tienda && 
                                      solicitud.nombre_tienda.toLowerCase().includes(termino);
                 
-                if (!coincideNombre && !coincideCuenta && !coincideNumero && !coincideProveedor && !coincideTipoServicio && !coincideTienda) {
+                if (!coincideCliente && !coincideOrigen && !coincideCuenta && !coincideNumero && !coincideProveedor && !coincideTipoServicio && !coincideTienda) {
                     return false;
                 }
             }
@@ -999,39 +1201,35 @@
             return true;
         });
         
-        totalPages = Math.max(1, Math.ceil(filteredSolicitudes.length / itemsPerPage));
+        moduleData.totalPages = Math.max(1, Math.ceil(moduleData.filteredSolicitudes.length / itemsPerPage));
         
-        if (currentPage > totalPages) {
-            currentPage = totalPages;
+        if (moduleData.currentPage > moduleData.totalPages) {
+            moduleData.currentPage = moduleData.totalPages;
         }
         
-        currentPageElement.textContent = currentPage;
-        totalPagesElement.textContent = totalPages;
+        if (elements.currentPageElement) elements.currentPageElement.textContent = moduleData.currentPage;
+        if (elements.totalPagesElement) elements.totalPagesElement.textContent = moduleData.totalPages;
         
         renderizarPagina();
     }
     
     // Función para renderizar la página actual
     function renderizarPagina() {
-        prevPageBtn.disabled = currentPage <= 1;
-        nextPageBtn.disabled = currentPage >= totalPages;
+        if (elements.prevPageBtn) elements.prevPageBtn.disabled = moduleData.currentPage <= 1;
+        if (elements.nextPageBtn) elements.nextPageBtn.disabled = moduleData.currentPage >= moduleData.totalPages;
         
-        currentPageElement.textContent = currentPage;
-        totalPagesElement.textContent = totalPages;
+        if (elements.currentPageElement) elements.currentPageElement.textContent = moduleData.currentPage;
+        if (elements.totalPagesElement) elements.totalPagesElement.textContent = moduleData.totalPages;
         
-        if (filteredSolicitudes.length === 0) {
-            if (tipoVendedor === 'interno') {
-                showEmptyState('No se encontraron solicitudes con los filtros seleccionados');
-            } else {
-                showEmptyState('Aún no tienes solicitudes de pago de servicios');
-            }
+        if (moduleData.filteredSolicitudes.length === 0) {
+            showEmptyState('No se encontraron solicitudes con los filtros seleccionados');
             return;
         }
         
-        const startIndex = (currentPage - 1) * itemsPerPage;
-        const endIndex = Math.min(startIndex + itemsPerPage, filteredSolicitudes.length);
+        const startIndex = (moduleData.currentPage - 1) * itemsPerPage;
+        const endIndex = Math.min(startIndex + itemsPerPage, moduleData.filteredSolicitudes.length);
         
-        const solicitudesPagina = filteredSolicitudes.slice(startIndex, endIndex);
+        const solicitudesPagina = moduleData.filteredSolicitudes.slice(startIndex, endIndex);
         
         renderSolicitudes(solicitudesPagina);
         showContent();
@@ -1039,7 +1237,12 @@
     
     // Función para renderizar solicitudes
     function renderSolicitudes(solicitudes) {
-        solicitudesTbody.innerHTML = '';
+        if (!elements.tbody) {
+            console.error('Elemento tbody no disponible');
+            return;
+        }
+        
+        elements.tbody.innerHTML = '';
         
         solicitudes.forEach(solicitud => {
             let estadoClass = '';
@@ -1076,29 +1279,49 @@
                 }
             }
             
-            // Preparar celda de tienda (solo para vendedores internos)
-            let tiendaCell = '';
-            if (tipoVendedor === 'interno') {
-                let tiendaDisplay = solicitud.nombre_tienda || 'Sin tienda';
-                
-                // Agregar badge para tiendas externas
-                if (tiendaDisplay.includes('(Externa)')) {
-                    tiendaDisplay = tiendaDisplay.replace('(Externa)', '<span class="tienda-externa-badge">EXTERNA</span>');
-                }
-                
-                // Agregar badge para solicitudes propias
-                if (parseInt(solicitud.es_propia) === 1) {
-                    tiendaDisplay = 'Mi solicitud <span class="label-propio">Tú</span>';
-                }
-                
-                tiendaCell = `<td class="tienda-column">${tiendaDisplay}</td>`;
-            } else {
-                tiendaCell = `<td class="tienda-column" style="display: none;"></td>`;
+            // Procesar nombre de tienda con badges apropiados
+            let tiendaDisplay = solicitud.nombre_tienda || 'Sin tienda';
+            
+            // Agregar badge para tiendas externas
+            if (tiendaDisplay.includes('(Externa)')) {
+                tiendaDisplay = tiendaDisplay.replace('(Externa)', '<span class="tienda-externa-badge">EXTERNA</span>');
+            }
+            
+            // Agregar badge para solicitudes propias
+            if (parseInt(solicitud.es_propia) === 1) {
+                tiendaDisplay = 'Solicitud propia <span class="label-propio">Tú</span>';
+            }
+
+            // Generar botones de acción según el estado
+            let accionesHTML = `
+                <button class="action-btn" title="Ver detalles" onclick="window.verDetalles('${solicitud.id}')">
+                    <i class="fas fa-eye"></i>
+                </button>
+                <button class="action-btn" title="Generar Ticket" onclick="window.generarTicket('${solicitud.id}')">
+                    <i class="fas fa-receipt"></i>
+                </button>
+            `;
+
+            // Agregar botones de procesamiento (solo si el subdistribuidor puede procesar - normalmente solo verían)
+            // Los subdistribuidores pueden solo ver, pero mantener código para futuras mejoras
+            if (estado === 'pendiente') {
+                accionesHTML += `
+                    <button class="action-btn action-btn-warning" title="Iniciar procesamiento" onclick="window.iniciarSolicitud('${solicitud.id}')">
+                        <i class="fas fa-play"></i>
+                    </button>
+                `;
+            } else if (estado === 'procesando') {
+                accionesHTML += `
+                    <button class="action-btn action-btn-success" title="Completar/Rechazar solicitud" onclick="window.mostrarModalCompletar('${solicitud.id}')">
+                        <i class="fas fa-check"></i>
+                    </button>
+                `;
             }
             
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${solicitud.id}</td>
+                <td>${solicitud.nombre_cliente || 'No disponible'}</td>
                 <td>${solicitud.user_name || 'No disponible'}</td>
                 <td>${solicitud.proveedor || 'No disponible'}</td>
                 <td>${solicitud.tipo_servicio || 'No disponible'}</td>
@@ -1106,27 +1329,215 @@
                 <td>${montoFormateado}</td>
                 <td>${solicitud.numero_contacto || 'No disponible'}</td>
                 <td>${fechaFormateada}</td>
-                ${tiendaCell}
+                <td>${tiendaDisplay}</td>
                 <td><span class="status-badge ${estadoClass}">${estado}</span></td>
-                <td>
-                    <button class="action-btn" title="Ver detalles" onclick="verDetalles('${solicitud.id}')">
-                        <i class="fas fa-eye"></i>
-                    </button>
-                    <button class="action-btn" title="Generar Ticket" onclick="generarTicket('${solicitud.id}')">
-                        <i class="fas fa-receipt"></i>
-                    </button>
-                </td>
+                <td>${accionesHTML}</td>
             `;
             
-            solicitudesTbody.appendChild(row);
+            elements.tbody.appendChild(row);
         });
     }
+
+    // Función para INICIAR solicitud (pendiente → procesando → abrir modal)
+    async function iniciarSolicitud(id) {
+        try {
+            showLoading();
+            
+            console.log('Iniciando procesamiento de solicitud ID:', id);
+            
+            const data = {
+                id_solicitud: parseInt(id),
+                uid: userUID,
+                role: userRole,
+                accion: 'iniciar'
+            };
+            
+            const response = await fetch('../api/procesar_solicitud_pago.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+            
+            const result = await response.json();
+            
+            if (!result.success) {
+                throw new Error(result.error || 'Error desconocido al iniciar el procesamiento');
+            }
+            
+            // Mostrar mensaje de éxito
+            alert('✅ ' + result.message);
+            
+            // Recargar las solicitudes para actualizar el estado
+            await loadSolicitudesPagoservicios();
+            
+            // Si la API indica que debemos abrir la modal, hacerlo
+            if (result.abrir_modal) {
+                // Buscar la solicitud actualizada y abrir modal
+                setTimeout(() => {
+                    mostrarModalCompletar(id);
+                }, 500); // Pequeño delay para que se actualice la vista
+            }
+            
+        } catch (error) {
+            console.error('Error al iniciar procesamiento:', error);
+            alert(`❌ Error: ${error.message}`);
+        } finally {
+            hideLoading();
+        }
+    }
+
+    // Función para mostrar el modal de procesar solicitud (procesando → completar/rechazar)
+    function mostrarModalCompletar(id) {
+        const solicitud = moduleData.allSolicitudes.find(s => String(s.id) === String(id));
+        
+        if (!solicitud) {
+            alert('No se encontró la solicitud');
+            return;
+        }
+
+        moduleData.solicitudActual = solicitud;
+        
+        // Formatear información de la solicitud
+        let montoFormateado = 'No disponible';
+        if (solicitud.monto) {
+            try {
+                montoFormateado = '$' + parseFloat(solicitud.monto).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+            } catch (e) {
+                console.error('Error al formatear monto:', e);
+            }
+        }
+
+        if (elements.modalCompletarTitle) {
+            elements.modalCompletarTitle.textContent = `Procesar Pago de Servicio #${solicitud.id}`;
+        }
+        
+        if (elements.solicitudInfoCompletar) {
+            elements.solicitudInfoCompletar.innerHTML = `
+                <div class="detail-item">
+                    <div class="detail-label">Cliente:</div>
+                    <div class="detail-value">${solicitud.nombre_cliente || 'No disponible'}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Origen:</div>
+                    <div class="detail-value">${solicitud.user_name || 'No disponible'}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Proveedor:</div>
+                    <div class="detail-value">${solicitud.proveedor || 'No disponible'}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Tipo de servicio:</div>
+                    <div class="detail-value">${solicitud.tipo_servicio || 'No disponible'}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Cuenta/Número:</div>
+                    <div class="detail-value">${solicitud.cuenta || 'No disponible'}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Monto:</div>
+                    <div class="detail-value">${montoFormateado}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Estado actual:</div>
+                    <div class="detail-value">
+                        <span class="status-badge ${getEstadoClass(solicitud.estado_solicitud)}">
+                            ${solicitud.estado_solicitud}
+                        </span>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Limpiar comentarios
+        if (elements.comentariosCompletar) {
+            elements.comentariosCompletar.value = '';
+        }
+        
+        if (elements.modalCompletar) {
+            elements.modalCompletar.style.display = 'block';
+        }
+    }
+
+    // Función universal para procesar solicitudes (completar/rechazar)
+    async function procesarSolicitud(accion) {
+        try {
+            if (!elements.comentariosCompletar) {
+                alert('Error: Elemento de comentarios no disponible');
+                return;
+            }
+            
+            const comentarios = elements.comentariosCompletar.value.trim();
+            
+            if (!comentarios) {
+                alert('Los comentarios son obligatorios');
+                elements.comentariosCompletar.focus();
+                return;
+            }
+
+            if (!moduleData.solicitudActual) {
+                alert('Error: No se ha seleccionado ninguna solicitud');
+                return;
+            }
+
+            let confirmMessage = '';
+            if (accion === 'completar') {
+                confirmMessage = '¿Estás seguro de que deseas completar esta solicitud?';
+            } else if (accion === 'rechazar') {
+                confirmMessage = '¿Estás seguro de que deseas rechazar esta solicitud?';
+            }
+
+            if (!confirm(confirmMessage)) {
+                return;
+            }
+
+            showLoading();
+            if (elements.modalCompletar) elements.modalCompletar.style.display = 'none';
+            
+            console.log(`${accion.charAt(0).toUpperCase() + accion.slice(1)} solicitud ID:`, moduleData.solicitudActual.id);
+            
+            const data = {
+                id_solicitud: parseInt(moduleData.solicitudActual.id),
+                uid: userUID,
+                role: userRole,
+                accion: accion,
+                comentarios: comentarios
+            };
+            
+            const response = await fetch('../api/procesar_solicitud_pago.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+            
+            const result = await response.json();
+            
+            if (!result.success) {
+                throw new Error(result.error || `Error desconocido al ${accion} la solicitud`);
+            }
+            
+            alert('✅ ' + result.message);
+            
+            // Recargar las solicitudes
+            await loadSolicitudesPagoservicios();
+            
+        } catch (error) {
+            console.error(`Error al ${accion} solicitud:`, error);
+            alert(`❌ Error: ${error.message}`);
+        } finally {
+            hideLoading();
+            moduleData.solicitudActual = null;
+        }
+    }
     
-    // Función para ver detalles (debe ser global)
-    window.verDetalles = function(id) {
+    // Función para ver detalles
+    function verDetalles(id) {
         console.log('Buscando solicitud con ID:', id);
         
-        const solicitud = allSolicitudes.find(s => String(s.id) === String(id));
+        const solicitud = moduleData.allSolicitudes.find(s => String(s.id) === String(id));
         
         if (!solicitud) {
             console.error('No se encontró la solicitud con ID:', id);
@@ -1155,7 +1566,9 @@
             }
         }
         
-        modalTitle.textContent = `Pago de Servicio #${solicitud.id} (${estado})`;
+        if (elements.modalTitle) {
+            elements.modalTitle.textContent = `Pago de Servicio #${solicitud.id} (${estado})`;
+        }
         
         let comentariosHtml = '';
         if (solicitud.comentarios && solicitud.comentarios.trim() !== '') {
@@ -1169,91 +1582,92 @@
             `;
         }
         
-        // Sección de tienda solo para vendedores internos
-        let tiendaSection = '';
-        if (tipoVendedor === 'interno') {
-            let tiendaDisplayModal = solicitud.nombre_tienda || 'Sin tienda asignada';
-            let etiquetasEspeciales = '';
-            
-            if (parseInt(solicitud.es_propia) === 1) {
-                tiendaDisplayModal = 'Mi solicitud';
-                etiquetasEspeciales = '<span class="label-propio">Tú</span>';
-            }
-            
-            // Agregar badge para tiendas externas
-            if (tiendaDisplayModal.includes('(Externa)')) {
-                tiendaDisplayModal = tiendaDisplayModal.replace('(Externa)', '');
-                etiquetasEspeciales += ' <span class="tienda-externa-badge">EXTERNA</span>';
-            }
-            
-            tiendaSection = `
-                <div class="detail-item">
-                    <div class="detail-label">Tienda:</div>
-                    <div class="detail-value">
-                        ${tiendaDisplayModal}
-                        ${etiquetasEspeciales}
+        // Procesar nombre de tienda para el modal
+        let tiendaDisplayModal = solicitud.nombre_tienda || 'Sin tienda asignada';
+        let etiquetasEspeciales = '';
+        
+        if (parseInt(solicitud.es_propia) === 1) {
+            tiendaDisplayModal = 'Solicitud propia';
+            etiquetasEspeciales = '<span class="label-propio">Tú</span>';
+        }
+        
+        // Agregar badge para tiendas externas
+        if (tiendaDisplayModal.includes('(Externa)')) {
+            tiendaDisplayModal = tiendaDisplayModal.replace('(Externa)', '');
+            etiquetasEspeciales += ' <span class="tienda-externa-badge">EXTERNA</span>';
+        }
+        
+        if (elements.modalContent) {
+            elements.modalContent.innerHTML = `
+                <div class="detail-group">
+                    <h4>Información del Cliente</h4>
+                    <div class="detail-item">
+                        <div class="detail-label">Cliente:</div>
+                        <div class="detail-value">${solicitud.nombre_cliente || 'No disponible'}</div>
                     </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Origen/Tienda:</div>
+                        <div class="detail-value">${solicitud.user_name || 'No disponible'}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Número de contacto:</div>
+                        <div class="detail-value">${solicitud.numero_contacto || 'No disponible'}</div>
+                    </div>
+                </div>
+                
+                <div class="detail-group">
+                    <h4>Información del Servicio</h4>
+                    <div class="detail-item">
+                        <div class="detail-label">Proveedor:</div>
+                        <div class="detail-value">${solicitud.proveedor || 'No disponible'}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Tipo de servicio:</div>
+                        <div class="detail-value">${solicitud.tipo_servicio || 'No disponible'}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Cuenta/Número:</div>
+                        <div class="detail-value">${solicitud.cuenta || 'No disponible'}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Monto a pagar:</div>
+                        <div class="detail-value">${montoFormateado}</div>
+                    </div>
+                </div>
+                
+                <div class="detail-group">
+                    <h4>Información de la Solicitud</h4>
+                    <div class="detail-item">
+                        <div class="detail-label">Estado:</div>
+                        <div class="detail-value">
+                            <span class="status-badge ${getEstadoClass(estado)}">
+                                ${estado}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Fecha de creación:</div>
+                        <div class="detail-value">${fechaFormateada}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Tienda:</div>
+                        <div class="detail-value">
+                            ${tiendaDisplayModal}
+                            ${etiquetasEspeciales}
+                        </div>
+                    </div>
+                    ${comentariosHtml}
                 </div>
             `;
         }
         
-        modalContent.innerHTML = `
-            <div class="detail-group">
-                <h4>Información del Cliente</h4>
-                <div class="detail-item">
-                    <div class="detail-label">Nombre/Tienda:</div>
-                    <div class="detail-value">${solicitud.user_name || 'No disponible'}</div>
-                </div>
-                <div class="detail-item">
-                    <div class="detail-label">Número de contacto:</div>
-                    <div class="detail-value">${solicitud.numero_contacto || 'No disponible'}</div>
-                </div>
-            </div>
-            
-            <div class="detail-group">
-                <h4>Información del Servicio</h4>
-                <div class="detail-item">
-                    <div class="detail-label">Proveedor:</div>
-                    <div class="detail-value">${solicitud.proveedor || 'No disponible'}</div>
-                </div>
-                <div class="detail-item">
-                    <div class="detail-label">Tipo de servicio:</div>
-                    <div class="detail-value">${solicitud.tipo_servicio || 'No disponible'}</div>
-                </div>
-                <div class="detail-item">
-                    <div class="detail-label">Cuenta/Número:</div>
-                    <div class="detail-value">${solicitud.cuenta || 'No disponible'}</div>
-                </div>
-                <div class="detail-item">
-                    <div class="detail-label">Monto a pagar:</div>
-                    <div class="detail-value">${montoFormateado}</div>
-                </div>
-            </div>
-            
-            <div class="detail-group">
-                <h4>Información de la Solicitud</h4>
-                <div class="detail-item">
-                    <div class="detail-label">Estado:</div>
-                    <div class="detail-value">
-                        <span class="status-badge ${getEstadoClass(estado)}">
-                            ${estado}
-                        </span>
-                    </div>
-                </div>
-                <div class="detail-item">
-                    <div class="detail-label">Fecha de creación:</div>
-                    <div class="detail-value">${fechaFormateada}</div>
-                </div>
-                ${tiendaSection}
-                ${comentariosHtml}
-            </div>
-        `;
-        
-        modal.style.display = 'block';
-    };
+        if (elements.modal) {
+            elements.modal.style.display = 'block';
+        }
+    }
     
-    // Función para generar ticket (debe ser global)
-    window.generarTicket = async function(id) {
+    // Función para generar ticket
+    async function generarTicket(id) {
         try {
             showLoading();
             
@@ -1287,7 +1701,7 @@
         } finally {
             hideLoading();
         }
-    };
+    }
 
     // Función para mostrar el ticket en un modal
     function mostrarTicketModal(ticket, folio) {
@@ -1306,7 +1720,7 @@
                     <pre>${ticketHtml}</pre>
                 </div>
                 <div class="ticket-actions">
-                    <button class="btn btn-primary" onclick="imprimirTicket('${folio}')">
+                    <button class="btn btn-primary" onclick="window.imprimirTicket('${folio}')">
                         <i class="fas fa-print"></i> Imprimir
                     </button>
                 </div>
@@ -1328,7 +1742,7 @@
     }
 
     // Función para imprimir el ticket
-    window.imprimirTicket = function(folio, ticketContent) {
+    function imprimirTicket(folio, ticketContent) {
         const printFrame = document.createElement('iframe');
         printFrame.style.position = 'fixed';
         printFrame.style.right = '0';
@@ -1391,7 +1805,7 @@
                 alert("El ticket se ha enviado a la impresora");
             }, 500);
         }, 250);
-    };
+    }
     
     // Función para obtener clase CSS según estado
     function getEstadoClass(estado) {
@@ -1407,50 +1821,76 @@
     
     // Funciones de utilidad para mostrar/ocultar elementos
     function showLoading() {
-        loadingElement.style.display = 'flex';
-        errorElement.style.display = 'none';
-        solicitudesContainer.style.display = 'none';
-        emptyState.style.display = 'none';
-        estadisticasContainer.style.display = 'none';
+        if (elements.loading) elements.loading.style.display = 'flex';
+        if (elements.error) elements.error.style.display = 'none';
+        if (elements.container) elements.container.style.display = 'none';
+        if (elements.emptyState) elements.emptyState.style.display = 'none';
+        if (elements.estadisticasContainer) elements.estadisticasContainer.style.display = 'none';
     }
     
     function showError(message) {
-        loadingElement.style.display = 'none';
-        errorElement.style.display = 'block';
-        solicitudesContainer.style.display = 'none';
-        emptyState.style.display = 'none';
-        estadisticasContainer.style.display = 'none';
-        errorMessageElement.textContent = message;
+        if (elements.loading) elements.loading.style.display = 'none';
+        if (elements.error) elements.error.style.display = 'block';
+        if (elements.container) elements.container.style.display = 'none';
+        if (elements.emptyState) elements.emptyState.style.display = 'none';
+        if (elements.estadisticasContainer) elements.estadisticasContainer.style.display = 'none';
+        if (elements.errorMessage) elements.errorMessage.textContent = message;
     }
     
     function showContent() {
-        loadingElement.style.display = 'none';
-        errorElement.style.display = 'none';
-        solicitudesContainer.style.display = 'block';
-        emptyState.style.display = 'none';
-        estadisticasContainer.style.display = 'flex';
+        if (elements.loading) elements.loading.style.display = 'none';
+        if (elements.error) elements.error.style.display = 'none';
+        if (elements.container) elements.container.style.display = 'block';
+        if (elements.emptyState) elements.emptyState.style.display = 'none';
+        if (elements.estadisticasContainer) elements.estadisticasContainer.style.display = 'flex';
     }
     
     function showEmptyState(message) {
-        loadingElement.style.display = 'none';
-        errorElement.style.display = 'none';
-        solicitudesContainer.style.display = 'none';
-        emptyState.style.display = 'block';
-        estadisticasContainer.style.display = 'flex';
-        emptyMessage.textContent = message;
-        
-        // Ajustar subtítulo según el tipo de vendedor
-        if (tipoVendedor === 'externo') {
-            emptySubtitle.textContent = 'Aún no tienes solicitudes de pago de servicios.';
-        } else {
-            emptySubtitle.textContent = 'Prueba ajustando los filtros para ver más resultados.';
-        }
+        if (elements.loading) elements.loading.style.display = 'none';
+        if (elements.error) elements.error.style.display = 'none';
+        if (elements.container) elements.container.style.display = 'none';
+        if (elements.emptyState) elements.emptyState.style.display = 'block';
+        if (elements.estadisticasContainer) elements.estadisticasContainer.style.display = 'flex';
+        if (elements.emptyMessage) elements.emptyMessage.textContent = message;
     }
     
     function hideLoading() {
-        loadingElement.style.display = 'none';
-        if (estadisticasContainer.style.display === 'none' && solicitudesContainer.style.display === 'none' && emptyState.style.display === 'none') {
+        if (elements.loading) elements.loading.style.display = 'none';
+        if (elements.estadisticasContainer && elements.estadisticasContainer.style.display === 'none' && 
+            elements.container && elements.container.style.display === 'none' && 
+            elements.emptyState && elements.emptyState.style.display === 'none') {
             showContent();
         }
     }
+    
+    // =============================================
+    // INICIALIZACIÓN DEL MÓDULO
+    // =============================================
+    
+    // Exponer funciones globales necesarias
+    window.verDetalles = verDetalles;
+    window.iniciarSolicitud = iniciarSolicitud;
+    window.mostrarModalCompletar = mostrarModalCompletar;
+    window.generarTicket = generarTicket;
+    window.imprimirTicket = imprimirTicket;
+    
+    // Función principal de inicialización
+    function initPagosModule() {
+        console.log('🔧 Inicializando módulo de pagos de servicios para subdistribuidores...');
+        
+        if (!initializeElements()) {
+            console.error('❌ Falló la inicialización de elementos DOM');
+            return;
+        }
+        
+        setupEventListeners();
+        loadSolicitudesPagoservicios();
+        
+        console.log('✅ Módulo de pagos de servicios para subdistribuidores inicializado correctamente');
+    }
+    
+    // Inicializar el módulo
+    initPagosModule();
+    
+})();
 </script>
