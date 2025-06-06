@@ -1,4 +1,4 @@
-<!-- Módulo de Atención al Cliente V3.0 - Con gestión de Sicatel -->
+<!-- Módulo de Atención al Cliente V3.0 - Versión Final Simplificada -->
 <div class="card">
     <h2 class="content-title">
         <i class="fas fa-headset"></i> Asignación de Atención al Cliente
@@ -215,17 +215,6 @@
                             </tbody>
                         </table>
                     </div>
-                    
-                    <!-- Paginación -->
-                    <div id="asignaciones-pagination" class="pagination" style="display: none;">
-                        <button id="asignaciones-prev" class="pagination-btn">
-                            <i class="fas fa-chevron-left"></i> Anterior
-                        </button>
-                        <div id="asignaciones-pages" class="pagination-pages"></div>
-                        <button id="asignaciones-next" class="pagination-btn">
-                            Siguiente <i class="fas fa-chevron-right"></i>
-                        </button>
-                    </div>
                 </div>
             </div>
             
@@ -332,17 +321,6 @@
                                 <!-- Filas se cargan dinámicamente -->
                             </tbody>
                         </table>
-                    </div>
-                    
-                    <!-- Paginación -->
-                    <div id="sicatel-pagination" class="pagination" style="display: none;">
-                        <button id="sicatel-prev" class="pagination-btn">
-                            <i class="fas fa-chevron-left"></i> Anterior
-                        </button>
-                        <div id="sicatel-pages" class="pagination-pages"></div>
-                        <button id="sicatel-next" class="pagination-btn">
-                            Siguiente <i class="fas fa-chevron-right"></i>
-                        </button>
                     </div>
                 </div>
             </div>
@@ -1040,52 +1018,6 @@
     color: #155724;
 }
 
-/* Toggle switches */
-.sicatel-toggle {
-    position: relative;
-    display: inline-block;
-    width: 50px;
-    height: 26px;
-}
-
-.sicatel-toggle input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-}
-
-.sicatel-slider {
-    position: absolute;
-    cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: #ccc;
-    transition: .4s;
-    border-radius: 26px;
-}
-
-.sicatel-slider:before {
-    position: absolute;
-    content: "";
-    height: 20px;
-    width: 20px;
-    left: 3px;
-    bottom: 3px;
-    background-color: white;
-    transition: .4s;
-    border-radius: 50%;
-}
-
-.sicatel-toggle input:checked + .sicatel-slider {
-    background-color: var(--sicatel-color);
-}
-
-.sicatel-toggle input:checked + .sicatel-slider:before {
-    transform: translateX(24px);
-}
-
 /* Controles masivos */
 .sicatel-controls {
     background: var(--light-bg);
@@ -1112,69 +1044,6 @@
 .bulk-buttons {
     display: flex;
     gap: 10px;
-}
-
-/* Paginación */
-.pagination {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 10px;
-    margin-top: 20px;
-}
-
-.pagination-btn {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    padding: 8px 12px;
-    background: white;
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius);
-    cursor: pointer;
-    transition: var(--transition);
-}
-
-.pagination-btn:hover:not(:disabled) {
-    background: var(--light-bg);
-}
-
-.pagination-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.pagination-pages {
-    display: flex;
-    gap: 5px;
-}
-
-.page-number {
-    width: 35px;
-    height: 35px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius);
-    cursor: pointer;
-    transition: var(--transition);
-    background: white;
-}
-
-.page-number:hover {
-    background: var(--light-bg);
-}
-
-.page-number.active {
-    background: var(--primary-color);
-    border-color: var(--primary-color);
-    color: white;
-}
-
-.page-ellipsis {
-    padding: 8px;
-    color: var(--text-secondary);
 }
 
 /* Botones de acción */
@@ -1246,23 +1115,20 @@
 <script>
 // ==================== CONFIGURACIÓN Y ESTADO ====================
 const AppState = {
-    // Configuración
     config: {
         itemsPerPage: 10,
         apiTimeout: 15000
     },
     
-    // Estado de asignación
     asignar: {
         tiendasOrigen: [],
         tiendaOrigenSeleccionada: null,
-        tipoSeleccionado: null, // 'internas' o 'externas'
+        tipoSeleccionado: null,
         tiendasDestino: [],
         tiendasDestinoSeleccionadas: new Set(),
         isLoading: false
     },
     
-    // Estado de visualización
     ver: {
         asignaciones: [],
         asignacionesFiltradas: [],
@@ -1271,7 +1137,6 @@ const AppState = {
         isLoading: false
     },
     
-    // Estado de Sicatel
     sicatel: {
         tiendas: [],
         tiendasFiltradas: [],
@@ -1287,7 +1152,6 @@ const AppState = {
         }
     },
     
-    // Pestañas
     activeTab: 'asignar'
 };
 
@@ -1336,10 +1200,6 @@ const DOM = {
     asignacionesEmpty: document.getElementById('asignaciones-empty'),
     asignacionesTableContainer: document.getElementById('asignaciones-table-container'),
     asignacionesTbody: document.getElementById('asignaciones-tbody'),
-    asignacionesPagination: document.getElementById('asignaciones-pagination'),
-    asignacionesPrev: document.getElementById('asignaciones-prev'),
-    asignacionesNext: document.getElementById('asignaciones-next'),
-    asignacionesPages: document.getElementById('asignaciones-pages'),
     
     // Sicatel
     sicatelStats: document.getElementById('sicatel-stats'),
@@ -1360,16 +1220,11 @@ const DOM = {
     sicatelEmpty: document.getElementById('sicatel-empty'),
     sicatelTableContainer: document.getElementById('sicatel-table-container'),
     sicatelTbody: document.getElementById('sicatel-tbody'),
-    selectAllTableSicatel: document.getElementById('select-all-table-sicatel'),
-    sicatelPagination: document.getElementById('sicatel-pagination'),
-    sicatelPrev: document.getElementById('sicatel-prev'),
-    sicatelNext: document.getElementById('sicatel-next'),
-    sicatelPages: document.getElementById('sicatel-pages')
+    selectAllTableSicatel: document.getElementById('select-all-table-sicatel')
 };
 
 // ==================== UTILIDADES ====================
 const Utils = {
-    // Obtener datos de usuario
     getUserData() {
         try {
             const userData = sessionStorage.getItem('userData');
@@ -1385,7 +1240,6 @@ const Utils = {
         }
     },
     
-    // Realizar petición API
     async apiRequest(url, options = {}) {
         try {
             const response = await fetch(url, {
@@ -1396,11 +1250,23 @@ const Utils = {
                 }
             });
             
+            const text = await response.text();
+            
             if (!response.ok) {
-                throw new Error(`Error HTTP: ${response.status} ${response.statusText}`);
+                let errorMessage = `Error HTTP: ${response.status} ${response.statusText}`;
+                try {
+                    const errorData = JSON.parse(text);
+                    if (errorData.error) {
+                        errorMessage = errorData.error;
+                    }
+                } catch (e) {
+                    if (text.trim()) {
+                        errorMessage += `\nDetalle: ${text.substring(0, 200)}`;
+                    }
+                }
+                throw new Error(errorMessage);
             }
             
-            const text = await response.text();
             return JSON.parse(text);
         } catch (error) {
             console.error('Error en petición API:', error);
@@ -1408,7 +1274,6 @@ const Utils = {
         }
     },
     
-    // Formatear fecha
     formatDate(dateString) {
         if (!dateString) return 'N/A';
         
@@ -1426,9 +1291,7 @@ const Utils = {
         }
     },
     
-    // Mostrar notificación
     showNotification(message, type = 'info') {
-        // Por ahora usamos alert, se puede mejorar con una librería de notificaciones
         if (type === 'error') {
             alert(`Error: ${message}`);
         } else if (type === 'success') {
@@ -1438,7 +1301,6 @@ const Utils = {
         }
     },
     
-    // Debounce para búsquedas
     debounce(func, wait) {
         let timeout;
         return function executedFunction(...args) {
@@ -1464,20 +1326,16 @@ const TabsModule = {
     },
     
     switchTab(tabId) {
-        // Actualizar botones
         DOM.tabBtns.forEach(btn => {
             btn.classList.toggle('active', btn.dataset.tab === tabId);
         });
         
-        // Actualizar paneles
         DOM.tabPanels.forEach(panel => {
             panel.classList.toggle('active', panel.id === `panel-${tabId}`);
         });
         
-        // Actualizar estado
         AppState.activeTab = tabId;
         
-        // Cargar datos según la pestaña
         switch (tabId) {
             case 'asignar':
                 AsignarModule.init();
@@ -1502,12 +1360,10 @@ const AsignarModule = {
     },
     
     setupEventListeners() {
-        // Selector de tienda origen
         DOM.tiendaOrigenSelector.addEventListener('change', () => {
             this.handleTiendaOrigenChange();
         });
         
-        // Botones de tipo
         DOM.btnTipoInternas.addEventListener('click', () => {
             this.selectTipo('internas');
         });
@@ -1516,7 +1372,6 @@ const AsignarModule = {
             this.selectTipo('externas');
         });
         
-        // Búsqueda
         DOM.btnBuscarDestino.addEventListener('click', () => {
             this.searchTiendasDestino();
         });
@@ -1532,12 +1387,10 @@ const AsignarModule = {
             }
         });
         
-        // Selección
         DOM.selectAllDestino.addEventListener('change', () => {
             this.handleSelectAll();
         });
         
-        // Asignar
         DOM.btnAsignar.addEventListener('click', () => {
             this.asignarTiendas();
         });
@@ -1609,25 +1462,19 @@ const AsignarModule = {
     },
     
     showTipoSelection(tienda) {
-        // Habilitar/deshabilitar botones según capacidades
         DOM.btnTipoInternas.disabled = !tienda.sicatel;
         DOM.btnTipoExternas.disabled = false;
         
-        // Mostrar sección
         DOM.tipoAsignacionSection.style.display = 'block';
-        
-        // Limpiar selección anterior
         this.resetTipoSelection();
     },
     
     selectTipo(tipo) {
         AppState.asignar.tipoSeleccionado = tipo;
         
-        // Actualizar UI de botones
         DOM.btnTipoInternas.classList.toggle('active', tipo === 'internas');
         DOM.btnTipoExternas.classList.toggle('active', tipo === 'externas');
         
-        // Actualizar placeholder y badge
         if (tipo === 'internas') {
             DOM.searchDestino.placeholder = 'Buscar tiendas internas...';
             DOM.tipoActual.textContent = 'Asignando: Tiendas Internas';
@@ -1636,7 +1483,6 @@ const AsignarModule = {
             DOM.tipoActual.textContent = 'Asignando: Tiendas Externas';
         }
         
-        // Mostrar búsqueda y cargar tiendas
         DOM.busquedaSection.style.display = 'block';
         this.loadTiendasDestino();
     },
@@ -1651,7 +1497,6 @@ const AsignarModule = {
             let url, data;
             
             if (AppState.asignar.tipoSeleccionado === 'externas') {
-                // Cargar tiendas externas
                 url = `../api/get_tiendas_externas.php?role=${encodeURIComponent(role)}&uid=${encodeURIComponent(uid)}`;
                 if (searchTerm) url += `&search=${encodeURIComponent(searchTerm)}`;
                 
@@ -1660,13 +1505,11 @@ const AsignarModule = {
                 
                 AppState.asignar.tiendasDestino = data.tiendas || [];
             } else {
-                // Cargar tiendas internas (excluyendo la origen)
                 url = `../api/get_tiendas_internas.php?role=${encodeURIComponent(role)}&uid=${encodeURIComponent(uid)}`;
                 
                 data = await Utils.apiRequest(url);
                 if (data.error) throw new Error(data.error);
                 
-                // Filtrar tienda origen y aplicar búsqueda
                 let tiendas = (data.tiendas || []).filter(t => 
                     t.id != AppState.asignar.tiendaOrigenSeleccionada.id
                 );
@@ -1742,7 +1585,6 @@ const AsignarModule = {
                 </div>
             `;
             
-            // Agregar sucursales si existen
             if (hasChildren) {
                 const childrenContainer = document.createElement('div');
                 childrenContainer.className = 'tree-children';
@@ -1762,7 +1604,6 @@ const AsignarModule = {
                 
                 item.appendChild(childrenContainer);
                 
-                // Evento toggle
                 const toggle = item.querySelector('.tree-toggle');
                 if (toggle) {
                     toggle.addEventListener('click', (e) => {
@@ -1814,7 +1655,6 @@ const AsignarModule = {
                     AppState.asignar.tiendasDestinoSeleccionadas.delete(tiendaId);
                 }
                 
-                // Si es checkbox padre, actualizar hijos
                 if (e.target.closest('.tree-parent')) {
                     const children = item.querySelectorAll('.tree-child .tree-checkbox');
                     children.forEach(childCheckbox => {
@@ -1896,15 +1736,11 @@ const AsignarModule = {
                 throw new Error(result.error);
             }
             
-            // Mostrar resultado
             const mensaje = `Asignación exitosa:\n${result.asignadas} tiendas asignadas correctamente.\n\n` +
                            `Detalles:\n${result.detalles.join('\n')}`;
             Utils.showNotification(mensaje, 'success');
             
-            // Limpiar formulario
             this.resetForm();
-            
-            // Cambiar a pestaña de visualización
             TabsModule.switchTab('ver');
             
         } catch (error) {
@@ -1981,7 +1817,6 @@ const VerModule = {
     },
     
     setupEventListeners() {
-        // Búsqueda
         DOM.btnBuscarAsignaciones.addEventListener('click', () => {
             this.searchAsignaciones();
         });
@@ -1996,24 +1831,6 @@ const VerModule = {
         DOM.searchAsignaciones.addEventListener('keyup', (e) => {
             if (e.key === 'Enter') {
                 this.searchAsignaciones();
-            }
-        });
-        
-        // Paginación
-        DOM.asignacionesPrev.addEventListener('click', () => {
-            if (AppState.ver.currentPage > 1) {
-                AppState.ver.currentPage--;
-                this.renderAsignaciones();
-                this.updatePagination();
-            }
-        });
-        
-        DOM.asignacionesNext.addEventListener('click', () => {
-            const totalPages = Math.ceil(AppState.ver.asignacionesFiltradas.length / AppState.config.itemsPerPage);
-            if (AppState.ver.currentPage < totalPages) {
-                AppState.ver.currentPage++;
-                this.renderAsignaciones();
-                this.updatePagination();
             }
         });
     },
@@ -2035,7 +1852,6 @@ const VerModule = {
             
             AppState.ver.asignaciones = data.asignaciones || [];
             
-            // Actualizar estadísticas
             if (data.estadisticas) {
                 this.updateStats(data.estadisticas);
             }
@@ -2087,27 +1903,20 @@ const VerModule = {
         }
         
         this.renderAsignaciones();
-        this.updatePagination();
         this.showTable();
     },
     
     renderAsignaciones() {
-        const startIndex = (AppState.ver.currentPage - 1) * AppState.config.itemsPerPage;
-        const endIndex = Math.min(startIndex + AppState.config.itemsPerPage, AppState.ver.asignacionesFiltradas.length);
-        const pageItems = AppState.ver.asignacionesFiltradas.slice(startIndex, endIndex);
-        
         DOM.asignacionesTbody.innerHTML = '';
         
-        pageItems.forEach(asignacion => {
+        AppState.ver.asignacionesFiltradas.forEach(asignacion => {
             const row = document.createElement('tr');
             
-            // Iconos para sicatel
             const origenIcon = asignacion.tienda_da_atencion_sicatel ? 
                 '<i class="fas fa-crown sicatel-crown" title="Con sicatel"></i> ' : '';
             const destinoIcon = asignacion.tienda_recibe_atencion_sicatel ? 
                 '<i class="fas fa-crown sicatel-crown" title="Con sicatel"></i> ' : '';
             
-            // Clase CSS para el tipo
             let tipoClase = '';
             switch (asignacion.tipo_asignacion) {
                 case 'interna_a_interna': tipoClase = 'tipo-interna-interna'; break;
@@ -2148,7 +1957,6 @@ const VerModule = {
                 </td>
             `;
             
-            // Evento para botón de acción
             const btnAccion = row.querySelector('.btn');
             btnAccion.addEventListener('click', () => {
                 this.cambiarEstadoAsignacion(asignacion.id, !asignacion.estado);
@@ -2156,72 +1964,6 @@ const VerModule = {
             
             DOM.asignacionesTbody.appendChild(row);
         });
-    },
-    
-    updatePagination() {
-        const totalPages = Math.ceil(AppState.ver.asignacionesFiltradas.length / AppState.config.itemsPerPage);
-        
-        DOM.asignacionesPrev.disabled = AppState.ver.currentPage <= 1;
-        DOM.asignacionesNext.disabled = AppState.ver.currentPage >= totalPages;
-        
-        DOM.asignacionesPages.innerHTML = '';
-        
-        if (totalPages <= 1) {
-            DOM.asignacionesPagination.style.display = 'none';
-            return;
-        }
-        
-        DOM.asignacionesPagination.style.display = 'flex';
-        
-        // Generar números de página
-        let startPage = Math.max(1, AppState.ver.currentPage - 2);
-        let endPage = Math.min(totalPages, startPage + 4);
-        
-        if (endPage - startPage < 4) {
-            startPage = Math.max(1, endPage - 4);
-        }
-        
-        // Primera página
-        if (startPage > 1) {
-            this.addPageNumber(1);
-            if (startPage > 2) {
-                this.addEllipsis('asignaciones');
-            }
-        }
-        
-        // Páginas intermedias
-        for (let i = startPage; i <= endPage; i++) {
-            this.addPageNumber(i);
-        }
-        
-        // Última página
-        if (endPage < totalPages) {
-            if (endPage < totalPages - 1) {
-                this.addEllipsis('asignaciones');
-            }
-            this.addPageNumber(totalPages);
-        }
-    },
-    
-    addPageNumber(pageNum) {
-        const pageBtn = document.createElement('div');
-        pageBtn.className = `page-number ${pageNum === AppState.ver.currentPage ? 'active' : ''}`;
-        pageBtn.textContent = pageNum;
-        pageBtn.addEventListener('click', () => {
-            if (pageNum !== AppState.ver.currentPage) {
-                AppState.ver.currentPage = pageNum;
-                this.renderAsignaciones();
-                this.updatePagination();
-            }
-        });
-        DOM.asignacionesPages.appendChild(pageBtn);
-    },
-    
-    addEllipsis(type) {
-        const ellipsis = document.createElement('div');
-        ellipsis.className = 'page-ellipsis';
-        ellipsis.textContent = '...';
-        DOM.asignacionesPages.appendChild(ellipsis);
     },
     
     async cambiarEstadoAsignacion(id, nuevoEstado) {
@@ -2244,7 +1986,6 @@ const VerModule = {
                 throw new Error(result.error);
             }
             
-            // Recargar asignaciones
             this.loadAsignaciones();
             
         } catch (error) {
@@ -2281,7 +2022,7 @@ const VerModule = {
     }
 };
 
-// ==================== MÓDULO SICATEL ====================
+// ==================== MÓDULO SICATEL - SIMPLIFICADO ====================
 const SicatelModule = {
     init() {
         this.setupEventListeners();
@@ -2289,7 +2030,6 @@ const SicatelModule = {
     },
     
     setupEventListeners() {
-        // Búsqueda
         DOM.btnBuscarSicatel.addEventListener('click', () => {
             this.searchTiendas();
         });
@@ -2297,7 +2037,6 @@ const SicatelModule = {
         DOM.btnLimpiarSicatel.addEventListener('click', () => {
             DOM.searchSicatel.value = '';
             AppState.sicatel.filtro = '';
-            AppState.sicatel.currentPage = 1;
             this.filterAndRenderTiendas();
         });
         
@@ -2307,7 +2046,6 @@ const SicatelModule = {
             }
         });
         
-        // Selección masiva
         DOM.selectAllSicatel.addEventListener('change', () => {
             this.handleSelectAll();
         });
@@ -2316,31 +2054,12 @@ const SicatelModule = {
             this.handleSelectAllTable();
         });
         
-        // Acciones masivas
         DOM.btnEnableBulk.addEventListener('click', () => {
             this.changeSicatelBulk(true);
         });
         
         DOM.btnDisableBulk.addEventListener('click', () => {
             this.changeSicatelBulk(false);
-        });
-        
-        // Paginación
-        DOM.sicatelPrev.addEventListener('click', () => {
-            if (AppState.sicatel.currentPage > 1) {
-                AppState.sicatel.currentPage--;
-                this.renderTiendas();
-                this.updatePagination();
-            }
-        });
-        
-        DOM.sicatelNext.addEventListener('click', () => {
-            const totalPages = Math.ceil(AppState.sicatel.tiendasFiltradas.length / AppState.config.itemsPerPage);
-            if (AppState.sicatel.currentPage < totalPages) {
-                AppState.sicatel.currentPage++;
-                this.renderTiendas();
-                this.updatePagination();
-            }
         });
     },
     
@@ -2390,7 +2109,6 @@ const SicatelModule = {
     
     searchTiendas() {
         AppState.sicatel.filtro = DOM.searchSicatel.value.trim();
-        AppState.sicatel.currentPage = 1;
         this.filterAndRenderTiendas();
     },
     
@@ -2417,18 +2135,13 @@ const SicatelModule = {
         }
         
         this.renderTiendas();
-        this.updatePagination();
         this.showTable();
     },
     
     renderTiendas() {
-        const startIndex = (AppState.sicatel.currentPage - 1) * AppState.config.itemsPerPage;
-        const endIndex = Math.min(startIndex + AppState.config.itemsPerPage, AppState.sicatel.tiendasFiltradas.length);
-        const pageItems = AppState.sicatel.tiendasFiltradas.slice(startIndex, endIndex);
-        
         DOM.sicatelTbody.innerHTML = '';
         
-        pageItems.forEach(tienda => {
+        AppState.sicatel.tiendasFiltradas.forEach(tienda => {
             const row = document.createElement('tr');
             
             const statusBadge = tienda.sicatel ? 
@@ -2450,13 +2163,7 @@ const SicatelModule = {
                 <td>${tienda.encargado || 'Sin asignar'}</td>
                 <td>${tienda.tipoTienda || 'Sin especificar'}</td>
                 <td>
-                    <div style="display: flex; align-items: center; gap: 15px;">
-                        ${statusBadge}
-                        <label class="sicatel-toggle">
-                            <input type="checkbox" ${tienda.sicatel ? 'checked' : ''} data-tienda-id="${tienda.id}">
-                            <span class="sicatel-slider"></span>
-                        </label>
-                    </div>
+                    ${statusBadge}
                 </td>
                 <td>
                     ${!tienda.sicatel ? 
@@ -2482,11 +2189,6 @@ const SicatelModule = {
                 this.updateBulkControls();
             });
             
-            const toggle = row.querySelector('.sicatel-toggle input');
-            toggle.addEventListener('change', (e) => {
-                this.changeSicatelIndividual(e.target.dataset.tiendaId, e.target.checked);
-            });
-            
             const btnQuick = row.querySelector('.btn');
             btnQuick.addEventListener('click', (e) => {
                 const tiendaId = e.target.dataset.tiendaId;
@@ -2499,69 +2201,6 @@ const SicatelModule = {
         
         this.updateBulkControls();
         this.updateSelectAllCheckboxes();
-    },
-    
-    updatePagination() {
-        const totalPages = Math.ceil(AppState.sicatel.tiendasFiltradas.length / AppState.config.itemsPerPage);
-        
-        DOM.sicatelPrev.disabled = AppState.sicatel.currentPage <= 1;
-        DOM.sicatelNext.disabled = AppState.sicatel.currentPage >= totalPages;
-        
-        DOM.sicatelPages.innerHTML = '';
-        
-        if (totalPages <= 1) {
-            DOM.sicatelPagination.style.display = 'none';
-            return;
-        }
-        
-        DOM.sicatelPagination.style.display = 'flex';
-        
-        // Generar números de página (similar a VerModule)
-        let startPage = Math.max(1, AppState.sicatel.currentPage - 2);
-        let endPage = Math.min(totalPages, startPage + 4);
-        
-        if (endPage - startPage < 4) {
-            startPage = Math.max(1, endPage - 4);
-        }
-        
-        if (startPage > 1) {
-            this.addPageNumber(1);
-            if (startPage > 2) {
-                this.addEllipsis();
-            }
-        }
-        
-        for (let i = startPage; i <= endPage; i++) {
-            this.addPageNumber(i);
-        }
-        
-        if (endPage < totalPages) {
-            if (endPage < totalPages - 1) {
-                this.addEllipsis();
-            }
-            this.addPageNumber(totalPages);
-        }
-    },
-    
-    addPageNumber(pageNum) {
-        const pageBtn = document.createElement('div');
-        pageBtn.className = `page-number ${pageNum === AppState.sicatel.currentPage ? 'active' : ''}`;
-        pageBtn.textContent = pageNum;
-        pageBtn.addEventListener('click', () => {
-            if (pageNum !== AppState.sicatel.currentPage) {
-                AppState.sicatel.currentPage = pageNum;
-                this.renderTiendas();
-                this.updatePagination();
-            }
-        });
-        DOM.sicatelPages.appendChild(pageBtn);
-    },
-    
-    addEllipsis() {
-        const ellipsis = document.createElement('div');
-        ellipsis.className = 'page-ellipsis';
-        ellipsis.textContent = '...';
-        DOM.sicatelPages.appendChild(ellipsis);
     },
     
     handleSelectAll() {
@@ -2622,6 +2261,8 @@ const SicatelModule = {
     
     async changeSicatelIndividual(tiendaId, enable) {
         try {
+            console.log('Cambiando sicatel individual:', { tiendaId, enable });
+            
             await this.updateSicatelAPI([tiendaId], enable);
             
             // Actualizar estado local
@@ -2633,16 +2274,18 @@ const SicatelModule = {
             // Actualizar UI
             this.updateStats();
             this.renderTiendas();
-            this.updatePagination();
             
             // Recargar tiendas origen si está en la pestaña asignar
             if (AppState.activeTab === 'asignar') {
                 AsignarModule.loadTiendasOrigen();
             }
             
+            const mensaje = enable ? 'Sicatel habilitado correctamente' : 'Sicatel deshabilitado correctamente';
+            Utils.showNotification(mensaje, 'success');
+            
         } catch (error) {
             console.error('Error al cambiar sicatel individual:', error);
-            Utils.showNotification(error.message, 'error');
+            Utils.showNotification(`Error: ${error.message}`, 'error');
             
             // Revertir UI
             setTimeout(() => {
@@ -2683,7 +2326,6 @@ const SicatelModule = {
             // Actualizar UI
             this.updateStats();
             this.renderTiendas();
-            this.updatePagination();
             
             // Recargar tiendas origen si está en la pestaña asignar
             if (AppState.activeTab === 'asignar') {
@@ -2700,6 +2342,7 @@ const SicatelModule = {
         }
     },
     
+    // API simplificada
     async updateSicatelAPI(tiendaIds, enable) {
         const { role, uid } = Utils.getUserData();
         
@@ -2710,13 +2353,17 @@ const SicatelModule = {
             role: role
         };
         
+        console.log('Enviando datos a API:', data);
+        
         const result = await Utils.apiRequest('../api/actualizar_sicatel.php', {
             method: 'POST',
             body: JSON.stringify(data)
         });
         
-        if (result.error) {
-            throw new Error(result.error);
+        console.log('Respuesta de API:', result);
+        
+        if (result.error || !result.success) {
+            throw new Error(result.error || 'Error desconocido al actualizar sicatel');
         }
         
         return result;
@@ -2753,17 +2400,13 @@ const SicatelModule = {
 // ==================== INICIALIZACIÓN ====================
 function initApp() {
     try {
-        console.log('Inicializando aplicación de Atención al Cliente v3.0...');
+        console.log('Inicializando aplicación de Atención al Cliente v3.0 Final...');
         
-        // Verificar elementos críticos
         if (!DOM.tiendaOrigenSelector) {
             throw new Error('Elemento tienda-origen-selector no encontrado');
         }
         
-        // Inicializar módulos
         TabsModule.init();
-        
-        // Cargar pestaña inicial
         TabsModule.switchTab('asignar');
         
         console.log('Aplicación inicializada correctamente');
@@ -2783,7 +2426,28 @@ window.AtencionClienteDebug = {
         sicatel: SicatelModule
     },
     dom: DOM,
-    utils: Utils
+    utils: Utils,
+    
+    // Función de prueba simplificada
+    async testSicatel(tiendaId, enable = true) {
+        try {
+            console.log('=== PRUEBA SICATEL ===');
+            console.log('Tienda ID:', tiendaId);
+            console.log('Habilitar:', enable);
+            
+            const result = await SicatelModule.updateSicatelAPI([tiendaId], enable);
+            
+            console.log('=== RESULTADO ===');
+            console.log(result);
+            
+            return result;
+            
+        } catch (error) {
+            console.error('=== ERROR EN PRUEBA ===');
+            console.error(error);
+            throw error;
+        }
+    }
 };
 
 // Inicializar cuando el DOM esté listo
