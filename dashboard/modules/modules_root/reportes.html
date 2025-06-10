@@ -1,0 +1,793 @@
+<!-- modules/modules_root/reportes.html - VERSIÓN SIMPLIFICADA -->
+<div class="content-header">
+    <h1 class="content-title">
+        <i class="fas fa-chart-bar"></i> Reporte de Tiendas
+    </h1>
+    <p class="content-subtitle">Genera reportes detallados de todas las tiendas del sistema</p>
+</div>
+
+<div class="reportes-container">
+    <!-- Controles de filtros -->
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-filter"></i> Filtros del Reporte</h3>
+        </div>
+        <div class="card-body">
+            <div class="filters-grid">
+                <div class="filter-group">
+                    <label for="tipo-reporte">Tipo de Reporte</label>
+                    <select id="tipo-reporte" class="form-control">
+                        <option value="">Seleccionar tipo...</option>
+                        <option value="tiendas">Reporte de Tiendas Internas</option>
+                        <!-- Más tipos de reportes se agregarán aquí en el futuro -->
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="fecha-inicio">Fecha Inicio</label>
+                    <input type="date" id="fecha-inicio" class="form-control">
+                    <small class="form-text">Para estadísticas de actividad en el período</small>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="fecha-fin">Fecha Fin</label>
+                    <input type="date" id="fecha-fin" class="form-control">
+                    <small class="form-text">Para estadísticas de actividad en el período</small>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="formato-reporte">Formato de Descarga</label>
+                    <select id="formato-reporte" class="form-control">
+                        <option value="csv">CSV (Excel)</option>
+                        <option value="pdf">PDF (En desarrollo)</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="filter-actions">
+                <button id="generar-reporte" class="btn btn-primary">
+                    <i class="fas fa-chart-line"></i> Generar Reporte de Tiendas
+                </button>
+                <button id="limpiar-filtros" class="btn btn-secondary">
+                    <i class="fas fa-eraser"></i> Limpiar Filtros
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Área de resultados -->
+    <div class="card" id="resultados-card" style="display: none;">
+        <div class="card-header">
+            <h3><i class="fas fa-store"></i> Resultados del Reporte de Tiendas</h3>
+            <div class="card-actions">
+                <button id="descargar-reporte" class="btn btn-success">
+                    <i class="fas fa-download"></i> Descargar
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div id="loading-reporte" class="loading-container" style="display: none;">
+                <div class="loading-spinner"></div>
+                <p>Generando reporte de tiendas...</p>
+            </div>
+            
+            <div id="reporte-content">
+                <!-- El contenido del reporte se cargará aquí -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.reportes-container {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.filters-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.filter-group label {
+    font-weight: 600;
+    color: #333;
+    font-size: 0.9rem;
+}
+
+.form-control {
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    transition: border-color 0.3s ease;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(48, 52, 152, 0.1);
+}
+
+.form-text {
+    font-size: 0.8rem;
+    color: #666;
+    margin-top: 4px;
+}
+
+.filter-actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 25px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+}
+
+.btn {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.95rem;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-dark);
+    transform: translateY(-2px);
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background-color: #545b62;
+}
+
+.btn-success {
+    background-color: #28a745;
+    color: white;
+}
+
+.btn-success:hover {
+    background-color: #218838;
+}
+
+.loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 50px;
+    text-align: center;
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid rgba(48, 52, 152, 0.1);
+    border-radius: 50%;
+    border-top-color: var(--primary-color);
+    animation: spin 1s linear infinite;
+    margin-bottom: 20px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.card-actions {
+    display: flex;
+    gap: 10px;
+}
+
+/* ===== ESTILOS PARA LOS RESULTADOS ===== */
+.reporte-header {
+    text-align: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid var(--primary-color);
+}
+
+.reporte-header h3 {
+    color: var(--primary-color);
+    margin-bottom: 10px;
+    font-size: 1.5rem;
+}
+
+.reporte-estadisticas {
+    margin-bottom: 35px;
+}
+
+.datos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.dato-item {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+    border-left: 4px solid var(--primary-color);
+    transition: transform 0.3s ease;
+}
+
+.dato-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.dato-label {
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 10px;
+    font-weight: 500;
+}
+
+.dato-valor {
+    font-size: 1.6rem;
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+/* ===== ESTILOS PARA TABLAS ===== */
+.reporte-tabla {
+    margin-top: 30px;
+}
+
+.reporte-tabla h4 {
+    color: var(--primary-color);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.2rem;
+}
+
+.tabla-container {
+    overflow-x: auto;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e9ecef;
+}
+
+.tabla-detallada {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    font-size: 0.9rem;
+}
+
+.tabla-detallada thead {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.tabla-detallada th,
+.tabla-detallada td {
+    padding: 14px 12px;
+    text-align: left;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.tabla-detallada th {
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.tabla-detallada tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.tabla-detallada tbody tr:nth-child(even) {
+    background-color: #fafafa;
+}
+
+/* Estilos para estados y canales */
+.canal-internas {
+    background-color: #007bff;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.canal-externas {
+    background-color: #6f42c1;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.sicatel-si {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.sicatel-no {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.text-success {
+    color: #28a745 !important;
+}
+
+.text-danger {
+    color: #dc3545 !important;
+}
+
+.text-warning {
+    color: #ffc107 !important;
+}
+
+.saldo-alto {
+    color: #28a745;
+    font-weight: 600;
+}
+
+.saldo-medio {
+    color: #ffc107;
+    font-weight: 600;
+}
+
+.saldo-bajo {
+    color: #dc3545;
+    font-weight: 600;
+}
+
+/* ===== SISTEMA DE NOTIFICACIONES ===== */
+.notificaciones-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10000;
+    max-width: 400px;
+}
+
+.notificacion {
+    background: white;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transform: translateX(100%);
+    opacity: 0;
+    transition: all 0.3s ease;
+    border-left: 4px solid;
+}
+
+.notificacion.mostrar {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.notificacion-success {
+    border-left-color: #28a745;
+    color: #155724;
+    background-color: #d4edda;
+}
+
+.notificacion-success i {
+    color: #28a745;
+}
+
+.notificacion-error {
+    border-left-color: #dc3545;
+    color: #721c24;
+    background-color: #f8d7da;
+}
+
+.notificacion-error i {
+    color: #dc3545;
+}
+
+.notificacion-warning {
+    border-left-color: #ffc107;
+    color: #856404;
+    background-color: #fff3cd;
+}
+
+.notificacion-warning i {
+    color: #ffc107;
+}
+
+.notificacion span {
+    flex: 1;
+    font-weight: 600;
+}
+
+.notificacion-cerrar {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: inherit;
+    opacity: 0.7;
+    padding: 0;
+}
+
+.notificacion-cerrar:hover {
+    opacity: 1;
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+    .filters-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .filter-actions {
+        flex-direction: column;
+    }
+    
+    .datos-grid {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+    }
+    
+    .tabla-container {
+        font-size: 0.8rem;
+    }
+    
+    .tabla-detallada th,
+    .tabla-detallada td {
+        padding: 10px 8px;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Módulo de Reportes de Tiendas inicializado');
+    
+    // Obtener elementos del DOM
+    const fechaInicio = document.getElementById('fecha-inicio');
+    const fechaFin = document.getElementById('fecha-fin');
+    const formatoReporte = document.getElementById('formato-reporte');
+    const generarBtn = document.getElementById('generar-reporte');
+    const limpiarBtn = document.getElementById('limpiar-filtros');
+    const resultadosCard = document.getElementById('resultados-card');
+    const loadingReporte = document.getElementById('loading-reporte');
+    const reporteContent = document.getElementById('reporte-content');
+    const descargarBtn = document.getElementById('descargar-reporte');
+    
+    // Establecer fechas por defecto (últimos 30 días)
+    const hoy = new Date();
+    const hace30Dias = new Date();
+    hace30Dias.setDate(hoy.getDate() - 30);
+    
+    fechaFin.value = hoy.toISOString().split('T')[0];
+    fechaInicio.value = hace30Dias.toISOString().split('T')[0];
+    
+    // Función principal para generar reporte
+    async function generarReporte() {
+        // Mostrar loading
+        resultadosCard.style.display = 'block';
+        loadingReporte.style.display = 'flex';
+        reporteContent.innerHTML = '';
+        
+        try {
+            // Obtener datos del usuario desde sessionStorage
+            const userUID = sessionStorage.getItem('userUID');
+            const userRole = sessionStorage.getItem('userRole');
+            
+            if (!userUID || !userRole) {
+                throw new Error('No se encontraron datos de sesión');
+            }
+            
+            // Preparar datos para la API
+            const requestData = {
+                uid: userUID,
+                role: userRole,
+                fecha_inicio: fechaInicio.value,
+                fecha_fin: fechaFin.value
+            };
+            
+            console.log('🚀 Generando reporte de tiendas:', requestData);
+            
+            // Llamada a la API
+            const response = await fetch('../api/generar_reporte.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestData)
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Error HTTP: ${response.status}`);
+            }
+            
+            const resultado = await response.json();
+            
+            if (!resultado.success) {
+                throw new Error(resultado.error || 'Error desconocido al generar reporte');
+            }
+            
+            console.log('✅ Reporte generado:', resultado);
+            
+            // Generar contenido con datos reales
+            const contenido = generarContenidoReporte(resultado);
+            reporteContent.innerHTML = contenido;
+            
+            // Guardar datos del reporte para descarga
+            window.reporteActual = resultado;
+            
+            mostrarMensaje('Reporte de tiendas generado exitosamente', 'success');
+            
+        } catch (error) {
+            console.error('❌ Error al generar reporte:', error);
+            mostrarMensaje('Error al generar el reporte: ' + error.message, 'error');
+            reporteContent.innerHTML = `<p class="error-message">Error al cargar el reporte: ${error.message}</p>`;
+        } finally {
+            loadingReporte.style.display = 'none';
+        }
+    }
+    
+    // Función para generar contenido del reporte
+    function generarContenidoReporte(resultado) {
+        const { datos, estadisticas, periodo } = resultado;
+        
+        let html = `
+            <div class="reporte-header">
+                <h3>Reporte de Tiendas</h3>
+                <p>Período de actividad: ${periodo.inicio} a ${periodo.fin}</p>
+            </div>
+        `;
+        
+        // Generar estadísticas
+        html += '<div class="reporte-estadisticas"><div class="datos-grid">';
+        html += `
+            <div class="dato-item">
+                <div class="dato-label">Tiendas Internas Activas</div>
+                <div class="dato-valor">${estadisticas.total_tiendas_activas}</div>
+            </div>
+            <div class="dato-item">
+                <div class="dato-label">Tiendas con Sicatel</div>
+                <div class="dato-valor">${estadisticas.total_tiendas_sicatel}</div>
+            </div>
+            <div class="dato-item">
+                <div class="dato-label">Saldo Total Sistema</div>
+                <div class="dato-valor">${estadisticas.saldo_total_sistema}</div>
+            </div>
+            <div class="dato-item">
+                <div class="dato-label">Total Vendedores</div>
+                <div class="dato-valor">${estadisticas.total_vendedores_sistema}</div>
+            </div>
+            <div class="dato-item">
+                <div class="dato-label">Solicitudes Procesadas</div>
+                <div class="dato-valor">${estadisticas.total_solicitudes_periodo}</div>
+            </div>
+            <div class="dato-item">
+                <div class="dato-label">Monto Total Procesado</div>
+                <div class="dato-valor">${estadisticas.total_monto_periodo}</div>
+            </div>
+            <div class="dato-item">
+                <div class="dato-label">Comisiones Totales</div>
+                <div class="dato-valor">${estadisticas.total_comision_subdistribuidor_periodo}</div>
+            </div>
+            <div class="dato-item">
+                <div class="dato-label">Proveedores Activos</div>
+                <div class="dato-valor">${estadisticas.proveedores_activos.length}</div>
+            </div>
+        `;
+        html += '</div></div>';
+        
+        // Mostrar lista de proveedores y servicios activos
+        if (estadisticas.proveedores_activos && estadisticas.proveedores_activos.length > 0) {
+            html += '<div class="info-adicional">';
+            html += '<div class="info-row">';
+            html += `<div class="info-item"><strong>Proveedores:</strong> ${estadisticas.proveedores_activos.join(', ')}</div>`;
+            html += `<div class="info-item"><strong>Servicios:</strong> ${estadisticas.servicios_activos.join(', ')}</div>`;
+            html += '</div>';
+            html += '</div>';
+        }
+        
+        // Tabla de datos detallados
+        if (datos && datos.length > 0) {
+            html += '<div class="reporte-tabla">';
+            html += '<h4><i class="fas fa-table"></i> Datos Detallados de Tiendas</h4>';
+            html += generarTablaDetallada(datos);
+            html += '</div>';
+        }
+        
+        return html;
+    }
+    
+    // Función para generar tabla detallada
+    function generarTablaDetallada(datos) {
+        let tabla = '<div class="tabla-container"><table class="tabla-detallada">';
+        tabla += '<thead><tr><th>Nombre</th><th>Canal</th><th>Tipo</th><th>Sicatel</th><th>Saldo</th><th>Vendedores</th><th>Solicitudes</th><th>Monto Completado</th><th>Encargado</th></tr></thead><tbody>';
+        
+        datos.forEach(row => {
+            const saldoNumerico = parseFloat(row.saldo_actual.replace(/,/g, ''));
+            let claSaldo = 'saldo-bajo';
+            if (saldoNumerico > 10000) claSaldo = 'saldo-alto';
+            else if (saldoNumerico > 1000) claSaldo = 'saldo-medio';
+            
+            tabla += `<tr>
+                <td><strong>${row.nombre_tienda}</strong></td>
+                <td><span class="canal-${row.canal}">${row.canal}</span></td>
+                <td>${row.tipoTienda || 'N/A'}</td>
+                <td>${row.sicatel ? '<i class="fas fa-check text-success"></i> Sí' : '<i class="fas fa-times text-danger"></i> No'}</td>
+                <td class="${claSaldo}">$${row.saldo_actual}</td>
+                <td><strong>${row.total_vendedores}</strong></td>
+                <td>${row.solicitudes_periodo}</td>
+                <td>$${row.monto_completado_periodo}</td>
+                <td>${row.encargado || 'N/A'}</td>
+            </tr>`;
+        });
+        
+        tabla += '</tbody></table></div>';
+        return tabla;
+    }
+    
+    // Función para mostrar mensajes (sistema de notificaciones)
+    function mostrarMensaje(mensaje, tipo) {
+        let notificacionesContainer = document.getElementById('notificaciones-container');
+        if (!notificacionesContainer) {
+            notificacionesContainer = document.createElement('div');
+            notificacionesContainer.id = 'notificaciones-container';
+            notificacionesContainer.className = 'notificaciones-container';
+            document.body.appendChild(notificacionesContainer);
+        }
+        
+        const notificacion = document.createElement('div');
+        notificacion.className = `notificacion notificacion-${tipo}`;
+        
+        const iconos = {
+            success: 'fas fa-check-circle',
+            error: 'fas fa-exclamation-circle',
+            warning: 'fas fa-exclamation-triangle'
+        };
+        
+        notificacion.innerHTML = `
+            <i class="${iconos[tipo] || iconos.warning}"></i>
+            <span>${mensaje}</span>
+            <button class="notificacion-cerrar">&times;</button>
+        `;
+        
+        notificacionesContainer.appendChild(notificacion);
+        
+        setTimeout(() => {
+            notificacion.classList.add('mostrar');
+        }, 100);
+        
+        const timeout = setTimeout(() => {
+            ocultarNotificacion(notificacion);
+        }, 5000);
+        
+        const cerrarBtn = notificacion.querySelector('.notificacion-cerrar');
+        cerrarBtn.addEventListener('click', () => {
+            clearTimeout(timeout);
+            ocultarNotificacion(notificacion);
+        });
+    }
+    
+    function ocultarNotificacion(notificacion) {
+        notificacion.classList.remove('mostrar');
+        setTimeout(() => {
+            if (notificacion.parentNode) {
+                notificacion.parentNode.removeChild(notificacion);
+            }
+        }, 300);
+    }
+    
+    // Función para limpiar filtros
+    function limpiarFiltros() {
+        const hoy = new Date();
+        const hace30Dias = new Date();
+        hace30Dias.setDate(hoy.getDate() - 30);
+        
+        fechaFin.value = hoy.toISOString().split('T')[0];
+        fechaInicio.value = hace30Dias.toISOString().split('T')[0];
+        formatoReporte.value = 'csv';
+        
+        resultadosCard.style.display = 'none';
+    }
+    
+    // Función para descargar reporte
+    function descargarReporte() {
+        if (!window.reporteActual) {
+            mostrarMensaje('No hay reporte para descargar. Genera un reporte primero.', 'warning');
+            return;
+        }
+        
+        const formato = formatoReporte.value;
+        
+        if (formato === 'csv') {
+            descargarCSV();
+        } else {
+            mostrarMensaje('Formato PDF en desarrollo...', 'warning');
+        }
+    }
+    
+    // Función para descargar CSV
+    function descargarCSV() {
+        const { datos, estadisticas, periodo } = window.reporteActual;
+        
+        let csvContent = '\uFEFF'; // BOM para UTF-8
+        
+        // Información del reporte
+        csvContent += 'Reporte de Tiendas\n';
+        csvContent += `Período de actividad,${periodo.inicio} a ${periodo.fin}\n`;
+        csvContent += `Generado,${new Date().toLocaleString()}\n\n`;
+        
+        // Estadísticas
+        csvContent += 'ESTADÍSTICAS GENERALES\n';
+        csvContent += 'Métrica,Valor\n';
+        Object.entries(estadisticas).forEach(([key, value]) => {
+            const keyLimpio = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            csvContent += `"${keyLimpio}","${value}"\n`;
+        });
+        csvContent += '\n';
+        
+        // Datos detallados
+        csvContent += 'DATOS DETALLADOS DE TIENDAS\n';
+        csvContent += 'Nombre,Canal,Tipo,Sicatel,Saldo,Vendedores,Solicitudes Período,Monto Completado,Encargado,Teléfono,Dirección\n';
+        
+        datos.forEach(row => {
+            csvContent += `"${row.nombre_tienda}","${row.canal}","${row.tipoTienda || 'N/A'}","${row.sicatel ? 'Sí' : 'No'}","${row.saldo_actual}","${row.total_vendedores}","${row.solicitudes_periodo}","${row.monto_completado_periodo}","${row.encargado || 'N/A'}","${row.telefono || 'N/A'}","${row.direccion || 'N/A'}"\n`;
+        });
+        
+        // Crear y descargar archivo
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `reporte_tiendas_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        mostrarMensaje('Reporte CSV descargado exitosamente', 'success');
+    }
+    
+    // Event Listeners
+    generarBtn.addEventListener('click', generarReporte);
+    limpiarBtn.addEventListener('click', limpiarFiltros);
+    descargarBtn.addEventListener('click', descargarReporte);
+    
+    // Función de limpieza del módulo
+    window.moduleCleanup = function() {
+        console.log('🧹 Limpiando módulo de Reportes de Tiendas...');
+    };
+    
+    console.log('✅ Módulo de Reportes de Tiendas listo');
+});
+</script>

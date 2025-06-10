@@ -94,6 +94,52 @@
             font-weight: 500;
         }
 
+        /* ===== ESTILOS PARA SUBMENU ===== */
+        /* Estilos para menú y submenu */
+        .menu-item {
+            margin: 5px 10px;
+            border-radius: 8px;
+        }
+        
+        .menu-item.solicitudes {
+            background-color: #f0f0f0;
+            margin-bottom: 0;
+        }
+        
+        .menu-icon {
+            color: #303498;
+        }
+        
+        .submenu-item {
+            padding: 10px 10px 10px 48px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            margin: 5px 10px;
+            background-color: #f7f7f7;
+            border-radius: 8px;
+        }
+        
+        .submenu-item:hover {
+            background-color: #eaeaea;
+        }
+        
+        .submenu-item.active {
+            background-color: #303498 !important;
+            color: white !important;
+        }
+        
+        .submenu-item.active .submenu-icon {
+            color: white !important;
+        }
+        
+        .submenu-icon {
+            color: #303498;
+            margin-right: 10px;
+            width: 16px;
+            text-align: center;
+        }
+
         /* Estilos mejorados para el loader */
         .loading-content {
             display: none;
@@ -175,9 +221,14 @@
                 <li class="menu-item" data-module="tiendas">
                     <i class="fas fa-store menu-icon"></i> <span class="menu-text">Tiendas</span>
                 </li>
-                <li class="menu-item" data-module="solicitudes">
-                    <i class="fas fa-clipboard-list menu-icon"></i> <span class="menu-text">Solicitudes</span>
+                
+                <!-- Menú de Solicitudes con submenu igual que en admin -->
+                <li class="menu-item solicitudes submenu-open" data-module="solicitudes">
+                    <i class="fas fa-clipboard-list menu-icon solicitudes-icon"></i> 
+                    <span class="menu-text">Solicitudes</span>
+                    <i class="fas fa-chevron-up menu-dropdown-icon"></i>
                 </li>
+                
                 <li class="menu-item" data-module="vendedores">
                     <i class="fas fa-users menu-icon"></i> <span class="menu-text">Vendedores</span>
                 </li>
@@ -186,6 +237,11 @@
                 </li>
                 <li class="menu-item" data-module="bolsa_saldo">
                     <i class="fas fa-wallet menu-icon"></i> <span class="menu-text">Recarga Bolsa</span>
+                </li>
+                
+                <!-- NUEVA OPCIÓN: Reportes -->
+                <li class="menu-item" data-module="reportes">
+                    <i class="fas fa-chart-bar menu-icon"></i> <span class="menu-text">Reportes</span>
                 </li>
             </ul>
         </nav>
@@ -223,6 +279,13 @@
                 }
             } catch (e) {
                 console.error('Error al parsear userData de sessionStorage:', e);
+            }
+            
+            // Verificar que el usuario tenga el rol correcto
+            if (userData && userData.role !== 'root') {
+                console.error("Acceso no autorizado: el usuario no tiene rol de root");
+                window.location.href = '../redirect.html';
+                return;
             }
             
             // Actualizar el header con información del usuario
@@ -297,6 +360,7 @@
             
             // Sistema de navegación SPA con validación segura
             const menuItems = document.querySelectorAll('.menu-item');
+            const submenuItems = document.querySelectorAll('.submenu-item'); // ✅ NUEVO: Agregar submenu items
             const mainContent = document.getElementById('main-content');
             const loadingContent = document.getElementById('loading-content');
             
@@ -337,7 +401,8 @@
                     
                     // Validar el módulo localmente antes de hacer la petición al servidor
                     const allowedModules = ['bienvenida', 'dashboard', 'tiendas', 'solicitudes', 'vendedores', 
-                                           'atencion_clientes', 'bolsa_saldo'];
+                                           'atencion_clientes', 'bolsa_saldo', 'reportes', 'portabilidad', 
+                                           'recuperacion', 'pagos']; // ✅ NUEVO: Agregar reportes y submenu modules
                     if (!allowedModules.includes(moduleName)) {
                         throw new Error(`El módulo "${moduleName}" no está disponible para usuarios root`);
                     }
@@ -461,13 +526,32 @@
             // CONFIGURACIÓN DE EVENT LISTENERS DEL MENÚ
             // =============================================
             
-            // Configurar menú
+            // ✅ NUEVO: Manejadores de eventos para los items del menú principal
             menuItems.forEach(item => {
-                item.addEventListener('click', () => {
-                    console.log(`🖱️ Clic en menú: ${item.dataset.module}`);
+                item.addEventListener('click', function() {
+                    console.log(`🖱️ Clic en menú principal: ${item.dataset.module}`);
                     
                     // Marcar ítem activo
                     menuItems.forEach(i => i.classList.remove('active'));
+                    submenuItems.forEach(i => i.classList.remove('active')); // ✅ NUEVO: Limpiar submenu también
+                    item.classList.add('active');
+                    
+                    // Cargar el módulo correspondiente
+                    const module = item.dataset.module;
+                    if (module) {
+                        loadModule(module);
+                    }
+                });
+            });
+            
+            // ✅ NUEVO: Manejadores para submenú (igual que en admin)
+            submenuItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    console.log(`🖱️ Clic en submenú: ${item.dataset.module}`);
+                    
+                    // Marcar ítem activo
+                    menuItems.forEach(i => i.classList.remove('active'));
+                    submenuItems.forEach(i => i.classList.remove('active'));
                     item.classList.add('active');
                     
                     // Cargar el módulo correspondiente
