@@ -1,4 +1,4 @@
-<!-- Módulo de Atención al Cliente V3.0 - Versión Final Simplificada -->
+<!-- Módulo de Atención al Cliente V3.1 - LIGAR/DESLIGAR -->
 <div class="card">
     <h2 class="content-title">
         <i class="fas fa-headset"></i> Asignación de Atención al Cliente
@@ -143,14 +143,14 @@
                         <div class="stat-icon"><i class="fas fa-tasks"></i></div>
                         <div class="stat-content">
                             <div class="stat-number" id="stat-total">0</div>
-                            <div class="stat-label">Total</div>
+                            <div class="stat-label">Total Ligadas</div>
                         </div>
                     </div>
                     <div class="stat-card stat-activas">
                         <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
                         <div class="stat-content">
                             <div class="stat-number" id="stat-activas">0</div>
-                            <div class="stat-label">Activas</div>
+                            <div class="stat-label">Ligadas</div>
                         </div>
                     </div>
                     <div class="stat-card stat-sicatel">
@@ -192,8 +192,8 @@
                 
                 <div id="asignaciones-empty" class="empty-state" style="display: none;">
                     <i class="fas fa-tasks"></i>
-                    <h3>No hay asignaciones</h3>
-                    <p>Aún no se han creado asignaciones de atención</p>
+                    <h3>No hay asignaciones ligadas</h3>
+                    <p>Aún no se han creado asignaciones de atención ligadas</p>
                 </div>
                 
                 <!-- Tabla de asignaciones -->
@@ -1736,8 +1736,14 @@ const AsignarModule = {
                 throw new Error(result.error);
             }
             
-            const mensaje = `Asignación exitosa:\n${result.asignadas} tiendas asignadas correctamente.\n\n` +
-                           `Detalles:\n${result.detalles.join('\n')}`;
+            // *** CAMBIO: Nueva terminología ***
+            let mensaje = `Asignación exitosa:\n${result.asignadas} tiendas ligadas correctamente.\n\n` +
+                         `Detalles:\n${result.detalles.join('\n')}`;
+            
+            if (result.omitidas && result.omitidas.length > 0) {
+                mensaje += `\n\nAsignaciones omitidas (ya existen):\n${result.omitidas.join('\n')}`;
+            }
+            
             Utils.showNotification(mensaje, 'success');
             
             this.resetForm();
@@ -1941,38 +1947,38 @@ const VerModule = {
                 </td>
                 <td>${Utils.formatDate(asignacion.fecha_asignacion)}</td>
                 <td>
-                    <span class="status-badge ${asignacion.estado ? 'status-active' : 'status-inactive'}">
-                        ${asignacion.estado ? 'Activo' : 'Inactivo'}
+                    <span class="status-badge status-active">
+                        Ligada
                     </span>
                 </td>
                 <td>
-                    ${asignacion.estado ? 
-                        `<button class="btn btn-danger btn-sm" data-id="${asignacion.id}">
-                            <i class="fas fa-times"></i> Desactivar
-                        </button>` : 
-                        `<button class="btn btn-success btn-sm" data-id="${asignacion.id}">
-                            <i class="fas fa-check"></i> Activar
-                        </button>`
-                    }
+                    <button class="btn btn-danger btn-sm" data-id="${asignacion.id}">
+                        <i class="fas fa-unlink"></i> Desligar
+                    </button>
                 </td>
             `;
             
-            const btnAccion = row.querySelector('.btn');
-            btnAccion.addEventListener('click', () => {
-                this.cambiarEstadoAsignacion(asignacion.id, !asignacion.estado);
+            const btnDesligar = row.querySelector('.btn');
+            btnDesligar.addEventListener('click', () => {
+                this.desligarAsignacion(asignacion.id);
             });
             
             DOM.asignacionesTbody.appendChild(row);
         });
     },
     
-    async cambiarEstadoAsignacion(id, nuevoEstado) {
+    async desligarAsignacion(id) {
         try {
+            // *** CAMBIO: Confirmar con nueva terminología ***
+            const confirmacion = confirm('¿Estás seguro de desligar esta asignación?\n\nLa asignación se ocultará y no aparecerá en futuras consultas.');
+            
+            if (!confirmacion) return;
+            
             const { role, uid } = Utils.getUserData();
             
             const data = {
                 id: id,
-                estado: nuevoEstado ? 1 : 0,
+                estado: 0, // Desligar = estado 0
                 user_uid: uid,
                 role: role
             };
@@ -1986,10 +1992,14 @@ const VerModule = {
                 throw new Error(result.error);
             }
             
+            // *** CAMBIO: Mostrar mensaje con nueva terminología ***
+            Utils.showNotification('Asignación desligada correctamente', 'success');
+            
+            // Recargar asignaciones (la desligada ya no aparecerá)
             this.loadAsignaciones();
             
         } catch (error) {
-            console.error('Error al cambiar estado:', error);
+            console.error('Error al desligar asignación:', error);
             Utils.showNotification(error.message, 'error');
         }
     },
@@ -2400,7 +2410,7 @@ const SicatelModule = {
 // ==================== INICIALIZACIÓN ====================
 function initApp() {
     try {
-        console.log('Inicializando aplicación de Atención al Cliente v3.0 Final...');
+        console.log('Inicializando aplicación de Atención al Cliente v3.1 LIGAR/DESLIGAR...');
         
         if (!DOM.tiendaOrigenSelector) {
             throw new Error('Elemento tienda-origen-selector no encontrado');

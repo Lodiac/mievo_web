@@ -1,5 +1,5 @@
 <?php
-// api/actualizar_asignacion.php
+// api/actualizar_asignacion.php - TERMINOLOGÍA LIGAR/DESLIGAR
 header('Content-Type: application/json; charset=UTF-8');
 require_once 'db_connect.php';
 
@@ -51,10 +51,17 @@ try {
     mysqli_stmt_close($stmt);
     mysqli_close($con);
     
+    // *** CAMBIO: Nueva terminología LIGAR/DESLIGAR ***
+    $accion = $estado ? "ligada" : "desligada";
+    $mensaje = "Asignación {$accion} correctamente";
+    
     // Devolver resultado exitoso
     echo json_encode([
         "success" => true,
-        "message" => "Estado de la asignación actualizado correctamente"
+        "message" => $mensaje,
+        "estado_nuevo" => $estado,
+        "accion_realizada" => $accion,
+        "nota" => $estado ? "La asignación está ahora activa" : "La asignación ha sido desligada y no aparecerá en futuras consultas"
     ]);
     
 } catch (Exception $e) {

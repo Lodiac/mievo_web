@@ -1,5 +1,5 @@
 <?php
-// api/get_asignaciones.php
+// api/get_asignaciones.php - SOLO MOSTRAR ESTADO = 1
 header('Content-Type: application/json; charset=UTF-8');
 require_once 'db_connect.php';
 
@@ -20,7 +20,7 @@ try {
     // Conectar a la base de datos
     $con = conexiondb();
 
-    // Consulta mejorada para obtener las asignaciones con información completa de sicatel
+    // *** MODIFICACIÓN CRÍTICA: Solo mostrar asignaciones con estado = 1 ***
     $query = "SELECT 
                 ac.id,
                 ac.tienda_interna_id,
@@ -56,6 +56,8 @@ try {
                 sucursales ti ON ac.tienda_interna_id = ti.id
               JOIN 
                 sucursales te ON ac.tienda_externa_id = te.id
+              WHERE 
+                ac.estado = 1
               ORDER BY 
                 ac.fecha_asignacion DESC";
 
@@ -70,7 +72,7 @@ try {
     $estadisticas = [
         'total' => 0,
         'activas' => 0,
-        'inactivas' => 0,
+        'inactivas' => 0, // Siempre 0 ya que solo mostramos activas
         'por_tipo' => [
             'interna_a_interna' => 0,
             'interna_a_externa' => 0,
@@ -121,11 +123,8 @@ try {
         
         // Actualizar estadísticas
         $estadisticas['total']++;
-        if ($row['estado']) {
-            $estadisticas['activas']++;
-        } else {
-            $estadisticas['inactivas']++;
-        }
+        // Como solo mostramos estado = 1, todas son activas
+        $estadisticas['activas']++;
         
         $estadisticas['por_tipo'][$row['tipo_asignacion']]++;
         
@@ -144,7 +143,7 @@ try {
     mysqli_close($con);
 
     // Log de estadísticas para debugging
-    error_log("Asignaciones cargadas: " . json_encode($estadisticas));
+    error_log("Asignaciones activas cargadas: " . json_encode($estadisticas));
 
     // Devolver resultados en formato JSON con estadísticas enriquecidas
     echo json_encode([
@@ -153,6 +152,7 @@ try {
         "meta" => [
             "timestamp" => date('Y-m-d H:i:s'),
             "sicatel_enabled" => true,
+            "solo_estado_activo" => true, // *** NUEVO: Indicador de filtro ***
             "tipos_asignacion_soportados" => [
                 "interna_a_interna" => "Tienda interna (con sicatel) atiende a otra tienda interna",
                 "interna_a_externa" => "Tienda interna atiende a tienda externa",

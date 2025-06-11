@@ -1,5 +1,5 @@
 <?php
-// api/asignar_atencion.php
+// api/asignar_atencion.php - VERSIÓN CORREGIDA
 header('Content-Type: application/json; charset=UTF-8');
 require_once 'db_connect.php';
 
@@ -62,11 +62,13 @@ try {
         // Contar asignaciones exitosas
         $asignacionesExitosas = 0;
         $detallesAsignaciones = [];
+        $asignacionesOmitidas = [];
         
         // Preparar consultas
         $stmtVerificar = mysqli_prepare($con, "SELECT id, estado FROM atencion_clientes WHERE tienda_interna_id = ? AND tienda_externa_id = ?");
-        $stmtInsertar = mysqli_prepare($con, "INSERT INTO atencion_clientes (tienda_interna_id, tienda_externa_id, usuario_asignacion, observaciones) VALUES (?, ?, ?, ?)");
-        $stmtActualizar = mysqli_prepare($con, "UPDATE atencion_clientes SET estado = 1 WHERE id = ?");
+        // *** CORRECCIÓN CRÍTICA: Agregar campo estado con valor 1 ***
+        $stmtInsertar = mysqli_prepare($con, "INSERT INTO atencion_clientes (tienda_interna_id, tienda_externa_id, usuario_asignacion, observaciones, estado) VALUES (?, ?, ?, ?, 1)");
+        $stmtReactivar = mysqli_prepare($con, "UPDATE atencion_clientes SET estado = 1 WHERE id = ?");
         
         // Procesar cada tienda destino
         foreach ($tiendasDestino as $tiendaDestinoId) {
@@ -148,23 +150,25 @@ try {
                 $tiendaQueRECIBEatencion = $tiendaOrigenId; // La externa es la que RECIBE atención
             }
             
-            // Verificar si ya existe la asignación
+            // *** NUEVA LÓGICA: Verificar si ya existe asignación ACTIVA ***
             mysqli_stmt_bind_param($stmtVerificar, "ii", $tiendaQueDAatencion, $tiendaQueRECIBEatencion);
             mysqli_stmt_execute($stmtVerificar);
             $resultVerificar = mysqli_stmt_get_result($stmtVerificar);
             
             if (mysqli_num_rows($resultVerificar) > 0) {
-                // Ya existe, verificar si está activa
+                // Ya existe, verificar estado
                 $row = mysqli_fetch_assoc($resultVerificar);
-                if ($row['estado'] == 0) {
-                    // Reactivar la asignación
-                    mysqli_stmt_bind_param($stmtActualizar, "i", $row['id']);
-                    if (mysqli_stmt_execute($stmtActualizar)) {
+                if ($row['estado'] == 1) {
+                    // *** CAMBIO: Si ya está activa, omitir (no mostrar en tiendas disponibles) ***
+                    $asignacionesOmitidas[] = "Ya existe asignación activa: {$tiendaOrigen['nombre_tienda']} → {$tiendaDestino['nombre_tienda']}";
+                    continue;
+                } else {
+                    // Está inactiva, reactivar
+                    mysqli_stmt_bind_param($stmtReactivar, "i", $row['id']);
+                    if (mysqli_stmt_execute($stmtReactivar)) {
                         $asignacionesExitosas++;
                         $detallesAsignaciones[] = "Reactivada: {$tiendaOrigen['nombre_tienda']} → {$tiendaDestino['nombre_tienda']} ($tipoAsignacion)";
                     }
-                } else {
-                    $detallesAsignaciones[] = "Ya existe asignación activa: {$tiendaOrigen['nombre_tienda']} → {$tiendaDestino['nombre_tienda']}";
                 }
             } else {
                 // No existe, crear nueva asignación
@@ -179,7 +183,7 @@ try {
         // Cerrar statements
         mysqli_stmt_close($stmtVerificar);
         mysqli_stmt_close($stmtInsertar);
-        mysqli_stmt_close($stmtActualizar);
+        mysqli_stmt_close($stmtReactivar);
         
         // Confirmar transacción
         mysqli_commit($con);
@@ -193,6 +197,7 @@ try {
             "asignadas" => $asignacionesExitosas,
             "message" => "Se procesaron las asignaciones correctamente",
             "detalles" => $detallesAsignaciones,
+            "omitidas" => $asignacionesOmitidas, // *** NUEVO: Información sobre asignaciones omitidas ***
             "reglas_aplicadas" => [
                 "tienda_origen" => [
                     "nombre" => $tiendaOrigen['nombre_tienda'],
