@@ -132,13 +132,9 @@ function generarReporteTiendasActualizado($con, $fechaInicio, $fechaFin) {
                    AND sp2.fecha_actualizacion BETWEEN CONCAT(?, ' 00:00:00') AND CONCAT(?, ' 23:59:59')
                    AND sp2.estado = 1 AND sp2.estado_solicitud = 'cancelada') as total_canceladas_tienda,
                    
-                -- Lista de UIDs y nombres únicos que han procesado solicitudes en esta tienda
-                (SELECT GROUP_CONCAT(
-                    DISTINCT CONCAT(sp2.procesada_por, ' (', COALESCE(u.user_name, 'Sin nombre'), ')') 
-                    ORDER BY sp2.procesada_por SEPARATOR ', '
-                 )
+                -- Lista de UIDs únicos que han procesado solicitudes en esta tienda
+                (SELECT GROUP_CONCAT(DISTINCT sp2.procesada_por ORDER BY sp2.procesada_por SEPARATOR ', ')
                  FROM sol_pagoservicios sp2 
-                 LEFT JOIN usuarios u ON sp2.procesada_por COLLATE utf8mb4_general_ci = u.user_id COLLATE utf8mb4_general_ci
                  WHERE sp2.procesada_por COLLATE utf8mb4_general_ci = s.user_id COLLATE utf8mb4_general_ci
                    AND sp2.fecha_actualizacion BETWEEN CONCAT(?, ' 00:00:00') AND CONCAT(?, ' 23:59:59')
                    AND sp2.estado = 1
