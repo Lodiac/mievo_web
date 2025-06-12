@@ -130,7 +130,19 @@ function generarReporteTiendasActualizado($con, $fechaInicio, $fechaFin) {
                  FROM sol_pagoservicios sp2 
                  WHERE sp2.procesada_por COLLATE utf8mb4_general_ci = s.user_id COLLATE utf8mb4_general_ci
                    AND sp2.fecha_actualizacion BETWEEN CONCAT(?, ' 00:00:00') AND CONCAT(?, ' 23:59:59')
-                   AND sp2.estado = 1 AND sp2.estado_solicitud = 'cancelada') as total_canceladas_tienda
+                   AND sp2.estado = 1 AND sp2.estado_solicitud = 'cancelada') as total_canceladas_tienda,
+                   
+                -- Lista de UIDs y nombres únicos que han procesado solicitudes en esta tienda
+                (SELECT GROUP_CONCAT(
+                    DISTINCT CONCAT(sp2.procesada_por, ' (', COALESCE(u.user_name, 'Sin nombre'), ')') 
+                    ORDER BY sp2.procesada_por SEPARATOR ', '
+                 )
+                 FROM sol_pagoservicios sp2 
+                 LEFT JOIN usuarios u ON sp2.procesada_por COLLATE utf8mb4_general_ci = u.user_id COLLATE utf8mb4_general_ci
+                 WHERE sp2.procesada_por COLLATE utf8mb4_general_ci = s.user_id COLLATE utf8mb4_general_ci
+                   AND sp2.fecha_actualizacion BETWEEN CONCAT(?, ' 00:00:00') AND CONCAT(?, ' 23:59:59')
+                   AND sp2.estado = 1
+                   AND sp2.estado_solicitud IN ('completada', 'rechazada', 'cancelada')) as uids_procesadores
 
             FROM sucursales s
             LEFT JOIN sol_pagoservicios sp ON sp.procesada_por COLLATE utf8mb4_general_ci = s.user_id COLLATE utf8mb4_general_ci
@@ -159,13 +171,14 @@ function generarReporteTiendasActualizado($con, $fechaInicio, $fechaFin) {
         throw new Exception("Error preparando la consulta: " . mysqli_error($con));
     }
     
-    // Bind de parámetros (12 fechas en total)
-    mysqli_stmt_bind_param($stmt, "ssssssssssss", 
+    // Bind de parámetros (16 fechas en total: 8 pares)
+    mysqli_stmt_bind_param($stmt, "ssssssssssssssss", 
         $fechaInicio, $fechaFin,  // total_solicitudes_tienda
         $fechaInicio, $fechaFin,  // total_monto_tienda
         $fechaInicio, $fechaFin,  // total_completadas_tienda
         $fechaInicio, $fechaFin,  // total_rechazadas_tienda
         $fechaInicio, $fechaFin,  // total_canceladas_tienda
+        $fechaInicio, $fechaFin,  // uids_procesadores
         $fechaInicio, $fechaFin,  // LEFT JOIN sp
         $fechaInicio, $fechaFin   // EXISTS subquery
     );
