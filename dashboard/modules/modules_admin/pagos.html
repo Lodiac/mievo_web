@@ -2,21 +2,32 @@
     <h2 class="content-title">
         <i class="fas fa-money-bill-wave"></i> Gestión de Pagos de Servicios
     </h2>
-    <p>Gestiona las solicitudes de pago de servicios realizadas por ti, tus vendedores internos y la red de tiendas externas conectadas.</p>
+    <p>Gestiona las solicitudes de pago de servicios realizadas por tu red de vendedores internos y tiendas externas conectadas.</p>
     
-    <!-- Filtros -->
+    <!-- Filtros Renovados -->
     <div class="filter-controls">
         <div class="row">
             <div class="col">
                 <div class="form-group">
-                    <label for="filtro-estado">Estado:</label>
-                     <select id="filtro-estado" class="form-control">
+                    <label for="filtro-fecha-inicio">Desde:</label>
+                    <input type="date" id="filtro-fecha-inicio" class="form-control">
+                </div>
+            </div>
+            <div class="col">
+                <div class="form-group">
+                    <label for="filtro-fecha-fin">Hasta:</label>
+                    <input type="date" id="filtro-fecha-fin" class="form-control">
+                </div>
+            </div>
+            <div class="col">
+                <div class="form-group">
+                    <label for="filtro-tipo-servicio">Tipo Servicio:</label>
+                    <select id="filtro-tipo-servicio" class="form-control">
                         <option value="">Todos</option>
-                        <option value="pendiente" selected>Pendiente</option>
-                        <option value="procesando">Procesando</option>
-                        <option value="completada">Completada</option>
-                        <option value="rechazada">Rechazada</option>
-                        <option value="cancelada">Cancelada</option>
+                        <option value="recarga">Recarga</option>
+                        <option value="pago_servicios">Pago de servicios</option>
+                        <option value="telecomunicaciones">Telecomunicaciones</option>
+                        <option value="entretenimiento">Entretenimiento</option>
                     </select>
                 </div>
             </div>
@@ -24,27 +35,16 @@
                 <div class="form-group">
                     <label for="filtro-origen">Origen:</label>
                     <select id="filtro-origen" class="form-control">
-                        <option value="">Todos</option>
+                        <option value="" selected>Todos</option>
                         <option value="1">Mis solicitudes</option>
                         <option value="0">Red de vendedores</option>
                     </select>
                 </div>
             </div>
             <div class="col">
-                <div class="form-group">
-                    <label for="filtro-proveedor">Proveedor:</label>
-                    <select id="filtro-proveedor" class="form-control">
-                        <option value="">Todos</option>
-                        <option value="telmex">Telmex</option>
-                        <option value="payjoy">Payjoy</option>
-                        <option value="telcel">Telcel</option>
-                    </select>
-                </div>
-            </div>
-            <div class="col">
                 <div class="search-input-container">
                     <i class="fas fa-search search-icon"></i>
-                    <input type="text" id="busqueda" class="search-input" placeholder="Buscar por cliente, origen, cuenta...">
+                    <input type="text" id="busqueda" class="search-input" placeholder="Buscar por nombre, número, tienda...">
                 </div>
             </div>
             <div class="col actions">
@@ -66,44 +66,44 @@
         <span id="error-message">Error al cargar las solicitudes</span>
     </div>
     
-    <!-- Estadísticas -->
+    <!-- Estadísticas Interactivas (Cards como Filtros) -->
     <div id="estadisticas-container" class="statistics-container" style="display: none;">
-        <div class="stat-card">
+        <div class="stat-card clickable active" data-estado="">
             <div class="stat-icon"><i class="fas fa-tasks"></i></div>
             <div class="stat-info">
                 <span class="stat-value" id="stat-total">0</span>
                 <span class="stat-label">Total</span>
             </div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card clickable active" data-estado="pendiente">
             <div class="stat-icon"><i class="fas fa-clock"></i></div>
             <div class="stat-info">
                 <span class="stat-value" id="stat-pendientes">0</span>
                 <span class="stat-label">Pendientes</span>
             </div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card clickable" data-estado="procesando">
             <div class="stat-icon"><i class="fas fa-spinner"></i></div>
             <div class="stat-info">
                 <span class="stat-value" id="stat-procesando">0</span>
                 <span class="stat-label">Procesando</span>
             </div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card clickable" data-estado="completada">
             <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
             <div class="stat-info">
                 <span class="stat-value" id="stat-completadas">0</span>
                 <span class="stat-label">Completadas</span>
             </div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card clickable" data-estado="rechazada">
             <div class="stat-icon"><i class="fas fa-times-circle"></i></div>
             <div class="stat-info">
                 <span class="stat-value" id="stat-rechazadas">0</span>
                 <span class="stat-label">Rechazadas</span>
             </div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card clickable" data-estado="cancelada">
             <div class="stat-icon"><i class="fas fa-ban"></i></div>
             <div class="stat-info">
                 <span class="stat-value" id="stat-canceladas">0</span>
@@ -118,16 +118,14 @@
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th>ID</th>
-                        <th>Cliente</th>
-                        <th>Origen</th>
-                        <th>Proveedor</th>
-                        <th>Tipo Servicio</th>
-                        <th>Cuenta</th>
-                        <th>Monto</th>
-                        <th>Contacto</th>
                         <th>Fecha</th>
+                        <th>Folio</th>
+                        <th class="highlighted-column">Nombre</th>
+                        <th>Tipo Servicio</th>
+                        <th class="highlighted-column">Número</th>
                         <th>Tienda</th>
+                        <th>Usuario</th>
+                        <th>Monto</th>
                         <th>Estado</th>
                         <th>Acciones</th>
                     </tr>
@@ -202,7 +200,7 @@
 </div>
 
 <style>
-    /* Estadísticas */
+    /* Estadísticas Interactivas */
     .statistics-container {
         display: flex;
         flex-wrap: wrap;
@@ -219,18 +217,35 @@
         flex: 1;
         min-width: 150px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        transition: transform 0.2s ease;
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
     }
     
-    .stat-card:hover {
+    .stat-card.clickable {
+        cursor: pointer;
+    }
+    
+    .stat-card.clickable:hover {
         transform: translateY(-3px);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        background-color: #e3f2fd;
+    }
+    
+    .stat-card.active {
+        border-color: var(--primary-color);
+        background-color: #e3f2fd;
+        box-shadow: 0 4px 12px rgba(2, 136, 209, 0.2);
     }
     
     .stat-icon {
         font-size: 1.5rem;
         color: var(--primary-color);
         margin-right: 15px;
+        transition: color 0.3s ease;
+    }
+    
+    .stat-card.active .stat-icon {
+        color: #1976d2;
     }
     
     .stat-info {
@@ -242,6 +257,11 @@
         font-size: 1.5rem;
         font-weight: 600;
         color: #333;
+        transition: color 0.3s ease;
+    }
+    
+    .stat-card.active .stat-value {
+        color: #1976d2;
     }
     
     .stat-label {
@@ -265,7 +285,7 @@
     
     .filter-controls .col {
         flex: 1;
-        min-width: 200px;
+        min-width: 180px;
     }
     
     .filter-controls .actions {
@@ -282,6 +302,7 @@
         margin-bottom: 5px;
         font-size: 0.9rem;
         color: #666;
+        font-weight: 500;
     }
     
     .form-control {
@@ -290,6 +311,13 @@
         border: 1px solid #ddd;
         border-radius: 4px;
         font-size: 0.95rem;
+        transition: border-color 0.3s ease;
+    }
+    
+    .form-control:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 2px rgba(2, 136, 209, 0.1);
     }
     
     .search-input-container {
@@ -310,6 +338,13 @@
         border: 1px solid #ddd;
         border-radius: 4px;
         font-size: 0.95rem;
+        transition: border-color 0.3s ease;
+    }
+    
+    .search-input:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 2px rgba(2, 136, 209, 0.1);
     }
     
     .btn {
@@ -413,7 +448,7 @@
         margin-bottom: 10px;
     }
     
-    /* Tabla de datos */
+    /* Tabla de datos con columnas resaltadas */
     .table-responsive {
         overflow-x: auto;
     }
@@ -433,10 +468,26 @@
     .data-table th {
         background-color: #f2f2f2;
         font-weight: 600;
+        position: sticky;
+        top: 0;
+        z-index: 10;
     }
     
     .data-table tbody tr:hover {
         background-color: #f5f5f5;
+    }
+    
+    /* Columnas destacadas */
+    .highlighted-column {
+        background-color: #e8f4fd !important;
+        font-weight: 600;
+        color: #1976d2;
+    }
+    
+    .data-table td.highlighted-cell {
+        background-color: #f0f8ff;
+        font-weight: 600;
+        color: #1976d2;
     }
     
     /* Badges de estado */
@@ -727,6 +778,16 @@
         .modal-actions {
             flex-direction: column;
         }
+
+        .statistics-container {
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+        }
+        
+        .stat-card {
+            min-width: 120px;
+            padding: 10px;
+        }
     }
 </style>
 
@@ -734,7 +795,7 @@
 (function() {
     'use strict';
     
-    console.log('🚀 Iniciando módulo de pagos de servicios...');
+    console.log('🚀 Iniciando módulo de pagos renovado...');
     
     // =============================================
     // SISTEMA DE LIMPIEZA PARA NAVEGACIÓN SPA
@@ -747,7 +808,8 @@
         filteredSolicitudes: [],
         solicitudActual: null,
         currentPage: 1,
-        totalPages: 1
+        totalPages: 1,
+        activeEstadoFilter: 'pendiente' // Default: Pendiente
     };
     
     // Función para agregar event listeners con limpieza automática
@@ -771,7 +833,7 @@
     
     // Función principal de limpieza del módulo
     function cleanupModule() {
-        console.log('🧹 Limpiando módulo de pagos de servicios...');
+        console.log('🧹 Limpiando módulo de pagos renovado...');
         
         // Limpiar event listeners
         activeEventListeners.forEach(listener => {
@@ -797,7 +859,8 @@
             filteredSolicitudes: [],
             solicitudActual: null,
             currentPage: 1,
-            totalPages: 1
+            totalPages: 1,
+            activeEstadoFilter: 'pendiente'
         };
         
         // Limpiar funciones globales del módulo
@@ -807,7 +870,7 @@
         if (window.generarTicket) delete window.generarTicket;
         if (window.imprimirTicket) delete window.imprimirTicket;
         
-        console.log('✅ Módulo de pagos de servicios limpiado correctamente');
+        console.log('✅ Módulo de pagos renovado limpiado correctamente');
     }
     
     // Registrar la función de limpieza globalmente para el dashboard
@@ -839,10 +902,11 @@
                 statRechazadas: document.getElementById('stat-rechazadas'),
                 statCanceladas: document.getElementById('stat-canceladas'),
                 
-                // Filtros
-                filtroEstado: document.getElementById('filtro-estado'),
+                // Filtros renovados
+                filtroFechaInicio: document.getElementById('filtro-fecha-inicio'),
+                filtroFechaFin: document.getElementById('filtro-fecha-fin'),
+                filtroTipoServicio: document.getElementById('filtro-tipo-servicio'),
                 filtroOrigen: document.getElementById('filtro-origen'),
-                filtroProveedor: document.getElementById('filtro-proveedor'),
                 busquedaInput: document.getElementById('busqueda'),
                 btnRefresh: document.getElementById('btn-refresh'),
                 
@@ -887,14 +951,59 @@
     }
     
     // =============================================
+    // CONFIGURACIÓN INICIAL DE FECHAS
+    // =============================================
+    
+    function configurarFechasPorDefecto() {
+        try {
+            if (!elements.filtroFechaInicio || !elements.filtroFechaFin) {
+                console.warn('Elementos de fecha no disponibles');
+                return;
+            }
+            
+            const hoy = new Date();
+            const hace3Dias = new Date();
+            hace3Dias.setDate(hoy.getDate() - 3);
+            
+            // Formatear fechas en formato YYYY-MM-DD
+            const formatoFecha = (fecha) => {
+                return fecha.toISOString().split('T')[0];
+            };
+            
+            elements.filtroFechaInicio.value = formatoFecha(hace3Dias);
+            elements.filtroFechaFin.value = formatoFecha(hoy);
+            
+            console.log('✅ Fechas por defecto configuradas: desde', formatoFecha(hace3Dias), 'hasta', formatoFecha(hoy));
+            
+        } catch (error) {
+            console.error('❌ Error al configurar fechas por defecto:', error);
+        }
+    }
+    
+    // =============================================
     // CONFIGURACIÓN DE EVENT LISTENERS
     // =============================================
     
     function setupEventListeners() {
         try {
-            // Filtros
-            if (elements.filtroEstado) {
-                addEventListenerWithCleanup(elements.filtroEstado, 'change', () => {
+            // Filtros de fecha
+            if (elements.filtroFechaInicio) {
+                addEventListenerWithCleanup(elements.filtroFechaInicio, 'change', () => {
+                    moduleData.currentPage = 1;
+                    aplicarFiltros();
+                });
+            }
+            
+            if (elements.filtroFechaFin) {
+                addEventListenerWithCleanup(elements.filtroFechaFin, 'change', () => {
+                    moduleData.currentPage = 1;
+                    aplicarFiltros();
+                });
+            }
+            
+            // Otros filtros
+            if (elements.filtroTipoServicio) {
+                addEventListenerWithCleanup(elements.filtroTipoServicio, 'change', () => {
                     moduleData.currentPage = 1;
                     aplicarFiltros();
                 });
@@ -902,13 +1011,6 @@
             
             if (elements.filtroOrigen) {
                 addEventListenerWithCleanup(elements.filtroOrigen, 'change', () => {
-                    moduleData.currentPage = 1;
-                    aplicarFiltros();
-                });
-            }
-            
-            if (elements.filtroProveedor) {
-                addEventListenerWithCleanup(elements.filtroProveedor, 'change', () => {
                     moduleData.currentPage = 1;
                     aplicarFiltros();
                 });
@@ -926,6 +1028,17 @@
             if (elements.btnRefresh) {
                 addEventListenerWithCleanup(elements.btnRefresh, 'click', loadSolicitudesPagoservicios);
             }
+            
+            // Cards estadísticas como filtros
+            const statCards = document.querySelectorAll('.stat-card.clickable');
+            statCards.forEach(card => {
+                addEventListenerWithCleanup(card, 'click', () => {
+                    const estado = card.dataset.estado;
+                    setActiveEstadoFilter(estado);
+                    moduleData.currentPage = 1;
+                    aplicarFiltros();
+                });
+            });
             
             // Paginación
             if (elements.prevPageBtn) {
@@ -994,6 +1107,26 @@
     }
     
     // =============================================
+    // GESTIÓN DE FILTROS DE ESTADO INTERACTIVOS
+    // =============================================
+    
+    function setActiveEstadoFilter(estado) {
+        moduleData.activeEstadoFilter = estado;
+        
+        // Actualizar visualización de cards
+        const statCards = document.querySelectorAll('.stat-card.clickable');
+        statCards.forEach(card => {
+            if (card.dataset.estado === estado) {
+                card.classList.add('active');
+            } else {
+                card.classList.remove('active');
+            }
+        });
+        
+        console.log('🎯 Filtro de estado activo:', estado || 'todos');
+    }
+    
+    // =============================================
     // FUNCIONES PRINCIPALES DEL MÓDULO
     // =============================================
     
@@ -1026,7 +1159,7 @@
         try {
             showLoading();
             
-            console.log('Iniciando carga de solicitudes de pagos para UID:', userUID, 'Role:', userRole);
+            console.log('Iniciando carga de solicitudes renovada para UID:', userUID, 'Role:', userRole);
             
             const response = await fetch(`../api/get_solicitudes_pagoservicios.php?uid=${encodeURIComponent(userUID)}&role=${encodeURIComponent(userRole)}`);
             
@@ -1076,23 +1209,50 @@
         }
     }
     
-    // Función para aplicar filtros
+    // Función para aplicar filtros renovados
     function aplicarFiltros() {
-        if (!elements.filtroEstado || !elements.filtroOrigen || !elements.busquedaInput) {
+        if (!elements.filtroFechaInicio || !elements.filtroFechaFin || !elements.filtroOrigen || !elements.busquedaInput) {
             console.warn('Elementos de filtro no disponibles');
             return;
         }
         
-        const estado = elements.filtroEstado.value;
+        const fechaInicio = elements.filtroFechaInicio.value;
+        const fechaFin = elements.filtroFechaFin.value;
+        const tipoServicio = elements.filtroTipoServicio.value;
         const origen = elements.filtroOrigen.value;
-        const proveedor = elements.filtroProveedor.value;
         const termino = elements.busquedaInput.value.trim().toLowerCase();
+        const estadoFiltro = moduleData.activeEstadoFilter;
         
         moduleData.filteredSolicitudes = moduleData.allSolicitudes.filter(solicitud => {
-            if (estado && solicitud.estado_solicitud !== estado) {
+            // Filtro por estado (desde cards)
+            if (estadoFiltro && solicitud.estado_solicitud !== estadoFiltro) {
                 return false;
             }
             
+            // Filtro por fecha
+            if (fechaInicio && solicitud.fecha_creacion) {
+                const fechaSolicitud = new Date(solicitud.fecha_creacion).toISOString().split('T')[0];
+                if (fechaSolicitud < fechaInicio) {
+                    return false;
+                }
+            }
+            
+            if (fechaFin && solicitud.fecha_creacion) {
+                const fechaSolicitud = new Date(solicitud.fecha_creacion).toISOString().split('T')[0];
+                if (fechaSolicitud > fechaFin) {
+                    return false;
+                }
+            }
+            
+            // Filtro por tipo de servicio
+            if (tipoServicio && solicitud.tipo_servicio) {
+                const tipoSolicitud = solicitud.tipo_servicio.toLowerCase();
+                if (!tipoSolicitud.includes(tipoServicio.toLowerCase())) {
+                    return false;
+                }
+            }
+            
+            // Filtro por origen
             if (origen !== '') {
                 const esPropia = parseInt(solicitud.es_propia) === 1;
                 if ((origen === '1' && !esPropia) || (origen === '0' && esPropia)) {
@@ -1100,30 +1260,22 @@
                 }
             }
             
-            if (proveedor && solicitud.proveedor) {
-                const proveedorSolicitud = solicitud.proveedor.toLowerCase();
-                if (!proveedorSolicitud.includes(proveedor.toLowerCase())) {
-                    return false;
-                }
-            }
-            
+            // Filtro por término de búsqueda
             if (termino) {
-                const coincideCliente = solicitud.nombre_cliente && 
+                const coincideNombre = solicitud.nombre_cliente && 
                                       solicitud.nombre_cliente.toLowerCase().includes(termino);
-                const coincideOrigen = solicitud.user_name && 
-                                     solicitud.user_name.toLowerCase().includes(termino);
-                const coincideCuenta = solicitud.cuenta && 
+                const coincideNumero = solicitud.cuenta && 
                                      solicitud.cuenta.toLowerCase().includes(termino);
-                const coincideNumero = solicitud.numero_contacto && 
-                                     solicitud.numero_contacto.includes(termino);
-                const coincideProveedor = solicitud.proveedor && 
-                                     solicitud.proveedor.toLowerCase().includes(termino);
-                const coincideTipoServicio = solicitud.tipo_servicio && 
-                                           solicitud.tipo_servicio.toLowerCase().includes(termino);
                 const coincideTienda = solicitud.nombre_tienda && 
                                      solicitud.nombre_tienda.toLowerCase().includes(termino);
+                const coincideUsuario = solicitud.user_name && 
+                                      solicitud.user_name.toLowerCase().includes(termino);
+                const coincideContacto = solicitud.numero_contacto && 
+                                       solicitud.numero_contacto.includes(termino);
+                const coincideTipoServicio = solicitud.tipo_servicio && 
+                                           solicitud.tipo_servicio.toLowerCase().includes(termino);
                 
-                if (!coincideCliente && !coincideOrigen && !coincideCuenta && !coincideNumero && !coincideProveedor && !coincideTipoServicio && !coincideTienda) {
+                if (!coincideNombre && !coincideNumero && !coincideTienda && !coincideUsuario && !coincideContacto && !coincideTipoServicio) {
                     return false;
                 }
             }
@@ -1165,7 +1317,7 @@
         showContent();
     }
     
-    // Función para renderizar solicitudes
+    // Función para renderizar solicitudes con nuevo orden de columnas
     function renderSolicitudes(solicitudes) {
         if (!elements.tbody) {
             console.error('Elemento tbody no disponible');
@@ -1186,6 +1338,7 @@
                 case 'cancelada': estadoClass = 'status-cancelada'; break;
             }
             
+            // Formatear fecha
             let fechaFormateada = 'No disponible';
             if (solicitud.fecha_creacion) {
                 try {
@@ -1200,6 +1353,7 @@
                 }
             }
             
+            // Formatear monto
             let montoFormateado = 'No disponible';
             if (solicitud.monto) {
                 try {
@@ -1248,17 +1402,17 @@
             }
             
             const row = document.createElement('tr');
+            
+            // NUEVO ORDEN DE COLUMNAS: Fecha, Folio, Nombre*, Tipo Servicio, Número*, Tienda, Usuario, Monto, Estado, Acciones
             row.innerHTML = `
-                <td>${solicitud.id}</td>
-                <td>${solicitud.nombre_cliente || 'No disponible'}</td>
-                <td>${solicitud.user_name || 'No disponible'}</td>
-                <td>${solicitud.proveedor || 'No disponible'}</td>
-                <td>${solicitud.tipo_servicio || 'No disponible'}</td>
-                <td>${solicitud.cuenta || 'No disponible'}</td>
-                <td>${montoFormateado}</td>
-                <td>${solicitud.numero_contacto || 'No disponible'}</td>
                 <td>${fechaFormateada}</td>
+                <td>${solicitud.id}</td>
+                <td class="highlighted-cell">${solicitud.nombre_cliente || 'No disponible'}</td>
+                <td>${solicitud.tipo_servicio || 'No disponible'}</td>
+                <td class="highlighted-cell">${solicitud.cuenta || 'No disponible'}</td>
                 <td>${tiendaDisplay}</td>
+                <td>${solicitud.user_name || 'No disponible'}</td>
+                <td>${montoFormateado}</td>
                 <td><span class="status-badge ${estadoClass}">${estado}</span></td>
                 <td>${accionesHTML}</td>
             `;
@@ -1345,23 +1499,19 @@
         if (elements.solicitudInfoCompletar) {
             elements.solicitudInfoCompletar.innerHTML = `
                 <div class="detail-item">
-                    <div class="detail-label">Cliente:</div>
+                    <div class="detail-label">Nombre:</div>
                     <div class="detail-value">${solicitud.nombre_cliente || 'No disponible'}</div>
                 </div>
                 <div class="detail-item">
-                    <div class="detail-label">Origen:</div>
+                    <div class="detail-label">Usuario:</div>
                     <div class="detail-value">${solicitud.user_name || 'No disponible'}</div>
-                </div>
-                <div class="detail-item">
-                    <div class="detail-label">Proveedor:</div>
-                    <div class="detail-value">${solicitud.proveedor || 'No disponible'}</div>
                 </div>
                 <div class="detail-item">
                     <div class="detail-label">Tipo de servicio:</div>
                     <div class="detail-value">${solicitud.tipo_servicio || 'No disponible'}</div>
                 </div>
                 <div class="detail-item">
-                    <div class="detail-label">Cuenta/Número:</div>
+                    <div class="detail-label">Número:</div>
                     <div class="detail-value">${solicitud.cuenta || 'No disponible'}</div>
                 </div>
                 <div class="detail-item">
@@ -1462,7 +1612,7 @@
         }
     }
     
-    // Función para ver detalles
+    // Función para ver detalles renovada
     function verDetalles(id) {
         console.log('Buscando solicitud con ID:', id);
         
@@ -1531,12 +1681,8 @@
                 <div class="detail-group">
                     <h4>Información del Cliente</h4>
                     <div class="detail-item">
-                        <div class="detail-label">Cliente:</div>
+                        <div class="detail-label">Nombre:</div>
                         <div class="detail-value">${solicitud.nombre_cliente || 'No disponible'}</div>
-                    </div>
-                    <div class="detail-item">
-                        <div class="detail-label">Origen/Tienda:</div>
-                        <div class="detail-value">${solicitud.user_name || 'No disponible'}</div>
                     </div>
                     <div class="detail-item">
                         <div class="detail-label">Número de contacto:</div>
@@ -1547,15 +1693,11 @@
                 <div class="detail-group">
                     <h4>Información del Servicio</h4>
                     <div class="detail-item">
-                        <div class="detail-label">Proveedor:</div>
-                        <div class="detail-value">${solicitud.proveedor || 'No disponible'}</div>
-                    </div>
-                    <div class="detail-item">
                         <div class="detail-label">Tipo de servicio:</div>
                         <div class="detail-value">${solicitud.tipo_servicio || 'No disponible'}</div>
                     </div>
                     <div class="detail-item">
-                        <div class="detail-label">Cuenta/Número:</div>
+                        <div class="detail-label">Número/Cuenta:</div>
                         <div class="detail-value">${solicitud.cuenta || 'No disponible'}</div>
                     </div>
                     <div class="detail-item">
@@ -1567,6 +1709,10 @@
                 <div class="detail-group">
                     <h4>Información de la Solicitud</h4>
                     <div class="detail-item">
+                        <div class="detail-label">Folio:</div>
+                        <div class="detail-value">${solicitud.id}</div>
+                    </div>
+                    <div class="detail-item">
                         <div class="detail-label">Estado:</div>
                         <div class="detail-value">
                             <span class="status-badge ${getEstadoClass(estado)}">
@@ -1575,7 +1721,7 @@
                         </div>
                     </div>
                     <div class="detail-item">
-                        <div class="detail-label">Fecha de creación:</div>
+                        <div class="detail-label">Fecha:</div>
                         <div class="detail-value">${fechaFormateada}</div>
                     </div>
                     <div class="detail-item">
@@ -1584,6 +1730,10 @@
                             ${tiendaDisplayModal}
                             ${etiquetasEspeciales}
                         </div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Usuario:</div>
+                        <div class="detail-value">${solicitud.user_name || 'No disponible'}</div>
                     </div>
                     ${comentariosHtml}
                 </div>
@@ -1805,17 +1955,22 @@
     
     // Función principal de inicialización
     function initPagosModule() {
-        console.log('🔧 Inicializando módulo de pagos de servicios...');
+        console.log('🔧 Inicializando módulo de pagos renovado...');
         
         if (!initializeElements()) {
             console.error('❌ Falló la inicialización de elementos DOM');
             return;
         }
         
+        configurarFechasPorDefecto();
         setupEventListeners();
+        
+        // Configurar filtro de estado por defecto (Pendiente)
+        setActiveEstadoFilter('pendiente');
+        
         loadSolicitudesPagoservicios();
         
-        console.log('✅ Módulo de pagos de servicios inicializado correctamente');
+        console.log('✅ Módulo de pagos renovado inicializado correctamente');
     }
     
     // Inicializar el módulo
