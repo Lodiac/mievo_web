@@ -576,7 +576,7 @@ try {
     if ($role === 'vendedor' && isset($tipo_vendedor)) {
         $tipo_vendedor_respuesta = $tipo_vendedor;
     } elseif ($role === 'admin' || $role === 'subdistribuidor') {
-        $tipo_vendedor_respuesta = 'interno'; // Para efectos de UI
+        $tipo_vendedor_respuesta = ''; // Para efectos de UI
     }
     
     // Cerrar conexión
