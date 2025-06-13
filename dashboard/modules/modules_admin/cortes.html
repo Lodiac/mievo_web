@@ -1,9 +1,12 @@
-<!-- modules/modules_admin/cortes.html - Módulo de Cortes Sicatel y PayJoy - VERSIÓN CORREGIDA -->
+<!-- modules/modules_admin/cortes.html - VERSIÓN CON NUEVAS TERMINOLOGÍAS -->
 <div class="content-header">
     <h1 class="content-title">
         <i class="fas fa-calendar-times"></i> Gestión de Cortes
     </h1>
     <p class="content-subtitle">Realiza cortes diarios de Sicatel y PayJoy</p>
+    <div id="tienda-info" class="tienda-badge" style="display: none;">
+        <i class="fas fa-store"></i> <span id="nombre-tienda">Cargando...</span>
+    </div>
 </div>
 
 <div class="cortes-container">
@@ -47,9 +50,9 @@
                     <label for="fecha-corte">Fecha del Corte</label>
                     <input type="date" id="fecha-corte" class="form-control">
                 </div>
-                <div class="config-item" id="monto-esperado-container">
-                    <label for="monto-esperado">Monto Esperado ($)</label>
-                    <input type="number" id="monto-esperado" class="form-control" step="0.01" min="0" placeholder="0.00">
+                <div class="config-item" id="corte-sicatel-container">
+                    <label for="corte-sicatel">Corte Sicatel ($)</label>
+                    <input type="number" id="corte-sicatel" class="form-control" step="0.01" min="0" placeholder="0.00">
                 </div>
             </div>
         </div>
@@ -97,6 +100,19 @@
     padding: 20px;
     max-width: 1200px;
     margin: 0 auto;
+}
+
+.tienda-badge {
+    background: #007bff;
+    color: white;
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
 }
 
 .card {
@@ -298,131 +314,236 @@
     100% { transform: rotate(360deg); }
 }
 
-/* Resultados */
-.resultado-card {
-    background: #f8f9fa;
-    border: 1px solid #dee2e6;
-    border-radius: 8px;
-    padding: 20px;
+/* NUEVOS ESTILOS MEJORADOS PARA RESULTADOS */
+.resultado-principal {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 15px;
+    padding: 30px;
     margin-bottom: 20px;
-}
-
-.resultado-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 15px;
-}
-
-.resultado-header h4 {
-    margin: 0;
-    color: #333;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.resultado-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 15px;
-    margin-bottom: 20px;
-}
-
-.resultado-item {
-    background: white;
-    padding: 15px;
-    border-radius: 6px;
-    border-left: 4px solid #007bff;
+    color: white;
     text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
 }
 
-.resultado-item.destacado {
-    border-left-color: #28a745;
-    background: #f8fff9;
+.resultado-principal h4 {
+    margin: 0 0 30px 0;
+    font-size: 1.4rem;
+    opacity: 0.95;
+    font-weight: 600;
 }
 
-.resultado-item.alerta {
-    border-left-color: #dc3545;
-    background: #fff8f8;
+.montos-principales {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 25px;
+    margin-bottom: 0;
 }
 
-.resultado-valor {
-    font-size: 1.8rem;
-    font-weight: bold;
-    color: #333;
+.monto-card {
+    background: rgba(255,255,255,0.12);
+    backdrop-filter: blur(15px);
+    border-radius: 12px;
+    padding: 25px 20px;
+    border: 1px solid rgba(255,255,255,0.25);
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.monto-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 3px;
+    background: rgba(255,255,255,0.5);
+    border-radius: 0 0 3px 3px;
+}
+
+.monto-card:hover {
+    transform: translateY(-2px);
+    background: rgba(255,255,255,0.18);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.monto-valor {
+    font-size: 2.8rem;
+    font-weight: 800;
+    margin-bottom: 10px;
+    line-height: 1;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.monto-label {
+    font-size: 1rem;
+    opacity: 0.9;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+}
+
+.monto-card.mievo {
+    background: linear-gradient(135deg, rgba(40, 167, 69, 0.25) 0%, rgba(34, 139, 34, 0.25) 100%);
+    border: 2px solid rgba(40, 167, 69, 0.5);
+}
+
+.monto-card.mievo::before {
+    background: #28a745;
+    width: 50px;
+    height: 4px;
+}
+
+/* ACCIÓN PRINCIPAL - MONTO A DEPOSITAR */
+.accion-depositar {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+    border: 3px solid #ff4757;
+    border-radius: 15px;
+    padding: 25px;
+    margin: 25px 0;
+    color: white;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 8px 25px rgba(255, 71, 87, 0.4);
+    animation: pulseAction 3s ease-in-out infinite;
+}
+
+.accion-depositar::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+    transform: rotate(45deg);
+    animation: shimmer 2s ease-in-out infinite;
+}
+
+@keyframes pulseAction {
+    0%, 100% { 
+        transform: scale(1);
+        box-shadow: 0 8px 25px rgba(255, 71, 87, 0.4);
+    }
+    50% { 
+        transform: scale(1.02);
+        box-shadow: 0 12px 35px rgba(255, 71, 87, 0.6);
+    }
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+    100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+}
+
+.accion-depositar .icono-accion {
+    font-size: 2rem;
+    margin-bottom: 10px;
+    display: block;
+    animation: bounce 2s ease-in-out infinite;
+}
+
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-10px); }
+    60% { transform: translateY(-5px); }
+}
+
+.accion-depositar .titulo-accion {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.accion-depositar .monto-accion {
+    font-size: 2.5rem;
+    font-weight: 900;
+    text-shadow: 0 3px 6px rgba(0,0,0,0.3);
     margin-bottom: 5px;
 }
 
-.resultado-label {
-    font-size: 0.9rem;
-    color: #666;
+.accion-depositar .texto-accion {
+    font-size: 0.95rem;
+    opacity: 0.9;
     font-weight: 500;
 }
 
-.diferencia {
-    margin-top: 10px;
-    padding: 10px;
-    border-radius: 6px;
+/* Estado Exacto - Mejorado */
+.estado-exacto {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    border: 3px solid #28a745;
+    border-radius: 15px;
+    padding: 20px;
+    margin: 25px 0;
+    color: white;
     text-align: center;
-    font-weight: 600;
+    font-size: 1.2rem;
+    font-weight: 700;
+    box-shadow: 0 8px 25px rgba(40, 167, 69, 0.3);
 }
 
-.diferencia.positiva {
-    background: #d4edda;
-    color: #155724;
-    border: 1px solid #c3e6cb;
+.estado-exacto .icono-exacto {
+    font-size: 1.8rem;
+    margin-right: 10px;
+    animation: checkmark 1.5s ease-in-out;
 }
 
-.diferencia.negativa {
-    background: #f8d7da;
-    color: #721c24;
-    border: 1px solid #f5c6cb;
+@keyframes checkmark {
+    0% { transform: scale(0); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
 }
 
-.diferencia.exacta {
-    background: #d1ecf1;
-    color: #0c5460;
-    border: 1px solid #bee5eb;
+/* Estado Excedente - Mejorado */
+.estado-excedente {
+    background: linear-gradient(135deg, #007bff 0%, #6f42c1 100%);
+    border: 3px solid #007bff;
+    border-radius: 15px;
+    padding: 20px;
+    margin: 25px 0;
+    color: white;
+    text-align: center;
+    font-size: 1.2rem;
+    font-weight: 700;
+    box-shadow: 0 8px 25px rgba(0, 123, 255, 0.3);
 }
 
-/* Detalle de solicitudes */
-.detalle-solicitudes {
+.estado-excedente .icono-excedente {
+    font-size: 1.8rem;
+    margin-right: 10px;
+}
+
+/* Información Adicional */
+.info-adicional {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
     margin-top: 20px;
+    border: 1px solid #dee2e6;
 }
 
-.tabla-container {
-    max-height: 400px;
-    overflow-y: auto;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    margin-top: 10px;
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #f1f1f1;
 }
 
-.datos-tabla {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.85rem;
+.info-row:last-child {
+    border-bottom: none;
 }
 
-.datos-tabla th,
-.datos-tabla td {
-    padding: 8px 12px;
-    text-align: left;
-    border-bottom: 1px solid #eee;
+.info-label {
+    font-weight: 500;
+    color: #666;
 }
 
-.datos-tabla th {
-    background: #f8f9fa;
+.info-valor {
     font-weight: 600;
-    color: #555;
-    position: sticky;
-    top: 0;
-    z-index: 1;
-}
-
-.datos-tabla tbody tr:hover {
-    background-color: #f8f9fa;
+    color: #333;
 }
 
 /* Coming Soon */
@@ -461,26 +582,10 @@
     border: 1px solid #f5c6cb;
 }
 
-.mensaje.exito {
-    background: #d4edda;
-    color: #155724;
-    border: 1px solid #c3e6cb;
-}
-
 .mensaje.info {
     background: #d1ecf1;
     color: #0c5460;
     border: 1px solid #bee5eb;
-}
-
-/* Botón de Confirmar */
-.boton-confirmar {
-    text-align: center;
-    margin-top: 20px;
-    padding: 20px;
-    background: #f8f9fa;
-    border-radius: 8px;
-    border: 2px dashed #dee2e6;
 }
 
 /* Badge para fecha */
@@ -510,33 +615,101 @@
         grid-template-columns: 1fr;
     }
     
-    .resultado-grid {
+    .montos-principales {
         grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .monto-valor {
+        font-size: 2.2rem !important;
+    }
+    
+    .resultado-principal h4 {
+        font-size: 1.2rem;
+    }
+    
+    .resultado-principal {
+        padding: 20px;
+    }
+    
+    .accion-depositar {
+        padding: 20px 15px;
+        margin: 20px 0;
+    }
+    
+    .accion-depositar .monto-accion {
+        font-size: 2rem;
+    }
+    
+    .accion-depositar .titulo-accion {
+        font-size: 1.1rem;
+    }
+    
+    .info-adicional {
+        padding: 15px;
+    }
+    
+    .info-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+        padding: 12px 0;
+    }
+    
+    .info-label {
+        font-size: 0.9rem;
+    }
+    
+    .info-valor {
+        font-size: 0.95rem;
+        margin-left: 20px;
     }
 }
 </style>
 
 <script>
-console.log('🚀 Iniciando módulo de Cortes...');
+console.log('🚀 Iniciando módulo de Cortes con nuevas terminologías...');
 
 function inicializarCortes() {
     console.log('⚙️ Inicializando módulo de cortes...');
     
     try {
-        // Elementos del DOM
+        // Elementos del DOM - CORREGIDOS PARA NUEVAS TERMINOLOGÍAS
         const fechaCorte = document.getElementById('fecha-corte');
-        const montoEsperado = document.getElementById('monto-esperado');
+        const corteSicatel = document.getElementById('corte-sicatel'); // Cambio de nombre
         const validarBtn = document.getElementById('validar-sicatel');
         const loadingSicatel = document.getElementById('loading-sicatel');
         const resultadosSicatel = document.getElementById('resultados-sicatel');
+        const tiendaInfo = document.getElementById('tienda-info');
+        const nombreTienda = document.getElementById('nombre-tienda');
         const corteOptions = document.querySelectorAll('.corte-option:not(.disabled)');
         
         // Verificar elementos
-        if (!fechaCorte || !montoEsperado || !validarBtn || !loadingSicatel || !resultadosSicatel) {
+        if (!fechaCorte || !corteSicatel || !validarBtn || !loadingSicatel || !resultadosSicatel) {
             throw new Error('No se encontraron todos los elementos del DOM');
         }
         
         console.log('✅ Elementos del DOM encontrados');
+        
+        // Obtener y mostrar nombre de la tienda desde la sesión
+        let userData = null;
+        let nombreTiendaSesion = null;
+        
+        try {
+            const userDataStr = sessionStorage.getItem('userData');
+            if (userDataStr) {
+                userData = JSON.parse(userDataStr);
+                nombreTiendaSesion = userData?.name || null;
+            }
+        } catch (e) {
+            console.error('Error al parsear userData de sessionStorage:', e);
+        }
+        
+        if (nombreTiendaSesion && tiendaInfo && nombreTienda) {
+            nombreTienda.textContent = nombreTiendaSesion;
+            tiendaInfo.style.display = 'inline-flex';
+            console.log('🏪 Nombre de tienda mostrado:', nombreTiendaSesion);
+        }
         
         // Establecer fecha de hoy por defecto
         const hoy = new Date();
@@ -544,7 +717,7 @@ function inicializarCortes() {
         console.log('📅 Fecha establecida:', fechaCorte.value);
         
         // Configurar formato de monto
-        montoEsperado.addEventListener('input', function() {
+        corteSicatel.addEventListener('input', function() {
             let valor = this.value;
             // Remover caracteres no numéricos excepto punto
             valor = valor.replace(/[^0-9.]/g, '');
@@ -570,9 +743,9 @@ function inicializarCortes() {
                     throw new Error('Selecciona una fecha para el corte');
                 }
                 
-                const montoEsperadoVal = parseFloat(montoEsperado.value) || 0;
-                if (montoEsperadoVal <= 0) {
-                    throw new Error('Ingresa un monto esperado válido mayor a 0');
+                const corteSicatelVal = parseFloat(corteSicatel.value) || 0;
+                if (corteSicatelVal <= 0) {
+                    throw new Error('Ingresa un corte Sicatel válido mayor a 0');
                 }
                 
                 // Mostrar loading
@@ -581,10 +754,9 @@ function inicializarCortes() {
                 validarBtn.disabled = true;
                 validarBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Validando...';
                 
-                // ✅ CORRECCIÓN: Obtener datos de sesión igual que en otros módulos
+                // Obtener datos de sesión
                 const userUID = sessionStorage.getItem('userUID');
                 const userEmail = sessionStorage.getItem('userEmail');
-                let userData = null;
                 let userRole = null;
                 
                 // Obtener userData y extraer el rol
@@ -603,21 +775,23 @@ function inicializarCortes() {
                 }
                 
                 console.log('👤 Sesión validada - Usuario:', userUID, 'Email:', userEmail, 'Rol:', userRole);
+                console.log('🏪 Tienda:', nombreTiendaSesion);
                 console.log('📅 Fecha:', fechaCorte.value);
-                console.log('💰 Monto esperado:', montoEsperadoVal);
+                console.log('💰 Corte Sicatel:', corteSicatelVal);
                 
                 // Verificar permisos (solo admin puede hacer cortes)
                 if (userRole !== 'admin') {
                     throw new Error('No tienes permisos para realizar cortes. Se requiere rol de administrador.');
                 }
                 
-                // Preparar datos para la API
+                // Preparar datos para la API (mantenemos nombres originales)
                 const requestData = {
                     uid: userUID,
                     role: userRole,
                     fecha: fechaCorte.value,
-                    monto_esperado: montoEsperadoVal,
-                    tipo_corte: 'sicatel'
+                    monto_esperado: corteSicatelVal, // API usa nombre original
+                    tipo_corte: 'sicatel',
+                    nombre_tienda: nombreTiendaSesion || 'Tienda no identificada'
                 };
                 
                 console.log('📤 Enviando request:', requestData);
@@ -639,9 +813,8 @@ function inicializarCortes() {
                     
                     let errorMessage = `Error HTTP ${response.status}`;
                     if (errorText) {
-                        // Intentar extraer mensaje de error del HTML o texto
                         if (errorText.includes('Error:') || errorText.includes('Exception:')) {
-                            errorMessage = errorText.substring(0, 200); // Limitar longitud
+                            errorMessage = errorText.substring(0, 200);
                         } else {
                             errorMessage += `: ${errorText.substring(0, 100)}`;
                         }
@@ -656,8 +829,8 @@ function inicializarCortes() {
                     throw new Error(resultado.error || 'Error desconocido en la consulta');
                 }
                 
-                // Mostrar resultados
-                mostrarResultadosSicatel(resultado.data, montoEsperadoVal);
+                // Mostrar resultados con nuevas terminologías
+                mostrarResultadosSicatel(resultado.data, corteSicatelVal, resultado.tienda_info);
                 
             } catch (error) {
                 console.error('❌ Error en validación:', error);
@@ -669,139 +842,107 @@ function inicializarCortes() {
             }
         }
         
-        // Función para mostrar resultados
-        function mostrarResultadosSicatel(data, montoEsperado) {
-            console.log('📊 Mostrando resultados:', data);
+        // FUNCIÓN ACTUALIZADA CON MEJOR DISEÑO VISUAL
+        function mostrarResultadosSicatel(data, corteSicatelVal, tiendaInfo) {
+            console.log('📊 Mostrando resultados con nuevas terminologías:', data);
             
-            const montoGenerado = parseFloat(data.monto_total) || 0;
-            const diferencia = montoGenerado - montoEsperado;
-            const porcentajeDiferencia = montoEsperado > 0 ? ((diferencia / montoEsperado) * 100) : 0;
+            const montoMievo = parseFloat(data.monto_mievo || data.monto_total) || 0;
+            const diferencia = montoMievo - corteSicatelVal;
             
-            let claseResultado = 'exacta';
-            let iconoResultado = 'fas fa-equals';
-            let textoResultado = 'Monto exacto';
+            let seccionEstado = '';
             
-            if (Math.abs(diferencia) > 0.01) { // Tolerancia de 1 centavo
-                if (diferencia > 0) {
-                    claseResultado = 'positiva';
-                    iconoResultado = 'fas fa-arrow-up';
-                    textoResultado = `Excedente de $${diferencia.toFixed(2)}`;
-                } else {
-                    claseResultado = 'negativa';
-                    iconoResultado = 'fas fa-arrow-down';
-                    textoResultado = `Faltante de $${Math.abs(diferencia).toFixed(2)}`;
-                }
-            }
-            
-            // Generar tabla de solicitudes
-            let tablaSolicitudes = '';
-            if (data.solicitudes && data.solicitudes.length > 0) {
-                tablaSolicitudes = `
-                    <div class="detalle-solicitudes">
-                        <h5><i class="fas fa-list"></i> Detalle de ${data.solicitudes.length} Solicitudes</h5>
-                        <div class="tabla-container">
-                            <table class="datos-tabla">
-                                <thead>
-                                    <tr>
-                                        <th>ID</th>
-                                        <th>Fecha</th>
-                                        <th>Cliente</th>
-                                        <th>Proveedor</th>
-                                        <th>Servicio</th>
-                                        <th>Monto</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${data.solicitudes.map(sol => `
-                                        <tr>
-                                            <td style="font-weight: 600;">#${sol.solicitud_id || sol.id}</td>
-                                            <td style="font-size: 0.8rem;">${sol.fecha_creacion_formateada || 'N/A'}</td>
-                                            <td>${sol.nombre_cliente || 'N/A'}</td>
-                                            <td style="font-weight: 500; text-transform: uppercase;">${sol.proveedor || 'N/A'}</td>
-                                            <td>${sol.tipo_servicio || 'N/A'}</td>
-                                            <td style="font-weight: 600; color: #28a745;">$${parseFloat(sol.monto || 0).toFixed(2)}</td>
-                                        </tr>
-                                    `).join('')}
-                                </tbody>
-                            </table>
-                        </div>
+            if (Math.abs(diferencia) <= 0.01) {
+                // MONTO EXACTO
+                seccionEstado = `
+                    <div class="estado-exacto">
+                        <i class="fas fa-check-circle icono-exacto"></i>
+                        <span>¡Perfecto! Los montos coinciden exactamente</span>
+                    </div>
+                `;
+            } else if (diferencia > 0) {
+                // MONTO EXCEDENTE
+                seccionEstado = `
+                    <div class="estado-excedente">
+                        <i class="fas fa-arrow-up icono-excedente"></i>
+                        <span>Monto excedente: <strong>${diferencia.toFixed(2)}</strong></span>
                     </div>
                 `;
             } else {
-                tablaSolicitudes = `
-                    <div class="detalle-solicitudes">
-                        <div class="mensaje info">
-                            <i class="fas fa-info-circle"></i>
-                            No se encontraron solicitudes para la fecha seleccionada.
-                        </div>
+                // MONTO A DEPOSITAR (ACCIÓN PRINCIPAL)
+                seccionEstado = `
+                    <div class="accion-depositar">
+                        <i class="fas fa-hand-holding-usd icono-accion"></i>
+                        <div class="titulo-accion">⚡ Acción Requerida</div>
+                        <div class="monto-accion">${Math.abs(diferencia).toFixed(2)}</div>
+                        <div class="texto-accion">Monto a depositar manualmente</div>
                     </div>
                 `;
             }
             
-            // Obtener datos de desglose de manera segura
-            const desglose = data.desglose || {};
-            const telcelData = desglose.telcel || { operaciones: 0, monto: 0, monto_formateado: '$0.00' };
-            const telmexData = desglose.telmex || { operaciones: 0, monto: 0, monto_formateado: '$0.00' };
-            
             const html = `
-                <div class="resultado-card">
-                    <div class="resultado-header">
-                        <h4><i class="fas fa-chart-line"></i> Resultado del Corte Sicatel</h4>
-                        <span class="badge badge-info">${data.fecha || fechaCorte.value}</span>
-                    </div>
+                <div class="resultado-principal">
+                    <h4><i class="fas fa-chart-line"></i> Corte Sicatel - ${data.fecha || fechaCorte.value}</h4>
+                    ${tiendaInfo ? `<p style="opacity: 0.9; margin: 0 0 25px 0; font-size: 1rem;"><i class="fas fa-store"></i> ${tiendaInfo.nombre}</p>` : ''}
                     
-                    <div class="resultado-grid">
-                        <div class="resultado-item">
-                            <div class="resultado-valor">$${montoEsperado.toFixed(2)}</div>
-                            <div class="resultado-label">Monto Esperado</div>
+                    <div class="montos-principales">
+                        <div class="monto-card">
+                            <div class="monto-valor">${corteSicatelVal.toFixed(2)}</div>
+                            <div class="monto-label">Corte Sicatel</div>
                         </div>
                         
-                        <div class="resultado-item destacado">
-                            <div class="resultado-valor">$${montoGenerado.toFixed(2)}</div>
-                            <div class="resultado-label">Monto Generado</div>
-                        </div>
-                        
-                        <div class="resultado-item">
-                            <div class="resultado-valor">${data.total_solicitudes || 0}</div>
-                            <div class="resultado-label">Solicitudes Procesadas</div>
-                        </div>
-                        
-                        <div class="resultado-item">
-                            <div class="resultado-valor">${(telcelData.operaciones + telmexData.operaciones)}</div>
-                            <div class="resultado-label">Total Operaciones</div>
+                        <div class="monto-card mievo">
+                            <div class="monto-valor">${montoMievo.toFixed(2)}</div>
+                            <div class="monto-label">Monto Mievo</div>
                         </div>
                     </div>
+                </div>
+                
+                ${seccionEstado}
+                
+                <div class="info-adicional">
+                    <h5 style="margin: 0 0 15px 0; color: #333; display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-info-circle"></i> 
+                        Información del Corte
+                    </h5>
                     
-                    <div class="diferencia ${claseResultado}">
-                        <i class="${iconoResultado}"></i>
-                        <strong>${textoResultado}</strong>
-                        ${Math.abs(porcentajeDiferencia) > 0.01 ? 
-                            `<span style="font-size: 0.9rem;"> (${porcentajeDiferencia > 0 ? '+' : ''}${porcentajeDiferencia.toFixed(2)}%)</span>` : 
-                            ''
-                        }
+                    <div class="info-row">
+                        <span class="info-label">
+                            <i class="fas fa-file-alt" style="color: #6c757d; margin-right: 8px;"></i>
+                            Total de solicitudes procesadas:
+                        </span>
+                        <span class="info-valor">${data.total_solicitudes || 0}</span>
                     </div>
                     
-                    <div style="margin-top: 15px; padding: 15px; background: white; border-radius: 6px; border: 1px solid #ddd;">
-                        <h6 style="margin: 0 0 10px 0; color: #555;">Desglose por Proveedor:</h6>
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
-                            <div style="text-align: center; padding: 10px; background: #f8f9fa; border-radius: 4px;">
-                                <strong>Telcel:</strong> ${telcelData.operaciones} ops, ${telcelData.monto_formateado}
-                            </div>
-                            <div style="text-align: center; padding: 10px; background: #f8f9fa; border-radius: 4px;">
-                                <strong>Telmex:</strong> ${telmexData.operaciones} ops, ${telmexData.monto_formateado}
-                            </div>
-                        </div>
+                    <div class="info-row">
+                        <span class="info-label">
+                            <i class="fas fa-signal" style="color: #007bff; margin-right: 8px;"></i>
+                            Operaciones Telcel:
+                        </span>
+                        <span class="info-valor">${data.desglose?.telcel?.operaciones || 0} - ${data.desglose?.telcel?.monto_formateado || '$0.00'}</span>
                     </div>
                     
-                    ${tablaSolicitudes}
+                    <div class="info-row">
+                        <span class="info-label">
+                            <i class="fas fa-phone" style="color: #28a745; margin-right: 8px;"></i>
+                            Operaciones Telmex:
+                        </span>
+                        <span class="info-valor">${data.desglose?.telmex?.operaciones || 0} - ${data.desglose?.telmex?.monto_formateado || '$0.00'}</span>
+                    </div>
                     
-                    <div class="boton-confirmar">
-                        <button class="btn btn-success" id="confirmar-corte" disabled>
-                            <i class="fas fa-check"></i> Confirmar Corte (Próximamente)
-                        </button>
-                        <p style="margin: 10px 0 0 0; font-size: 0.85rem; color: #666;">
-                            La funcionalidad de confirmar estará disponible próximamente
-                        </p>
+                    <div class="info-row">
+                        <span class="info-label">
+                            <i class="fas fa-user" style="color: #6f42c1; margin-right: 8px;"></i>
+                            Usuario procesador:
+                        </span>
+                        <span class="info-valor">${data.usuario_procesador || 'N/A'}</span>
+                    </div>
+                    
+                    <div class="info-row">
+                        <span class="info-label">
+                            <i class="fas fa-clock" style="color: #fd7e14; margin-right: 8px;"></i>
+                            Fecha y hora de consulta:
+                        </span>
+                        <span class="info-valor">${new Date().toLocaleString()}</span>
                     </div>
                 </div>
             `;
@@ -809,7 +950,7 @@ function inicializarCortes() {
             resultadosSicatel.innerHTML = html;
             resultadosSicatel.style.display = 'block';
             
-            console.log('✅ Resultados mostrados correctamente');
+            console.log('✅ Resultados mostrados con nuevo diseño visual');
         }
         
         // Función para mostrar errores
@@ -830,7 +971,14 @@ function inicializarCortes() {
         // Event listeners
         validarBtn.addEventListener('click', validarSicatel);
         
-        // Selector de tipo de corte (para futuro)
+        // Función para Enter en el campo de monto
+        corteSicatel.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                validarSicatel();
+            }
+        });
+        
+        // Selector de tipo de corte
         corteOptions.forEach(option => {
             option.addEventListener('click', function() {
                 if (this.classList.contains('disabled')) return;
@@ -841,11 +989,15 @@ function inicializarCortes() {
                 const tipo = this.dataset.tipo;
                 console.log('🔄 Tipo de corte seleccionado:', tipo);
                 
-                // Por ahora solo Sicatel está activo
+                // Mostrar/ocultar secciones según el tipo
                 if (tipo === 'sicatel') {
                     document.getElementById('sicatel-section').style.display = 'block';
                     document.getElementById('payjoy-section').style.display = 'none';
-                    document.getElementById('monto-esperado-container').style.display = 'flex';
+                    document.getElementById('corte-sicatel-container').style.display = 'flex';
+                } else if (tipo === 'payjoy') {
+                    document.getElementById('sicatel-section').style.display = 'none';
+                    document.getElementById('payjoy-section').style.display = 'block';
+                    document.getElementById('corte-sicatel-container').style.display = 'none';
                 }
             });
         });
@@ -869,16 +1021,17 @@ function inicializarCortes() {
             
             console.log('🔍 Debug Cortes:', {
                 fecha: fechaCorte.value,
-                monto: montoEsperado.value,
+                corteSicatel: corteSicatel.value,
                 userUID: userUID,
                 userEmail: userEmail,
                 userRole: userRole,
+                nombreTienda: nombreTiendaSesion,
                 userData: userData
             });
         };
         
         window.testCorte = function() {
-            montoEsperado.value = '1000.00';
+            corteSicatel.value = '1000.00';
             validarSicatel();
         };
         
@@ -897,6 +1050,21 @@ if (document.readyState === 'loading') {
 } else {
     setTimeout(inicializarCortes, 100);
 }
+
+// Función de limpieza para evitar memory leaks
+window.moduleCleanup = function() {
+    console.log('🧹 Limpiando módulo de Cortes...');
+    
+    // Limpiar funciones globales de debugging
+    if (window.debugCortes) {
+        delete window.debugCortes;
+    }
+    if (window.testCorte) {
+        delete window.testCorte;
+    }
+    
+    console.log('✅ Módulo de Cortes limpiado');
+};
 
 console.log('📱 Script del módulo de Cortes cargado');
 </script>
