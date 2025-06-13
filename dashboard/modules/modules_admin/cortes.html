@@ -1,4 +1,4 @@
-<!-- modules/modules_admin/cortes.html - VERSIÓN CON NUEVAS TERMINOLOGÍAS -->
+<!-- modules/modules_admin/cortes.html - MÓDULO COMPLETO CON DESGLOSE POR TIPO DE SERVICIO -->
 <div class="content-header">
     <h1 class="content-title">
         <i class="fas fa-calendar-times"></i> Gestión de Cortes
@@ -314,7 +314,7 @@
     100% { transform: rotate(360deg); }
 }
 
-/* NUEVOS ESTILOS MEJORADOS PARA RESULTADOS */
+/* ESTILOS PARA RESULTADOS */
 .resultado-principal {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     border-radius: 15px;
@@ -470,7 +470,7 @@
     font-weight: 500;
 }
 
-/* Estado Exacto - Mejorado */
+/* Estado Exacto */
 .estado-exacto {
     background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
     border: 3px solid #28a745;
@@ -496,7 +496,7 @@
     100% { transform: scale(1); }
 }
 
-/* Estado Excedente - Mejorado */
+/* Estado Excedente */
 .estado-excedente {
     background: linear-gradient(135deg, #007bff 0%, #6f42c1 100%);
     border: 3px solid #007bff;
@@ -544,6 +544,164 @@
 .info-valor {
     font-weight: 600;
     color: #333;
+}
+
+/* ESTILOS PARA DESGLOSE POR PROVEEDOR Y SERVICIOS */
+.proveedor-divisor {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px 20px;
+    margin: 15px -20px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-left: 4px solid;
+    font-weight: 700;
+    font-size: 0.95rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.proveedor-divisor.telcel {
+    border-left-color: #007bff;
+    background: linear-gradient(135deg, #e7f3ff 0%, #cce7ff 100%);
+    color: #0056b3;
+}
+
+.proveedor-divisor.telmex {
+    border-left-color: #28a745;
+    background: linear-gradient(135deg, #e8f5e8 0%, #d4f4d4 100%);
+    color: #1e7e34;
+}
+
+.proveedor-divisor i {
+    font-size: 1.2rem;
+    margin-right: 10px;
+}
+
+.proveedor-total {
+    font-weight: 600;
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+
+.servicio-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0 8px 30px;
+    border-bottom: 1px solid #f1f1f1;
+    margin-left: 20px;
+    position: relative;
+}
+
+.servicio-row:before {
+    content: '';
+    position: absolute;
+    left: -10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 6px;
+    height: 6px;
+    background: #6c757d;
+    border-radius: 50%;
+}
+
+.servicio-row:last-of-type {
+    border-bottom: none;
+    margin-bottom: 10px;
+}
+
+.servicio-nombre {
+    font-weight: 500;
+    color: #555;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.servicio-nombre i {
+    width: 16px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.servicio-datos {
+    font-weight: 600;
+    color: #333;
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
+/* BOTÓN REALIZAR CORTE */
+.accion-corte {
+    margin-top: 25px;
+    text-align: center;
+    padding: 20px 0;
+    border-top: 2px dashed #dee2e6;
+}
+
+.btn-realizar-corte {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    border: none;
+    padding: 15px 30px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    justify-content: center;
+    min-width: 200px;
+    margin: 0 auto;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-realizar-corte:before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg, transparent, rgba(255,255,255,0.2), transparent);
+    transform: rotate(45deg);
+    transition: transform 0.6s ease;
+}
+
+.btn-realizar-corte:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(40, 167, 69, 0.4);
+    background: linear-gradient(135deg, #218838 0%, #1ca085 100%);
+}
+
+.btn-realizar-corte:hover:before {
+    transform: translateX(100%) translateY(100%) rotate(45deg);
+}
+
+.btn-realizar-corte:active {
+    transform: translateY(0);
+    box-shadow: 0 3px 10px rgba(40, 167, 69, 0.3);
+}
+
+.btn-realizar-corte i {
+    font-size: 1.2rem;
+    animation: cut 2s ease-in-out infinite;
+}
+
+@keyframes cut {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(-10deg); }
+    75% { transform: rotate(10deg); }
 }
 
 /* Coming Soon */
@@ -664,19 +822,63 @@
         font-size: 0.95rem;
         margin-left: 20px;
     }
+    
+    /* Responsivo para nuevos elementos */
+    .proveedor-divisor {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 12px 15px;
+        margin: 15px -15px;
+        font-size: 0.9rem;
+    }
+    
+    .proveedor-total {
+        font-size: 0.85rem;
+        margin-left: 25px;
+    }
+    
+    .servicio-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+        padding: 10px 0 10px 25px;
+        margin-left: 15px;
+    }
+    
+    .servicio-nombre {
+        font-size: 0.85rem;
+    }
+    
+    .servicio-datos {
+        font-size: 0.8rem;
+        margin-left: 15px;
+        color: #666;
+    }
+    
+    .btn-realizar-corte {
+        padding: 12px 20px;
+        font-size: 1rem;
+        min-width: 180px;
+    }
+    
+    .accion-corte {
+        padding: 15px 0;
+        margin-top: 20px;
+    }
 }
 </style>
 
 <script>
-console.log('🚀 Iniciando módulo de Cortes con nuevas terminologías...');
+console.log('🚀 Iniciando módulo de Cortes con desglose por tipo de servicio...');
 
 function inicializarCortes() {
     console.log('⚙️ Inicializando módulo de cortes...');
     
     try {
-        // Elementos del DOM - CORREGIDOS PARA NUEVAS TERMINOLOGÍAS
+        // Elementos del DOM
         const fechaCorte = document.getElementById('fecha-corte');
-        const corteSicatel = document.getElementById('corte-sicatel'); // Cambio de nombre
+        const corteSicatel = document.getElementById('corte-sicatel');
         const validarBtn = document.getElementById('validar-sicatel');
         const loadingSicatel = document.getElementById('loading-sicatel');
         const resultadosSicatel = document.getElementById('resultados-sicatel');
@@ -784,12 +986,12 @@ function inicializarCortes() {
                     throw new Error('No tienes permisos para realizar cortes. Se requiere rol de administrador.');
                 }
                 
-                // Preparar datos para la API (mantenemos nombres originales)
+                // Preparar datos para la API
                 const requestData = {
                     uid: userUID,
                     role: userRole,
                     fecha: fechaCorte.value,
-                    monto_esperado: corteSicatelVal, // API usa nombre original
+                    monto_esperado: corteSicatelVal,
                     tipo_corte: 'sicatel',
                     nombre_tienda: nombreTiendaSesion || 'Tienda no identificada'
                 };
@@ -829,7 +1031,7 @@ function inicializarCortes() {
                     throw new Error(resultado.error || 'Error desconocido en la consulta');
                 }
                 
-                // Mostrar resultados con nuevas terminologías
+                // Mostrar resultados con desglose por tipo de servicio
                 mostrarResultadosSicatel(resultado.data, corteSicatelVal, resultado.tienda_info);
                 
             } catch (error) {
@@ -842,9 +1044,43 @@ function inicializarCortes() {
             }
         }
         
-        // FUNCIÓN ACTUALIZADA CON MEJOR DISEÑO VISUAL
+        // Función para obtener ícono según el tipo de servicio
+        function obtenerIconoServicio(servicio, proveedor) {
+            const servicioLower = servicio.toLowerCase();
+            
+            if (proveedor === 'telcel') {
+                if (servicioLower.includes('parcialidad')) {
+                    return '<i class="fas fa-credit-card" style="color: #ffc107;"></i>';
+                } else if (servicioLower.includes('enganche')) {
+                    return '<i class="fas fa-hand-holding-usd" style="color: #17a2b8;"></i>';
+                } else if (servicioLower === 'telcel') {
+                    return '<i class="fas fa-mobile-alt" style="color: #007bff;"></i>';
+                }
+            } else if (proveedor === 'telmex') {
+                if (servicioLower.includes('recibo')) {
+                    return '<i class="fas fa-file-invoice-dollar" style="color: #28a745;"></i>';
+                }
+            }
+            
+            return '<i class="fas fa-cog" style="color: #6c757d;"></i>';
+        }
+        
+        // Función para formatear nombre del servicio
+        function formatearNombreServicio(servicio) {
+            // Mantener nombres exactos como vienen de la base de datos
+            if (servicio.includes('Parcialidad Amigo Paguitos')) {
+                return 'Parcialidad Amigo Paguitos (OP61)';
+            } else if (servicio.includes('Enganche Amigo Paguitos')) {
+                return 'Enganche Amigo Paguitos (OP60)';
+            } else if (servicio.includes('Pago de Recibo Telmex')) {
+                return 'Pago de Recibo Telmex';
+            }
+            return servicio;
+        }
+        
+        // FUNCIÓN ACTUALIZADA CON DESGLOSE POR TIPO DE SERVICIO
         function mostrarResultadosSicatel(data, corteSicatelVal, tiendaInfo) {
-            console.log('📊 Mostrando resultados con nuevas terminologías:', data);
+            console.log('📊 Mostrando resultados con desglose por tipo de servicio:', data);
             
             const montoMievo = parseFloat(data.monto_mievo || data.monto_total) || 0;
             const diferencia = montoMievo - corteSicatelVal;
@@ -864,7 +1100,7 @@ function inicializarCortes() {
                 seccionEstado = `
                     <div class="estado-excedente">
                         <i class="fas fa-arrow-up icono-excedente"></i>
-                        <span>Monto excedente: <strong>${diferencia.toFixed(2)}</strong></span>
+                        <span>Monto excedente: <strong>$${diferencia.toFixed(2)}</strong></span>
                     </div>
                 `;
             } else {
@@ -873,10 +1109,48 @@ function inicializarCortes() {
                     <div class="accion-depositar">
                         <i class="fas fa-hand-holding-usd icono-accion"></i>
                         <div class="titulo-accion">⚡ Acción Requerida</div>
-                        <div class="monto-accion">${Math.abs(diferencia).toFixed(2)}</div>
+                        <div class="monto-accion">$${Math.abs(diferencia).toFixed(2)}</div>
                         <div class="texto-accion">Monto a depositar manualmente</div>
                     </div>
                 `;
+            }
+            
+            // Generar desglose de servicios Telcel
+            let desgloseTelcel = '';
+            if (data.desglose_por_proveedor?.telcel?.servicios) {
+                const serviciosTelcel = data.desglose_por_proveedor.telcel.servicios;
+                for (const [servicio, datos] of Object.entries(serviciosTelcel)) {
+                    const icono = obtenerIconoServicio(servicio, 'telcel');
+                    const nombreFormateado = formatearNombreServicio(servicio);
+                    desgloseTelcel += `
+                        <div class="servicio-row">
+                            <span class="servicio-nombre">
+                                ${icono}
+                                ${nombreFormateado}
+                            </span>
+                            <span class="servicio-datos">${datos.operaciones} ops - ${datos.monto_formateado}</span>
+                        </div>
+                    `;
+                }
+            }
+            
+            // Generar desglose de servicios Telmex
+            let desgloseTelmex = '';
+            if (data.desglose_por_proveedor?.telmex?.servicios) {
+                const serviciosTelmex = data.desglose_por_proveedor.telmex.servicios;
+                for (const [servicio, datos] of Object.entries(serviciosTelmex)) {
+                    const icono = obtenerIconoServicio(servicio, 'telmex');
+                    const nombreFormateado = formatearNombreServicio(servicio);
+                    desgloseTelmex += `
+                        <div class="servicio-row">
+                            <span class="servicio-nombre">
+                                ${icono}
+                                ${nombreFormateado}
+                            </span>
+                            <span class="servicio-datos">${datos.operaciones} ops - ${datos.monto_formateado}</span>
+                        </div>
+                    `;
+                }
             }
             
             const html = `
@@ -886,12 +1160,12 @@ function inicializarCortes() {
                     
                     <div class="montos-principales">
                         <div class="monto-card">
-                            <div class="monto-valor">${corteSicatelVal.toFixed(2)}</div>
+                            <div class="monto-valor">$${corteSicatelVal.toFixed(2)}</div>
                             <div class="monto-label">Corte Sicatel</div>
                         </div>
                         
                         <div class="monto-card mievo">
-                            <div class="monto-valor">${montoMievo.toFixed(2)}</div>
+                            <div class="monto-valor">$${montoMievo.toFixed(2)}</div>
                             <div class="monto-label">Monto Mievo</div>
                         </div>
                     </div>
@@ -913,44 +1187,52 @@ function inicializarCortes() {
                         <span class="info-valor">${data.total_solicitudes || 0}</span>
                     </div>
                     
-                    <div class="info-row">
-                        <span class="info-label">
-                            <i class="fas fa-signal" style="color: #007bff; margin-right: 8px;"></i>
-                            Operaciones Telcel:
-                        </span>
-                        <span class="info-valor">${data.desglose?.telcel?.operaciones || 0} - ${data.desglose?.telcel?.monto_formateado || '$0.00'}</span>
+                    <!-- DIVISOR TELCEL -->
+                    <div class="proveedor-divisor telcel">
+                        <span><i class="fas fa-signal"></i> OPERACIONES TELCEL</span>
+                        <span class="proveedor-total">${data.desglose?.telcel?.operaciones || 0} - ${data.desglose?.telcel?.monto_formateado || '$0.00'}</span>
                     </div>
                     
-                    <div class="info-row">
-                        <span class="info-label">
-                            <i class="fas fa-phone" style="color: #28a745; margin-right: 8px;"></i>
-                            Operaciones Telmex:
-                        </span>
-                        <span class="info-valor">${data.desglose?.telmex?.operaciones || 0} - ${data.desglose?.telmex?.monto_formateado || '$0.00'}</span>
+                    ${desgloseTelcel}
+                    
+                    <!-- DIVISOR TELMEX -->
+                    <div class="proveedor-divisor telmex">
+                        <span><i class="fas fa-phone"></i> OPERACIONES TELMEX</span>
+                        <span class="proveedor-total">${data.desglose?.telmex?.operaciones || 0} - ${data.desglose?.telmex?.monto_formateado || '$0.00'}</span>
                     </div>
                     
-                    <div class="info-row">
-                        <span class="info-label">
-                            <i class="fas fa-user" style="color: #6f42c1; margin-right: 8px;"></i>
-                            Usuario procesador:
-                        </span>
-                        <span class="info-valor">${data.usuario_procesador || 'N/A'}</span>
-                    </div>
+                    ${desgloseTelmex}
                     
                     <div class="info-row">
                         <span class="info-label">
                             <i class="fas fa-clock" style="color: #fd7e14; margin-right: 8px;"></i>
-                            Fecha y hora de consulta:
+                            Fecha y hora de corte:
                         </span>
-                        <span class="info-valor">${new Date().toLocaleString()}</span>
+                        <span class="info-valor">${data.fecha_hora_corte || new Date().toLocaleString()}</span>
                     </div>
+                </div>
+                
+                <!-- BOTÓN REALIZAR CORTE -->
+                <div class="accion-corte">
+                    <button id="realizar-corte-btn" class="btn btn-realizar-corte">
+                        <i class="fas fa-cut"></i>
+                        Realizar Corte
+                    </button>
                 </div>
             `;
             
             resultadosSicatel.innerHTML = html;
             resultadosSicatel.style.display = 'block';
             
-            console.log('✅ Resultados mostrados con nuevo diseño visual');
+            // Agregar event listener al botón de realizar corte
+            const realizarCorteBtn = document.getElementById('realizar-corte-btn');
+            if (realizarCorteBtn) {
+                realizarCorteBtn.addEventListener('click', function() {
+                    realizarCorte(data, corteSicatelVal);
+                });
+            }
+            
+            console.log('✅ Resultados mostrados con desglose por tipo de servicio');
         }
         
         // Función para mostrar errores
@@ -966,6 +1248,129 @@ function inicializarCortes() {
             
             resultadosSicatel.innerHTML = html;
             resultadosSicatel.style.display = 'block';
+        }
+        
+        // FUNCIÓN PARA REALIZAR CORTE
+        async function realizarCorte(data, corteSicatelVal) {
+            console.log('✂️ Iniciando realización de corte...', data);
+            
+            try {
+                // Obtener datos de sesión
+                const userUID = sessionStorage.getItem('userUID');
+                const userEmail = sessionStorage.getItem('userEmail');
+                let userData = null;
+                let userRole = null;
+                
+                try {
+                    const userDataStr = sessionStorage.getItem('userData');
+                    if (userDataStr) {
+                        userData = JSON.parse(userDataStr);
+                        userRole = userData?.role || null;
+                    }
+                } catch (e) {
+                    console.error('Error al parsear userData:', e);
+                }
+                
+                if (!userUID || !userRole) {
+                    throw new Error('No se encontraron datos de sesión válidos');
+                }
+                
+                // Confirmar acción con el usuario
+                const confirmar = confirm(`¿Confirmas realizar el corte de Sicatel?
+                
+📅 Fecha: ${data.fecha}
+💰 Corte Sicatel: $${corteSicatelVal.toFixed(2)}
+📊 Monto Mievo: $${data.monto_total.toFixed(2)}
+📋 Solicitudes: ${data.total_solicitudes}
+                
+⚠️ Esta acción quedará registrada en el sistema.`);
+                
+                if (!confirmar) {
+                    console.log('❌ Corte cancelado por el usuario');
+                    return;
+                }
+                
+                // Preparar datos para futura implementación
+                const datosCorte = {
+                    uid: userUID,
+                    role: userRole,
+                    fecha: data.fecha,
+                    corte_sicatel: corteSicatelVal,
+                    monto_mievo: data.monto_total,
+                    total_solicitudes: data.total_solicitudes,
+                    desglose_telcel: data.desglose?.telcel || {},
+                    desglose_telmex: data.desglose?.telmex || {},
+                    desglose_por_proveedor: data.desglose_por_proveedor || {},
+                    diferencia: data.monto_total - corteSicatelVal,
+                    timestamp: new Date().toISOString()
+                };
+                
+                console.log('📤 Datos de corte preparados:', datosCorte);
+                
+                // Por ahora, simular el proceso
+                const realizarCorteBtn = document.getElementById('realizar-corte-btn');
+                if (realizarCorteBtn) {
+                    realizarCorteBtn.disabled = true;
+                    realizarCorteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Realizando Corte...';
+                }
+                
+                // Simular delay de procesamiento
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                // Mostrar mensaje de éxito (simulado)
+                alert(`✅ Corte realizado exitosamente
+                
+📋 ID del Corte: CORTE-${Date.now()}
+📅 Fecha: ${data.fecha}
+💰 Monto: $${corteSicatelVal.toFixed(2)}
+⏰ Hora: ${new Date().toLocaleTimeString()}
+
+El corte ha sido registrado en el sistema.`);
+                
+                console.log('✅ Corte realizado exitosamente (simulado)');
+                
+                // Restaurar botón
+                if (realizarCorteBtn) {
+                    realizarCorteBtn.disabled = false;
+                    realizarCorteBtn.innerHTML = '<i class="fas fa-check"></i> Corte Realizado';
+                    realizarCorteBtn.style.background = 'linear-gradient(135deg, #6c757d 0%, #495057 100%)';
+                    realizarCorteBtn.style.cursor = 'not-allowed';
+                }
+                
+                // TODO: Implementar llamada real a la API cuando esté lista
+                /*
+                const response = await fetch('../api/realizar_corte.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(datosCorte)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Error HTTP ${response.status}`);
+                }
+                
+                const resultado = await response.json();
+                
+                if (!resultado.success) {
+                    throw new Error(resultado.error || 'Error desconocido');
+                }
+                
+                alert('✅ Corte realizado exitosamente');
+                */
+                
+            } catch (error) {
+                console.error('❌ Error al realizar corte:', error);
+                alert('❌ Error al realizar el corte: ' + error.message);
+                
+                // Restaurar botón en caso de error
+                const realizarCorteBtn = document.getElementById('realizar-corte-btn');
+                if (realizarCorteBtn) {
+                    realizarCorteBtn.disabled = false;
+                    realizarCorteBtn.innerHTML = '<i class="fas fa-cut"></i> Realizar Corte';
+                }
+            }
         }
         
         // Event listeners

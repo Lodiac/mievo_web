@@ -1,5 +1,5 @@
 <?php
-// api/consultar_corte_sicatel.php - API para consultar cortes diarios de Sicatel (Telcel y Telmex)
+// api/consultar_corte_sicatel.php - API para consultar cortes diarios de Sicatel con DESGLOSE POR TIPO DE SERVICIO
 header('Content-Type: application/json; charset=UTF-8');
 require_once 'db_connect.php';
 
@@ -53,8 +53,8 @@ try {
     // Conectar a la base de datos
     $con = conexiondb();
     
-    // Generar consulta de corte Sicatel
-    $resultado = consultarCorteSicatel($con, $uid, $fecha);
+    // Generar consulta de corte Sicatel CON DESGLOSE POR TIPO DE SERVICIO
+    $resultado = consultarCorteSicatelConDesglose($con, $uid, $fecha);
     
     // Calcular diferencias
     $diferencia = $resultado['monto_total'] - $montoEsperado;
@@ -73,7 +73,9 @@ try {
         "data" => array_merge($resultado, [
             "diferencia" => $diferencia,
             "porcentaje_diferencia" => round($porcentajeDiferencia, 2),
-            "estado_corte" => determinarEstadoCorte($diferencia)
+            "estado_corte" => determinarEstadoCorte($diferencia),
+            "fecha_hora_corte" => date('d/m/Y H:i'),
+            "monto_mievo" => $resultado['monto_total'] // Para compatibilidad con frontend
         ]),
         "timestamp" => date('Y-m-d H:i:s')
     ]);
@@ -95,11 +97,11 @@ try {
 }
 
 // =====================================================
-// FUNCIÓN PARA CONSULTAR CORTE SICATEL
+// FUNCIÓN PARA CONSULTAR CORTE SICATEL CON DESGLOSE POR TIPO DE SERVICIO
 // =====================================================
 
-function consultarCorteSicatel($con, $uid, $fecha) {
-    // Query específica para corte Sicatel - solo Telcel y Telmex procesadas por el usuario actual
+function consultarCorteSicatelConDesglose($con, $uid, $fecha) {
+    // Query principal para obtener todas las solicitudes
     $query = "SELECT 
                 sp.id as solicitud_id,
                 sp.user_id,
@@ -148,13 +150,19 @@ function consultarCorteSicatel($con, $uid, $fecha) {
     
     $solicitudes = [];
     $totalMonto = 0;
-    $contadorProveedores = [
-        'telcel' => 0,
-        'telmex' => 0
-    ];
-    $montosProveedores = [
-        'telcel' => 0,
-        'telmex' => 0
+    
+    // Estructura para desglose por proveedor y tipo de servicio
+    $desglosePorProveedor = [
+        'telcel' => [
+            'total_operaciones' => 0,
+            'total_monto' => 0,
+            'servicios' => []
+        ],
+        'telmex' => [
+            'total_operaciones' => 0,
+            'total_monto' => 0,
+            'servicios' => []
+        ]
     ];
     
     while ($row = mysqli_fetch_assoc($result)) {
@@ -165,17 +173,27 @@ function consultarCorteSicatel($con, $uid, $fecha) {
         
         // Normalizar proveedor
         $proveedorNormalizado = strtolower(trim($row['proveedor']));
+        $tipoServicio = trim($row['tipo_servicio']);
         
         // Sumar al total
         $totalMonto += $monto;
         
-        // Contar por proveedor
-        if ($proveedorNormalizado === 'telcel') {
-            $contadorProveedores['telcel']++;
-            $montosProveedores['telcel'] += $monto;
-        } elseif ($proveedorNormalizado === 'telmex') {
-            $contadorProveedores['telmex']++;
-            $montosProveedores['telmex'] += $monto;
+        // Agregar al desglose por proveedor
+        if ($proveedorNormalizado === 'telcel' || $proveedorNormalizado === 'telmex') {
+            // Incrementar totales del proveedor
+            $desglosePorProveedor[$proveedorNormalizado]['total_operaciones']++;
+            $desglosePorProveedor[$proveedorNormalizado]['total_monto'] += $monto;
+            
+            // Incrementar por tipo de servicio
+            if (!isset($desglosePorProveedor[$proveedorNormalizado]['servicios'][$tipoServicio])) {
+                $desglosePorProveedor[$proveedorNormalizado]['servicios'][$tipoServicio] = [
+                    'operaciones' => 0,
+                    'monto' => 0
+                ];
+            }
+            
+            $desglosePorProveedor[$proveedorNormalizado]['servicios'][$tipoServicio]['operaciones']++;
+            $desglosePorProveedor[$proveedorNormalizado]['servicios'][$tipoServicio]['monto'] += $monto;
         }
         
         $solicitudes[] = $row;
@@ -183,8 +201,25 @@ function consultarCorteSicatel($con, $uid, $fecha) {
     
     mysqli_stmt_close($stmt);
     
+    // Formatear montos y crear resumen
+    foreach ($desglosePorProveedor as $proveedor => &$data) {
+        $data['total_monto_formateado'] = '$' . number_format($data['total_monto'], 2);
+        $data['porcentaje'] = $totalMonto > 0 ? round(($data['total_monto'] / $totalMonto) * 100, 2) : 0;
+        
+        // Formatear cada servicio
+        foreach ($data['servicios'] as $servicio => &$servicioData) {
+            $servicioData['monto_formateado'] = '$' . number_format($servicioData['monto'], 2);
+            $servicioData['porcentaje_del_proveedor'] = $data['total_monto'] > 0 ? round(($servicioData['monto'] / $data['total_monto']) * 100, 2) : 0;
+        }
+        
+        // Ordenar servicios por monto descendente
+        uasort($data['servicios'], function($a, $b) {
+            return $b['monto'] <=> $a['monto'];
+        });
+    }
+    
     // Log del resultado
-    error_log("Corte Sicatel generado exitosamente. Fecha: $fecha, Usuario: $uid, Total solicitudes: " . count($solicitudes) . ", Monto total: $" . number_format($totalMonto, 2));
+    error_log("Corte Sicatel con desglose generado exitosamente. Fecha: $fecha, Usuario: $uid, Total solicitudes: " . count($solicitudes) . ", Monto total: $" . number_format($totalMonto, 2));
     
     return [
         'fecha' => $fecha,
@@ -193,20 +228,29 @@ function consultarCorteSicatel($con, $uid, $fecha) {
         'total_solicitudes' => count($solicitudes),
         'monto_total' => $totalMonto,
         'monto_total_formateado' => '$' . number_format($totalMonto, 2),
-        'proveedores' => $contadorProveedores,
-        'montos' => $montosProveedores,
+        'desglose_por_proveedor' => $desglosePorProveedor,
+        
+        // Mantener compatibilidad con versión anterior
+        'proveedores' => [
+            'telcel' => $desglosePorProveedor['telcel']['total_operaciones'],
+            'telmex' => $desglosePorProveedor['telmex']['total_operaciones']
+        ],
+        'montos' => [
+            'telcel' => $desglosePorProveedor['telcel']['total_monto'],
+            'telmex' => $desglosePorProveedor['telmex']['total_monto']
+        ],
         'desglose' => [
             'telcel' => [
-                'operaciones' => $contadorProveedores['telcel'],
-                'monto' => $montosProveedores['telcel'],
-                'monto_formateado' => '$' . number_format($montosProveedores['telcel'], 2),
-                'porcentaje' => $totalMonto > 0 ? round(($montosProveedores['telcel'] / $totalMonto) * 100, 2) : 0
+                'operaciones' => $desglosePorProveedor['telcel']['total_operaciones'],
+                'monto' => $desglosePorProveedor['telcel']['total_monto'],
+                'monto_formateado' => $desglosePorProveedor['telcel']['total_monto_formateado'],
+                'porcentaje' => $desglosePorProveedor['telcel']['porcentaje']
             ],
             'telmex' => [
-                'operaciones' => $contadorProveedores['telmex'],
-                'monto' => $montosProveedores['telmex'],
-                'monto_formateado' => '$' . number_format($montosProveedores['telmex'], 2),
-                'porcentaje' => $totalMonto > 0 ? round(($montosProveedores['telmex'] / $totalMonto) * 100, 2) : 0
+                'operaciones' => $desglosePorProveedor['telmex']['total_operaciones'],
+                'monto' => $desglosePorProveedor['telmex']['total_monto'],
+                'monto_formateado' => $desglosePorProveedor['telmex']['total_monto_formateado'],
+                'porcentaje' => $desglosePorProveedor['telmex']['porcentaje']
             ]
         ]
     ];
