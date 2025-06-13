@@ -1,9 +1,9 @@
-<!-- modules/modules_root/reportes.html - VERSIÓN BÁSICA -->
+<!-- modules/modules_root/reportes.html - VERSIÓN COMPLETA PARA SOLICITUDES INDIVIDUALES -->
 <div class="content-header">
     <h1 class="content-title">
-        <i class="fas fa-chart-bar"></i> Reporte de Tiendas
+        <i class="fas fa-chart-bar"></i> Reporte de Solicitudes de Pago
     </h1>
-    <p class="content-subtitle">Datos básicos de tiendas del sistema</p>
+    <p class="content-subtitle">Listado detallado de solicitudes procesadas individualmente</p>
 </div>
 
 <div class="reportes-container">
@@ -33,12 +33,12 @@
         </div>
     </div>
 
-    <!-- Resultados simples -->
+    <!-- Resultados -->
     <div class="card" id="resultados-card" style="display: none;">
         <div class="card-header">
             <h3><i class="fas fa-table"></i> Resultados</h3>
             <div class="info">
-                <span id="total-registros" class="badge">0 registros</span>
+                <span id="total-registros" class="badge">0 solicitudes</span>
             </div>
         </div>
         <div class="card-body">
@@ -238,7 +238,7 @@
 
 .info-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: 15px;
     margin-bottom: 20px;
 }
@@ -263,6 +263,65 @@
     color: #666;
 }
 
+/* Badges para estados */
+.estado-badge {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.estado-completada {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.estado-rechazada {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.estado-cancelada {
+    background-color: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+}
+
+/* Badges para canal */
+.canal-badge {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.canal-internas {
+    background-color: #cce5ff;
+    color: #004085;
+    border: 1px solid #b3d9ff;
+}
+
+.canal-externas {
+    background-color: #e2e3e5;
+    color: #383d41;
+    border: 1px solid #ced4da;
+}
+
+/* Sicatel */
+.sicatel-si {
+    color: #28a745;
+    font-weight: 600;
+}
+
+.sicatel-no {
+    color: #dc3545;
+    font-weight: 600;
+}
+
 /* Responsivo */
 @media (max-width: 768px) {
     .filters-row {
@@ -282,14 +341,14 @@
 
 <script>
 // DEBUGGING EXTREMO
-console.log('🟢 Script iniciando...');
+console.log('🟢 Script de reportes de solicitudes iniciando...');
 
 // Función principal que se ejecuta inmediatamente
 function inicializarModulo() {
     console.log('🟢 Inicializando módulo (sin esperar DOMContentLoaded)');
     
     try {
-        console.log('🟢 Iniciando módulo básico de reportes');
+        console.log('🟢 Iniciando módulo básico de reportes de solicitudes');
         
         // Buscar elementos DOM con verificación
         console.log('🔍 Buscando elementos DOM...');
@@ -350,7 +409,7 @@ function inicializarModulo() {
                 resultadosCard.style.display = 'block';
                 loading.style.display = 'flex';
                 datosContainer.innerHTML = '';
-                totalRegistros.textContent = '0 registros';
+                totalRegistros.textContent = '0 solicitudes';
                 
                 // Deshabilitar botón
                 console.log('🔘 Deshabilitando botón...');
@@ -404,7 +463,6 @@ function inicializarModulo() {
                 // Obtener el texto de la respuesta primero
                 const responseText = await response.text();
                 console.log('📥 Response text (primeros 500 caracteres):', responseText.substring(0, 500));
-                console.log('📥 Response text completo:', responseText);
                 
                 if (!response.ok) {
                     throw new Error(`Error HTTP: ${response.status} - ${response.statusText}\nRespuesta: ${responseText.substring(0, 200)}`);
@@ -430,11 +488,12 @@ function inicializarModulo() {
                 console.log('📊 Datos recibidos:', {
                     cantidad: resultado.datos ? resultado.datos.length : 0,
                     periodo: resultado.periodo,
+                    estadisticas: resultado.estadisticas,
                     timestamp: resultado.timestamp
                 });
                 
                 datosActuales = resultado.datos;
-                mostrarDatos(datosActuales, resultado.periodo);
+                mostrarDatos(datosActuales, resultado.periodo, resultado.estadisticas);
                 
                 console.log('✅ ===== CONSULTA COMPLETADA =====');
                 
@@ -452,93 +511,149 @@ function inicializarModulo() {
         }
         
         // Función para mostrar datos
-        function mostrarDatos(datos, periodo) {
-            console.log('📊 ===== MOSTRANDO DATOS =====');
-            console.log('📊 Datos recibidos:', datos);
+        function mostrarDatos(datos, periodo, estadisticas) {
+            console.log('📊 ===== MOSTRANDO DATOS INDIVIDUALES =====');
+            console.log('📊 Solicitudes recibidas:', datos);
             console.log('📊 Cantidad:', datos ? datos.length : 0);
+            console.log('📊 Estadísticas:', estadisticas);
             
             if (!datos || datos.length === 0) {
-                datosContainer.innerHTML = '<div class="error-message">❌ No se encontraron datos para el período seleccionado.</div>';
-                totalRegistros.textContent = '0 registros';
+                datosContainer.innerHTML = '<div class="error-message">❌ No se encontraron solicitudes para el período seleccionado.</div>';
+                totalRegistros.textContent = '0 solicitudes';
                 return;
             }
             
             // Actualizar contador
-            totalRegistros.textContent = `${datos.length} registros`;
+            totalRegistros.textContent = `${datos.length} solicitudes`;
             
-            // Mostrar datos simples
+            // Mostrar solicitudes individuales
             let html = `
                 <div class="success-message">
                     <strong>✅ Consulta exitosa</strong><br>
                     Período: ${periodo.inicio} al ${periodo.fin}<br>
-                    Registros: ${datos.length}
+                    <strong>Solicitudes encontradas:</strong> ${datos.length}
                 </div>
                 
-                <h4>Primeros 5 registros:</h4>
-                <div style="background: #f8f9fa; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
-                    <strong>Total de registros:</strong> ${datos.length}<br>
-                    <strong>Tiendas únicas:</strong> ${[...new Set(datos.map(d => d.id))].length}<br>
-                    <strong>UIDs procesadores únicos:</strong> ${[...new Set(datos.flatMap(d => d.uids_procesadores ? d.uids_procesadores.split(', ') : []))].length}
+                <!-- Estadísticas Generales -->
+                <div class="info-grid">
+                    <div class="info-card">
+                        <div class="info-card-value">${estadisticas.total_solicitudes}</div>
+                        <div class="info-card-label">Total Solicitudes</div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-card-value">${estadisticas.total_monto_formateado}</div>
+                        <div class="info-card-label">Monto Total</div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-card-value" style="color: #28a745;">${estadisticas.por_estado.completadas}</div>
+                        <div class="info-card-label">Completadas</div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-card-value" style="color: #dc3545;">${estadisticas.por_estado.rechazadas}</div>
+                        <div class="info-card-label">Rechazadas</div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-card-value" style="color: #ffc107;">${estadisticas.por_estado.canceladas}</div>
+                        <div class="info-card-label">Canceladas</div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-card-value">${estadisticas.tiendas_unicas}</div>
+                        <div class="info-card-label">Tiendas Únicas</div>
+                    </div>
                 </div>
                 
-                <div style="overflow-x: auto; max-height: 400px; border: 1px solid #ddd; border-radius: 6px;">
-                    <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
-                        <thead style="background: #f8f9fa; position: sticky; top: 0;">
+                <!-- Tabla de Solicitudes Individuales -->
+                <div class="tabla-container">
+                    <table class="datos-tabla">
+                        <thead>
                             <tr>
-                                <th style="padding: 10px; border-bottom: 1px solid #ddd; text-align: left;">ID</th>
-                                <th style="padding: 10px; border-bottom: 1px solid #ddd; text-align: left;">Nombre Tienda</th>
-                                <th style="padding: 10px; border-bottom: 1px solid #ddd; text-align: left;">Proveedor</th>
-                                <th style="padding: 10px; border-bottom: 1px solid #ddd; text-align: left;">Servicio</th>
-                                <th style="padding: 10px; border-bottom: 1px solid #ddd; text-align: left;">UIDs Procesadores</th>
-                                <th style="padding: 10px; border-bottom: 1px solid #ddd; text-align: left;">Solicitudes</th>
-                                <th style="padding: 10px; border-bottom: 1px solid #ddd; text-align: left;">Monto Total</th>
-                                <th style="padding: 10px; border-bottom: 1px solid #ddd; text-align: left;">Completadas</th>
-                                <th style="padding: 10px; border-bottom: 1px solid #ddd; text-align: left;">Rechazadas</th>
-                                <th style="padding: 10px; border-bottom: 1px solid #ddd; text-align: left;">Canceladas</th>
+                                <th>ID Sol.</th>
+                                <th>Fecha Creación</th>
+                                <th>Fecha Actualización</th>
+                                <th>UID Solicitante</th>
+                                <th>Nombre Usuario</th>
+                                <th>Cliente</th>
+                                <th>Proveedor</th>
+                                <th>Servicio</th>
+                                <th>Cuenta</th>
+                                <th>Monto</th>
+                                <th>Estado</th>
+                                <th>Procesada Por</th>
+                                <th>Tienda Procesadora</th>
+                                <th>Canal</th>
+                                <th>Sicatel</th>
+                                <th>Comentarios</th>
                             </tr>
                         </thead>
                         <tbody>
-                            ${datos.slice(0, 20).map(fila => `
-                                <tr style="border-bottom: 1px solid #eee;">
-                                    <td style="padding: 8px;">${fila.id || '-'}</td>
-                                    <td style="padding: 8px; font-weight: 600;">${fila.nombre_tienda || '-'}</td>
-                                    <td style="padding: 8px;">${fila.proveedor || '-'}</td>
-                                    <td style="padding: 8px;">${fila.tipo_servicio || '-'}</td>
-                                    <td style="padding: 8px; font-family: monospace; font-size: 0.8rem; color: #007bff;">
-                                        ${fila.uids_procesadores || 'Sin datos'}
+                            ${datos.map(solicitud => `
+                                <tr>
+                                    <td style="font-weight: 600; color: #007bff;">${solicitud.solicitud_id}</td>
+                                    <td style="font-size: 0.85rem;">${solicitud.fecha_creacion_formateada || '-'}</td>
+                                    <td style="font-size: 0.85rem;">${solicitud.fecha_actualizacion_formateada || '-'}</td>
+                                    <td style="font-family: monospace; font-size: 0.8rem; color: #6c757d;">${solicitud.user_id || '-'}</td>
+                                    <td style="font-weight: 600;">${solicitud.user_name || '-'}</td>
+                                    <td>${solicitud.nombre_cliente || '-'}</td>
+                                    <td style="font-weight: 500;">${solicitud.proveedor || '-'}</td>
+                                    <td>${solicitud.tipo_servicio || '-'}</td>
+                                    <td style="font-family: monospace; font-size: 0.85rem;">${solicitud.cuenta || '-'}</td>
+                                    <td style="text-align: right; font-weight: 600; color: #28a745;">
+                                        ${solicitud.monto_formateado || '$0.00'}
                                     </td>
-                                    <td style="padding: 8px; text-align: center;">${fila.total_solicitudes_tienda || 0}</td>
-                                    <td style="padding: 8px; text-align: right; font-weight: 600;">
-                                        ${parseFloat(fila.total_monto_tienda || 0).toLocaleString('es-MX', {minimumFractionDigits: 2})}
+                                    <td>
+                                        <span class="estado-badge estado-${solicitud.estado_solicitud}">
+                                            ${solicitud.estado_legible || solicitud.estado_solicitud}
+                                        </span>
                                     </td>
-                                    <td style="padding: 8px; text-align: center; color: #28a745;">${fila.total_completadas_tienda || 0}</td>
-                                    <td style="padding: 8px; text-align: center; color: #dc3545;">${fila.total_rechazadas_tienda || 0}</td>
-                                    <td style="padding: 8px; text-align: center; color: #ffc107;">${fila.total_canceladas_tienda || 0}</td>
+                                    <td style="font-family: monospace; font-size: 0.8rem; color: #6c757d;">${solicitud.procesada_por || '-'}</td>
+                                    <td style="font-weight: 500;">${solicitud.nombre_tienda || 'Tienda no encontrada'}</td>
+                                    <td>
+                                        <span class="canal-badge canal-${solicitud.canal}">
+                                            ${solicitud.canal || '-'}
+                                        </span>
+                                    </td>
+                                    <td style="text-align: center;">
+                                        ${solicitud.sicatel ? 
+                                            '<span class="sicatel-si">✅ Sí</span>' : 
+                                            '<span class="sicatel-no">❌ No</span>'
+                                        }
+                                    </td>
+                                    <td style="max-width: 200px; font-size: 0.8rem; word-wrap: break-word;">
+                                        ${solicitud.comentarios ? 
+                                            (solicitud.comentarios.length > 50 ? 
+                                                solicitud.comentarios.substring(0, 50) + '...' : 
+                                                solicitud.comentarios
+                                            ) : '-'
+                                        }
+                                    </td>
                                 </tr>
                             `).join('')}
-                            ${datos.length > 20 ? `
-                                <tr>
-                                    <td colspan="10" style="padding: 15px; text-align: center; font-style: italic; background: #f8f9fa;">
-                                        ... y ${datos.length - 20} registros más
-                                    </td>
-                                </tr>
-                            ` : ''}
                         </tbody>
                     </table>
                 </div>
                 
+                <!-- Footer con totales -->
+                <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid #007bff;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; font-size: 0.9rem;">
+                        <div><strong>Total Solicitudes:</strong> ${estadisticas.total_solicitudes}</div>
+                        <div><strong>Monto Total:</strong> ${estadisticas.total_monto_formateado}</div>
+                        <div><strong>Tiendas Únicas:</strong> ${estadisticas.tiendas_unicas}</div>
+                        <div><strong>Procesadores Únicos:</strong> ${estadisticas.procesadores_unicos}</div>
+                    </div>
+                </div>
+                
                 <details style="margin-top: 20px;">
                     <summary style="cursor: pointer; padding: 10px; background: #f8f9fa; border-radius: 6px; font-weight: 600;">
-                        Ver datos raw JSON (primeros 3 registros)
+                        Ver datos raw JSON (primeros 2 registros)
                     </summary>
                     <pre style="background: #f8f9fa; padding: 15px; border-radius: 6px; overflow-x: auto; font-size: 0.75rem; margin-top: 10px;">
-${JSON.stringify(datos.slice(0, 3), null, 2)}
+${JSON.stringify(datos.slice(0, 2), null, 2)}
                     </pre>
                 </details>
             `;
             
             datosContainer.innerHTML = html;
-            console.log('✅ Datos mostrados en pantalla');
+            console.log('✅ Solicitudes individuales mostradas en pantalla');
         }
         
         // Función para mostrar errores
@@ -550,7 +665,7 @@ ${JSON.stringify(datos.slice(0, 3), null, 2)}
                     ${mensaje}
                 </div>
             `;
-            totalRegistros.textContent = '0 registros';
+            totalRegistros.textContent = '0 solicitudes';
         }
         
         // AGREGAR EVENT LISTENER CON LOGGING
@@ -566,8 +681,8 @@ ${JSON.stringify(datos.slice(0, 3), null, 2)}
         
         // Función de debugging global
         window.debugReportes = function() {
-            console.log('🔍 ===== DEBUG REPORTES =====');
-            console.log('📊 Datos actuales:', datosActuales);
+            console.log('🔍 ===== DEBUG REPORTES SOLICITUDES =====');
+            console.log('📊 Solicitudes actuales:', datosActuales);
             console.log('📅 Fechas:', {
                 inicio: fechaInicio ? fechaInicio.value : 'No disponible',
                 fin: fechaFin ? fechaFin.value : 'No disponible'
@@ -590,14 +705,14 @@ ${JSON.stringify(datos.slice(0, 3), null, 2)}
             }
         };
         
-        console.log('✅ ===== MÓDULO COMPLETAMENTE INICIALIZADO =====');
+        console.log('✅ ===== MÓDULO DE SOLICITUDES COMPLETAMENTE INICIALIZADO =====');
         console.log('💡 Comandos disponibles:');
         console.log('   - window.debugReportes() : Ver estado');
         console.log('   - window.testButton() : Probar botón');
         
         // Auto-test
         setTimeout(() => {
-            console.log('🧪 Auto-test del módulo...');
+            console.log('🧪 Auto-test del módulo de solicitudes...');
             console.log('🔘 Botón existe:', !!generarBtn);
             console.log('🔘 Botón habilitado:', generarBtn ? !generarBtn.disabled : false);
             console.log('📅 Fechas configuradas:', fechaInicio ? fechaInicio.value : 'N/A', 'a', fechaFin ? fechaFin.value : 'N/A');
@@ -622,5 +737,5 @@ if (document.readyState === 'loading') {
     setTimeout(inicializarModulo, 100);
 }
 
-console.log('🟢 Script cargado completamente');
+console.log('🟢 Script de reportes de solicitudes cargado completamente');
 </script>

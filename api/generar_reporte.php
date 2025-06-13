@@ -1,5 +1,5 @@
 <?php
-// api/generar_reporte.php - VERSIÓN ACTUALIZADA CON NUEVA QUERY
+// api/generar_reporte.php - VERSIÓN ACTUALIZADA PARA SOLICITUDES INDIVIDUALES
 header('Content-Type: application/json; charset=UTF-8');
 require_once 'db_connect.php';
 
@@ -24,7 +24,7 @@ try {
     $fechaFin = $input['fecha_fin'] ?? date('Y-m-d');
     
     // Log para debugging
-    error_log("Generando reporte de tiendas: usuario=$uid, role=$role, desde=$fechaInicio, hasta=$fechaFin");
+    error_log("Generando reporte de solicitudes individuales: usuario=$uid, role=$role, desde=$fechaInicio, hasta=$fechaFin");
     
     // Verificar permisos - solo root puede generar reportes
     if ($role !== 'root') {
@@ -34,8 +34,8 @@ try {
     // Conectar a la base de datos
     $con = conexiondb();
     
-    // Generar reporte de tiendas
-    $resultado = generarReporteTiendasActualizado($con, $fechaInicio, $fechaFin);
+    // Generar reporte de solicitudes individuales
+    $resultado = generarReporteSolicitudesIndividuales($con, $fechaInicio, $fechaFin);
     
     // Cerrar conexión
     mysqli_close($con);
@@ -43,12 +43,13 @@ try {
     // Respuesta exitosa
     echo json_encode([
         "success" => true,
-        "tipo_reporte" => "tiendas",
+        "tipo_reporte" => "solicitudes_individuales",
         "periodo" => [
             "inicio" => $fechaInicio,
             "fin" => $fechaFin
         ],
-        "datos" => $resultado,
+        "datos" => $resultado['solicitudes'],
+        "estadisticas" => $resultado['estadisticas'],
         "timestamp" => date('Y-m-d H:i:s')
     ]);
     
@@ -69,115 +70,65 @@ try {
 }
 
 // =====================================================
-// FUNCIÓN ACTUALIZADA PARA GENERAR REPORTE DE TIENDAS
+// FUNCIÓN PARA GENERAR REPORTE DE SOLICITUDES INDIVIDUALES
 // =====================================================
 
-function generarReporteTiendasActualizado($con, $fechaInicio, $fechaFin) {
-    // QUERY ACTUALIZADA CON NUEVOS CAMPOS Y ESTRUCTURA
+function generarReporteSolicitudesIndividuales($con, $fechaInicio, $fechaFin) {
+    // NUEVA QUERY PARA MOSTRAR SOLICITUDES INDIVIDUALES
     $query = "SELECT 
-                s.id,
+                sp.id as solicitud_id,
+                sp.user_id,
+                sp.user_name,
+                sp.nombre_cliente,
+                sp.proveedor,
+                sp.tipo_servicio,
+                sp.cuenta,
+                sp.monto,
+                sp.estado_solicitud,
+                sp.fecha_creacion,
+                sp.fecha_actualizacion,
+                sp.procesada_por,
+                sp.comentarios,
+                
+                -- Información de la tienda procesadora
+                s.id as tienda_id,
                 s.nombre_tienda,
                 s.canal,
                 s.tipoTienda,
                 s.sicatel,
-                s.encargado,
-                s.telefono,
-                (SELECT COUNT(*) 
-                 FROM vendedor_tienda_relacion vtr 
-                 WHERE vtr.tienda_id = s.id) as total_vendedores,
+                s.encargado as tienda_encargado,
+                s.telefono as tienda_telefono,
                 
-                COALESCE(sp.proveedor, 'Sin actividad') as proveedor,
-                COALESCE(sp.tipo_servicio, 'Sin actividad') as tipo_servicio,
+                -- Información adicional útil
+                CASE 
+                    WHEN sp.estado_solicitud = 'completada' THEN 'Completada'
+                    WHEN sp.estado_solicitud = 'rechazada' THEN 'Rechazada'
+                    WHEN sp.estado_solicitud = 'cancelada' THEN 'Cancelada'
+                    ELSE sp.estado_solicitud
+                END as estado_legible,
                 
-                COALESCE(COUNT(sp.id), 0) as solicitudes_desglose,
-                COALESCE(SUM(sp.monto), 0) as monto_desglose,
-                
-                COUNT(CASE WHEN sp.estado_solicitud = 'completada' THEN 1 END) as solicitudes_completadas_desglose,
-                COUNT(CASE WHEN sp.estado_solicitud = 'rechazada' THEN 1 END) as solicitudes_rechazadas_desglose,
-                COUNT(CASE WHEN sp.estado_solicitud = 'cancelada' THEN 1 END) as solicitudes_canceladas_desglose,
-                
-                SUM(CASE WHEN sp.estado_solicitud = 'completada' THEN sp.monto ELSE 0 END) as monto_completado_desglose,
-                SUM(CASE WHEN sp.estado_solicitud = 'rechazada' THEN sp.monto ELSE 0 END) as monto_rechazado_desglose,
-                SUM(CASE WHEN sp.estado_solicitud = 'cancelada' THEN sp.monto ELSE 0 END) as monto_cancelado_desglose,
-                
-                (SELECT COUNT(*) 
-                 FROM sol_pagoservicios sp2 
-                 WHERE sp2.procesada_por COLLATE utf8mb4_general_ci = s.user_id COLLATE utf8mb4_general_ci
-                   AND sp2.fecha_actualizacion BETWEEN CONCAT(?, ' 00:00:00') AND CONCAT(?, ' 23:59:59')
-                   AND sp2.estado = 1
-                   AND sp2.estado_solicitud IN ('completada', 'rechazada', 'cancelada')) as total_solicitudes_tienda,
-                
-                (SELECT COALESCE(SUM(sp2.monto), 0) 
-                 FROM sol_pagoservicios sp2 
-                 WHERE sp2.procesada_por COLLATE utf8mb4_general_ci = s.user_id COLLATE utf8mb4_general_ci
-                   AND sp2.fecha_actualizacion BETWEEN CONCAT(?, ' 00:00:00') AND CONCAT(?, ' 23:59:59')
-                   AND sp2.estado = 1 
-                   AND sp2.estado_solicitud IN ('completada', 'rechazada', 'cancelada')) as total_monto_tienda,
-                   
-                (SELECT COUNT(*) 
-                 FROM sol_pagoservicios sp2 
-                 WHERE sp2.procesada_por COLLATE utf8mb4_general_ci = s.user_id COLLATE utf8mb4_general_ci
-                   AND sp2.fecha_actualizacion BETWEEN CONCAT(?, ' 00:00:00') AND CONCAT(?, ' 23:59:59')
-                   AND sp2.estado = 1 AND sp2.estado_solicitud = 'completada') as total_completadas_tienda,
-                   
-                (SELECT COUNT(*) 
-                 FROM sol_pagoservicios sp2 
-                 WHERE sp2.procesada_por COLLATE utf8mb4_general_ci = s.user_id COLLATE utf8mb4_general_ci
-                   AND sp2.fecha_actualizacion BETWEEN CONCAT(?, ' 00:00:00') AND CONCAT(?, ' 23:59:59')
-                   AND sp2.estado = 1 AND sp2.estado_solicitud = 'rechazada') as total_rechazadas_tienda,
-                   
-                (SELECT COUNT(*) 
-                 FROM sol_pagoservicios sp2 
-                 WHERE sp2.procesada_por COLLATE utf8mb4_general_ci = s.user_id COLLATE utf8mb4_general_ci
-                   AND sp2.fecha_actualizacion BETWEEN CONCAT(?, ' 00:00:00') AND CONCAT(?, ' 23:59:59')
-                   AND sp2.estado = 1 AND sp2.estado_solicitud = 'cancelada') as total_canceladas_tienda,
-                   
-                -- Lista de UIDs únicos que han procesado solicitudes en esta tienda
-                (SELECT GROUP_CONCAT(DISTINCT sp2.procesada_por ORDER BY sp2.procesada_por SEPARATOR ', ')
-                 FROM sol_pagoservicios sp2 
-                 WHERE sp2.procesada_por COLLATE utf8mb4_general_ci = s.user_id COLLATE utf8mb4_general_ci
-                   AND sp2.fecha_actualizacion BETWEEN CONCAT(?, ' 00:00:00') AND CONCAT(?, ' 23:59:59')
-                   AND sp2.estado = 1
-                   AND sp2.estado_solicitud IN ('completada', 'rechazada', 'cancelada')) as uids_procesadores
+                DATE_FORMAT(sp.fecha_creacion, '%d/%m/%Y %H:%i') as fecha_creacion_formateada,
+                DATE_FORMAT(sp.fecha_actualizacion, '%d/%m/%Y %H:%i') as fecha_actualizacion_formateada
 
-            FROM sucursales s
-            LEFT JOIN sol_pagoservicios sp ON sp.procesada_por COLLATE utf8mb4_general_ci = s.user_id COLLATE utf8mb4_general_ci
-                AND sp.fecha_actualizacion BETWEEN CONCAT(?, ' 00:00:00') AND CONCAT(?, ' 23:59:59')
-                AND sp.estado = 1
-                AND sp.estado_solicitud IN ('completada', 'rechazada', 'cancelada')
-
-            WHERE s.estado = 1 
-              AND s.canal = 'internas'
-              AND EXISTS (
-                SELECT 1 FROM sol_pagoservicios sp_check 
-                WHERE sp_check.procesada_por COLLATE utf8mb4_general_ci = s.user_id COLLATE utf8mb4_general_ci
-                  AND sp_check.fecha_actualizacion BETWEEN CONCAT(?, ' 00:00:00') AND CONCAT(?, ' 23:59:59')
-                  AND sp_check.estado = 1
-                  AND sp_check.estado_solicitud IN ('completada', 'rechazada', 'cancelada')
-              )
-
-            GROUP BY s.id, s.nombre_tienda, s.canal, s.tipoTienda, s.sicatel, s.encargado, s.telefono, 
-                     s.user_id, sp.proveedor, sp.tipo_servicio
-
-            ORDER BY total_monto_tienda DESC, s.nombre_tienda, sp.proveedor, sp.tipo_servicio";
+            FROM sol_pagoservicios sp
+            LEFT JOIN sucursales s ON sp.procesada_por COLLATE utf8mb4_general_ci = s.user_id COLLATE utf8mb4_general_ci
+                AND s.estado = 1
+                AND s.canal = 'internas'
+                
+            WHERE sp.fecha_actualizacion BETWEEN CONCAT(?, ' 00:00:00') AND CONCAT(?, ' 23:59:59')
+              AND sp.estado = 1
+              AND sp.estado_solicitud IN ('completada', 'rechazada', 'cancelada')
+              
+            ORDER BY sp.fecha_actualizacion DESC, sp.id DESC";
     
-    // Preparar statement con todos los parámetros de fecha
+    // Preparar statement con solo 2 parámetros de fecha
     $stmt = mysqli_prepare($con, $query);
     if (!$stmt) {
         throw new Exception("Error preparando la consulta: " . mysqli_error($con));
     }
     
-    // Bind de parámetros (16 fechas en total: 8 pares)
-    mysqli_stmt_bind_param($stmt, "ssssssssssssssss", 
-        $fechaInicio, $fechaFin,  // total_solicitudes_tienda
-        $fechaInicio, $fechaFin,  // total_monto_tienda
-        $fechaInicio, $fechaFin,  // total_completadas_tienda
-        $fechaInicio, $fechaFin,  // total_rechazadas_tienda
-        $fechaInicio, $fechaFin,  // total_canceladas_tienda
-        $fechaInicio, $fechaFin,  // uids_procesadores
-        $fechaInicio, $fechaFin,  // LEFT JOIN sp
-        $fechaInicio, $fechaFin   // EXISTS subquery
-    );
+    // Bind de parámetros (solo 2 fechas)
+    mysqli_stmt_bind_param($stmt, "ss", $fechaInicio, $fechaFin);
     
     if (!mysqli_stmt_execute($stmt)) {
         throw new Exception("Error ejecutando la consulta: " . mysqli_stmt_error($stmt));
@@ -189,37 +140,51 @@ function generarReporteTiendasActualizado($con, $fechaInicio, $fechaFin) {
     }
     
     $datos = [];
+    $totalMonto = 0;
+    $contadorEstados = [
+        'completadas' => 0,
+        'rechazadas' => 0,
+        'canceladas' => 0
+    ];
     
     while ($row = mysqli_fetch_assoc($result)) {
         // Convertir sicatel a booleano
         $row['sicatel'] = (bool)$row['sicatel'];
         
         // Formatear números para consistencia
-        $row['monto_desglose'] = number_format((float)$row['monto_desglose'], 2, '.', '');
-        $row['monto_completado_desglose'] = number_format((float)$row['monto_completado_desglose'], 2, '.', '');
-        $row['monto_rechazado_desglose'] = number_format((float)$row['monto_rechazado_desglose'], 2, '.', '');
-        $row['monto_cancelado_desglose'] = number_format((float)$row['monto_cancelado_desglose'], 2, '.', '');
-        $row['total_monto_tienda'] = number_format((float)$row['total_monto_tienda'], 2, '.', '');
+        $row['monto'] = number_format((float)$row['monto'], 2, '.', '');
+        $totalMonto += (float)$row['monto'];
         
-        // Convertir números a enteros donde corresponde
-        $row['total_vendedores'] = (int)$row['total_vendedores'];
-        $row['solicitudes_desglose'] = (int)$row['solicitudes_desglose'];
-        $row['solicitudes_completadas_desglose'] = (int)$row['solicitudes_completadas_desglose'];
-        $row['solicitudes_rechazadas_desglose'] = (int)$row['solicitudes_rechazadas_desglose'];
-        $row['solicitudes_canceladas_desglose'] = (int)$row['solicitudes_canceladas_desglose'];
-        $row['total_solicitudes_tienda'] = (int)$row['total_solicitudes_tienda'];
-        $row['total_completadas_tienda'] = (int)$row['total_completadas_tienda'];
-        $row['total_rechazadas_tienda'] = (int)$row['total_rechazadas_tienda'];
-        $row['total_canceladas_tienda'] = (int)$row['total_canceladas_tienda'];
+        // Contar estados
+        $estado = strtolower($row['estado_solicitud']);
+        if (isset($contadorEstados[$estado])) {
+            $contadorEstados[$estado]++;
+        }
+        
+        // Agregar campos calculados
+        $row['monto_formateado'] = '$' . number_format((float)$row['monto'], 2);
         
         $datos[] = $row;
     }
     
     mysqli_stmt_close($stmt);
     
-    // Log del resultado
-    error_log("Reporte generado exitosamente. Total de filas: " . count($datos));
+    // Agregar estadísticas generales
+    $estadisticas = [
+        'total_solicitudes' => count($datos),
+        'total_monto' => number_format($totalMonto, 2, '.', ''),
+        'total_monto_formateado' => '$' . number_format($totalMonto, 2),
+        'por_estado' => $contadorEstados,
+        'tiendas_unicas' => count(array_unique(array_column($datos, 'tienda_id'))),
+        'procesadores_unicos' => count(array_unique(array_filter(array_column($datos, 'procesada_por'))))
+    ];
     
-    return $datos;
+    // Log del resultado
+    error_log("Reporte individual generado exitosamente. Total de solicitudes: " . count($datos) . ", Monto total: $" . number_format($totalMonto, 2));
+    
+    return [
+        'solicitudes' => $datos,
+        'estadisticas' => $estadisticas
+    ];
 }
 ?>
