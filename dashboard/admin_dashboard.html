@@ -151,8 +151,9 @@
                 <li class="menu-item active" data-module="bienvenida">
                     <i class="fas fa-home menu-icon"></i> <span class="menu-text">Bienvenida</span>
                 </li>
-                <li class="menu-item" data-module="dashboard">
-                    <i class="fas fa-chart-line menu-icon"></i> <span class="menu-text">Dashboard</span>
+                <!-- MODIFICADO: Dashboard cambiado por Cortes -->
+                <li class="menu-item" data-module="cortes">
+                    <i class="fas fa-calendar-times menu-icon"></i> <span class="menu-text">Cortes</span>
                 </li>
                 <li class="menu-item" data-module="tiendas">
                     <i class="fas fa-store menu-icon"></i> <span class="menu-text">Tiendas</span>
@@ -317,8 +318,8 @@
                     // Limpiar contenido anterior
                     mainContent.innerHTML = '';
                     
-                    // Validar el módulo localmente antes de hacer la petición al servidor
-                    const allowedModules = ['bienvenida', 'dashboard', 'tiendas', 'solicitudes', 'vendedores', 
+                    // MODIFICADO: Validar el módulo localmente - "dashboard" cambiado por "cortes"
+                    const allowedModules = ['bienvenida', 'cortes', 'tiendas', 'solicitudes', 'vendedores', 
                                            'portabilidad', 'recuperacion', 'pagos'];
                     if (!allowedModules.includes(moduleName)) {
                         throw new Error(`El módulo "${moduleName}" no está disponible para administradores`);

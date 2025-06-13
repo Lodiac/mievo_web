@@ -1,0 +1,825 @@
+<!-- modules/modules_admin/cortes.html - Módulo de Cortes Sicatel y PayJoy -->
+<div class="content-header">
+    <h1 class="content-title">
+        <i class="fas fa-calendar-times"></i> Gestión de Cortes
+    </h1>
+    <p class="content-subtitle">Realiza cortes diarios de Sicatel y PayJoy</p>
+</div>
+
+<div class="cortes-container">
+    <!-- Selector de Tipo de Corte -->
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-route"></i> Tipo de Corte</h3>
+        </div>
+        <div class="card-body">
+            <div class="tipo-corte-selector">
+                <div class="corte-option active" data-tipo="sicatel">
+                    <div class="corte-icon">
+                        <i class="fas fa-signal"></i>
+                    </div>
+                    <div class="corte-info">
+                        <h4>Corte Sicatel</h4>
+                        <p>Telcel y Telmex</p>
+                    </div>
+                </div>
+                <div class="corte-option disabled" data-tipo="payjoy">
+                    <div class="corte-icon">
+                        <i class="fas fa-mobile-alt"></i>
+                    </div>
+                    <div class="corte-info">
+                        <h4>Corte PayJoy</h4>
+                        <p>Próximamente</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Configuración -->
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-cog"></i> Configuración</h3>
+        </div>
+        <div class="card-body">
+            <div class="config-row">
+                <div class="config-item">
+                    <label for="fecha-corte">Fecha del Corte</label>
+                    <input type="date" id="fecha-corte" class="form-control">
+                </div>
+                <div class="config-item" id="monto-esperado-container">
+                    <label for="monto-esperado">Monto Esperado ($)</label>
+                    <input type="number" id="monto-esperado" class="form-control" step="0.01" min="0" placeholder="0.00">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sección Sicatel -->
+    <div class="card" id="sicatel-section">
+        <div class="card-header">
+            <h3><i class="fas fa-signal"></i> Corte Sicatel - Telcel y Telmex</h3>
+            <div class="acciones">
+                <button id="validar-sicatel" class="btn btn-primary">
+                    <i class="fas fa-search"></i> Validar
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div id="loading-sicatel" class="loading" style="display: none;">
+                <div class="spinner"></div>
+                <p>Consultando datos...</p>
+            </div>
+            
+            <div id="resultados-sicatel" style="display: none;">
+                <!-- Los resultados aparecerán aquí -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Sección PayJoy (Pendiente) -->
+    <div class="card disabled" id="payjoy-section" style="display: none;">
+        <div class="card-header">
+            <h3><i class="fas fa-mobile-alt"></i> Corte PayJoy</h3>
+        </div>
+        <div class="card-body">
+            <div class="coming-soon">
+                <i class="fas fa-clock"></i>
+                <h4>Próximamente</h4>
+                <p>Esta funcionalidad estará disponible en una futura actualización</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.cortes-container {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    border: 1px solid #ddd;
+    transition: all 0.3s ease;
+}
+
+.card.disabled {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.card-header {
+    padding: 15px 20px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f8f9fa;
+}
+
+.card-header h3 {
+    margin: 0;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.card-body {
+    padding: 20px;
+}
+
+/* Selector de Tipo de Corte */
+.tipo-corte-selector {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.corte-option {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 20px;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: #f8f9fa;
+}
+
+.corte-option.active {
+    border-color: #007bff;
+    background: #e7f3ff;
+    box-shadow: 0 2px 10px rgba(0,123,255,0.1);
+}
+
+.corte-option.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #f5f5f5;
+}
+
+.corte-option:not(.disabled):hover {
+    border-color: #007bff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.corte-icon {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #007bff;
+    color: white;
+    border-radius: 50%;
+    font-size: 1.5rem;
+}
+
+.corte-option.disabled .corte-icon {
+    background: #6c757d;
+}
+
+.corte-info h4 {
+    margin: 0 0 5px 0;
+    color: #333;
+    font-weight: 600;
+}
+
+.corte-info p {
+    margin: 0;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+/* Configuración */
+.config-row {
+    display: flex;
+    gap: 20px;
+    align-items: end;
+    flex-wrap: wrap;
+}
+
+.config-item {
+    flex: 1;
+    min-width: 200px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.config-item label {
+    font-weight: 600;
+    color: #555;
+    font-size: 0.9rem;
+}
+
+.form-control {
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
+}
+
+/* Botones */
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.95rem;
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btn-primary {
+    background-color: #007bff;
+    color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background-color: #0056b3;
+    transform: translateY(-1px);
+}
+
+.btn-success {
+    background-color: #28a745;
+    color: white;
+}
+
+.btn-success:hover:not(:disabled) {
+    background-color: #1e7e34;
+    transform: translateY(-1px);
+}
+
+/* Loading */
+.loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px;
+    text-align: center;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 15px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Resultados */
+.resultado-card {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.resultado-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.resultado-header h4 {
+    margin: 0;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.resultado-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.resultado-item {
+    background: white;
+    padding: 15px;
+    border-radius: 6px;
+    border-left: 4px solid #007bff;
+    text-align: center;
+}
+
+.resultado-item.destacado {
+    border-left-color: #28a745;
+    background: #f8fff9;
+}
+
+.resultado-item.alerta {
+    border-left-color: #dc3545;
+    background: #fff8f8;
+}
+
+.resultado-valor {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.resultado-label {
+    font-size: 0.9rem;
+    color: #666;
+    font-weight: 500;
+}
+
+.diferencia {
+    margin-top: 10px;
+    padding: 10px;
+    border-radius: 6px;
+    text-align: center;
+    font-weight: 600;
+}
+
+.diferencia.positiva {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.diferencia.negativa {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.diferencia.exacta {
+    background: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+}
+
+/* Detalle de solicitudes */
+.detalle-solicitudes {
+    margin-top: 20px;
+}
+
+.tabla-container {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    margin-top: 10px;
+}
+
+.datos-tabla {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+
+.datos-tabla th,
+.datos-tabla td {
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.datos-tabla th {
+    background: #f8f9fa;
+    font-weight: 600;
+    color: #555;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.datos-tabla tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+/* Coming Soon */
+.coming-soon {
+    text-align: center;
+    padding: 60px 20px;
+    color: #666;
+}
+
+.coming-soon i {
+    font-size: 3rem;
+    margin-bottom: 20px;
+    opacity: 0.5;
+}
+
+.coming-soon h4 {
+    margin: 0 0 10px 0;
+    color: #555;
+}
+
+.coming-soon p {
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+/* Mensajes */
+.mensaje {
+    padding: 15px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+}
+
+.mensaje.error {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.mensaje.exito {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.mensaje.info {
+    background: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+}
+
+/* Botón de Confirmar */
+.boton-confirmar {
+    text-align: center;
+    margin-top: 20px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 2px dashed #dee2e6;
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+    .config-row {
+        flex-direction: column;
+    }
+    
+    .config-item {
+        min-width: auto;
+    }
+    
+    .tipo-corte-selector {
+        grid-template-columns: 1fr;
+    }
+    
+    .resultado-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<script>
+console.log('🚀 Iniciando módulo de Cortes...');
+
+function inicializarCortes() {
+    console.log('⚙️ Inicializando módulo de cortes...');
+    
+    try {
+        // Elementos del DOM
+        const fechaCorte = document.getElementById('fecha-corte');
+        const montoEsperado = document.getElementById('monto-esperado');
+        const validarBtn = document.getElementById('validar-sicatel');
+        const loadingSicatel = document.getElementById('loading-sicatel');
+        const resultadosSicatel = document.getElementById('resultados-sicatel');
+        const corteOptions = document.querySelectorAll('.corte-option:not(.disabled)');
+        
+        // Verificar elementos
+        if (!fechaCorte || !montoEsperado || !validarBtn || !loadingSicatel || !resultadosSicatel) {
+            throw new Error('No se encontraron todos los elementos del DOM');
+        }
+        
+        console.log('✅ Elementos del DOM encontrados');
+        
+        // Establecer fecha de hoy por defecto
+        const hoy = new Date();
+        fechaCorte.value = hoy.toISOString().split('T')[0];
+        console.log('📅 Fecha establecida:', fechaCorte.value);
+        
+        // Configurar formato de monto
+        montoEsperado.addEventListener('input', function() {
+            let valor = this.value;
+            // Remover caracteres no numéricos excepto punto
+            valor = valor.replace(/[^0-9.]/g, '');
+            // Asegurar solo un punto decimal
+            const puntos = valor.split('.');
+            if (puntos.length > 2) {
+                valor = puntos[0] + '.' + puntos.slice(1).join('');
+            }
+            // Limitar decimales a 2
+            if (puntos[1] && puntos[1].length > 2) {
+                valor = puntos[0] + '.' + puntos[1].substring(0, 2);
+            }
+            this.value = valor;
+        });
+        
+        // Función para validar Sicatel
+        async function validarSicatel() {
+            console.log('🔍 Iniciando validación de Sicatel...');
+            
+            try {
+                // Validaciones
+                if (!fechaCorte.value) {
+                    throw new Error('Selecciona una fecha para el corte');
+                }
+                
+                const montoEsperadoVal = parseFloat(montoEsperado.value) || 0;
+                if (montoEsperadoVal <= 0) {
+                    throw new Error('Ingresa un monto esperado válido mayor a 0');
+                }
+                
+                // Mostrar loading
+                loadingSicatel.style.display = 'flex';
+                resultadosSicatel.style.display = 'none';
+                validarBtn.disabled = true;
+                validarBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Validando...';
+                
+                // Obtener datos de sesión
+                const userUID = sessionStorage.getItem('userUID');
+                const userRole = sessionStorage.getItem('userRole');
+                
+                if (!userUID || !userRole) {
+                    throw new Error('No se encontraron datos de sesión');
+                }
+                
+                console.log('👤 Usuario:', userUID, 'Rol:', userRole);
+                console.log('📅 Fecha:', fechaCorte.value);
+                console.log('💰 Monto esperado:', montoEsperadoVal);
+                
+                // Preparar datos para la API
+                const requestData = {
+                    uid: userUID,
+                    role: userRole,
+                    fecha: fechaCorte.value,
+                    monto_esperado: montoEsperadoVal,
+                    tipo_corte: 'sicatel'
+                };
+                
+                console.log('📤 Enviando request:', requestData);
+                
+                // Llamar a la API
+                const response = await fetch('../api/consultar_corte_sicatel.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestData)
+                });
+                
+                console.log('📡 Response status:', response.status);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Error HTTP ${response.status}: ${errorText}`);
+                }
+                
+                const resultado = await response.json();
+                console.log('📥 Resultado recibido:', resultado);
+                
+                if (!resultado.success) {
+                    throw new Error(resultado.error || 'Error desconocido en la consulta');
+                }
+                
+                // Mostrar resultados
+                mostrarResultadosSicatel(resultado.data, montoEsperadoVal);
+                
+            } catch (error) {
+                console.error('❌ Error en validación:', error);
+                mostrarErrorSicatel(error.message);
+            } finally {
+                loadingSicatel.style.display = 'none';
+                validarBtn.disabled = false;
+                validarBtn.innerHTML = '<i class="fas fa-search"></i> Validar';
+            }
+        }
+        
+        // Función para mostrar resultados
+        function mostrarResultadosSicatel(data, montoEsperado) {
+            console.log('📊 Mostrando resultados:', data);
+            
+            const montoGenerado = parseFloat(data.monto_total);
+            const diferencia = montoGenerado - montoEsperado;
+            const porcentajeDiferencia = montoEsperado > 0 ? ((diferencia / montoEsperado) * 100) : 0;
+            
+            let claseResultado = 'exacta';
+            let iconoResultado = 'fas fa-equals';
+            let textoResultado = 'Monto exacto';
+            
+            if (diferencia > 0) {
+                claseResultado = 'positiva';
+                iconoResultado = 'fas fa-arrow-up';
+                textoResultado = `Excedente de $${diferencia.toFixed(2)}`;
+            } else if (diferencia < 0) {
+                claseResultado = 'negativa';
+                iconoResultado = 'fas fa-arrow-down';
+                textoResultado = `Faltante de $${Math.abs(diferencia).toFixed(2)}`;
+            }
+            
+            // Generar tabla de solicitudes
+            let tablaSolicitudes = '';
+            if (data.solicitudes && data.solicitudes.length > 0) {
+                tablaSolicitudes = `
+                    <div class="detalle-solicitudes">
+                        <h5><i class="fas fa-list"></i> Detalle de ${data.solicitudes.length} Solicitudes</h5>
+                        <div class="tabla-container">
+                            <table class="datos-tabla">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Fecha</th>
+                                        <th>Cliente</th>
+                                        <th>Proveedor</th>
+                                        <th>Servicio</th>
+                                        <th>Monto</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${data.solicitudes.map(sol => `
+                                        <tr>
+                                            <td style="font-weight: 600;">#${sol.id}</td>
+                                            <td style="font-size: 0.8rem;">${sol.fecha_formateada}</td>
+                                            <td>${sol.nombre_cliente || 'N/A'}</td>
+                                            <td style="font-weight: 500; text-transform: uppercase;">${sol.proveedor}</td>
+                                            <td>${sol.tipo_servicio}</td>
+                                            <td style="font-weight: 600; color: #28a745;">$${parseFloat(sol.monto).toFixed(2)}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            const html = `
+                <div class="resultado-card">
+                    <div class="resultado-header">
+                        <h4><i class="fas fa-chart-line"></i> Resultado del Corte Sicatel</h4>
+                        <span class="badge badge-info">${data.fecha}</span>
+                    </div>
+                    
+                    <div class="resultado-grid">
+                        <div class="resultado-item">
+                            <div class="resultado-valor">$${montoEsperado.toFixed(2)}</div>
+                            <div class="resultado-label">Monto Esperado</div>
+                        </div>
+                        
+                        <div class="resultado-item destacado">
+                            <div class="resultado-valor">$${montoGenerado.toFixed(2)}</div>
+                            <div class="resultado-label">Monto Generado</div>
+                        </div>
+                        
+                        <div class="resultado-item">
+                            <div class="resultado-valor">${data.total_solicitudes}</div>
+                            <div class="resultado-label">Solicitudes Procesadas</div>
+                        </div>
+                        
+                        <div class="resultado-item">
+                            <div class="resultado-valor">${data.proveedores.telcel + data.proveedores.telmex}</div>
+                            <div class="resultado-label">Total Operaciones</div>
+                        </div>
+                    </div>
+                    
+                    <div class="diferencia ${claseResultado}">
+                        <i class="${iconoResultado}"></i>
+                        <strong>${textoResultado}</strong>
+                        ${Math.abs(porcentajeDiferencia) > 0.01 ? 
+                            `<span style="font-size: 0.9rem;"> (${porcentajeDiferencia > 0 ? '+' : ''}${porcentajeDiferencia.toFixed(2)}%)</span>` : 
+                            ''
+                        }
+                    </div>
+                    
+                    <div style="margin-top: 15px; padding: 15px; background: white; border-radius: 6px; border: 1px solid #ddd;">
+                        <h6 style="margin: 0 0 10px 0; color: #555;">Desglose por Proveedor:</h6>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
+                            <div style="text-align: center; padding: 10px; background: #f8f9fa; border-radius: 4px;">
+                                <strong>Telcel:</strong> ${data.proveedores.telcel} ops, $${data.montos.telcel.toFixed(2)}
+                            </div>
+                            <div style="text-align: center; padding: 10px; background: #f8f9fa; border-radius: 4px;">
+                                <strong>Telmex:</strong> ${data.proveedores.telmex} ops, $${data.montos.telmex.toFixed(2)}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    ${tablaSolicitudes}
+                    
+                    <div class="boton-confirmar">
+                        <button class="btn btn-success" id="confirmar-corte" disabled>
+                            <i class="fas fa-check"></i> Confirmar Corte (Próximamente)
+                        </button>
+                        <p style="margin: 10px 0 0 0; font-size: 0.85rem; color: #666;">
+                            La funcionalidad de confirmar estará disponible próximamente
+                        </p>
+                    </div>
+                </div>
+            `;
+            
+            resultadosSicatel.innerHTML = html;
+            resultadosSicatel.style.display = 'block';
+            
+            console.log('✅ Resultados mostrados correctamente');
+        }
+        
+        // Función para mostrar errores
+        function mostrarErrorSicatel(mensaje) {
+            const html = `
+                <div class="mensaje error">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Error:</strong> ${mensaje}
+                </div>
+            `;
+            
+            resultadosSicatel.innerHTML = html;
+            resultadosSicatel.style.display = 'block';
+        }
+        
+        // Event listeners
+        validarBtn.addEventListener('click', validarSicatel);
+        
+        // Selector de tipo de corte (para futuro)
+        corteOptions.forEach(option => {
+            option.addEventListener('click', function() {
+                if (this.classList.contains('disabled')) return;
+                
+                corteOptions.forEach(opt => opt.classList.remove('active'));
+                this.classList.add('active');
+                
+                const tipo = this.dataset.tipo;
+                console.log('🔄 Tipo de corte seleccionado:', tipo);
+                
+                // Por ahora solo Sicatel está activo
+                if (tipo === 'sicatel') {
+                    document.getElementById('sicatel-section').style.display = 'block';
+                    document.getElementById('payjoy-section').style.display = 'none';
+                    document.getElementById('monto-esperado-container').style.display = 'flex';
+                }
+            });
+        });
+        
+        // Funciones globales para debugging
+        window.debugCortes = function() {
+            console.log('🔍 Debug Cortes:', {
+                fecha: fechaCorte.value,
+                monto: montoEsperado.value,
+                usuario: sessionStorage.getItem('userUID'),
+                rol: sessionStorage.getItem('userRole')
+            });
+        };
+        
+        window.testCorte = function() {
+            montoEsperado.value = '1000.00';
+            validarSicatel();
+        };
+        
+        console.log('✅ Módulo de cortes inicializado correctamente');
+        console.log('💡 Comandos disponibles: window.debugCortes(), window.testCorte()');
+        
+    } catch (error) {
+        console.error('❌ Error al inicializar módulo de cortes:', error);
+        alert('Error al inicializar el módulo: ' + error.message);
+    }
+}
+
+// Ejecutar inicialización
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', inicializarCortes);
+} else {
+    setTimeout(inicializarCortes, 100);
+}
+
+console.log('📱 Script del módulo de Cortes cargado');
+</script>
