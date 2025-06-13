@@ -1,4 +1,4 @@
-<!-- modules/modules_admin/cortes.html - Módulo de Cortes Sicatel y PayJoy -->
+<!-- modules/modules_admin/cortes.html - Módulo de Cortes Sicatel y PayJoy - VERSIÓN CORREGIDA -->
 <div class="content-header">
     <h1 class="content-title">
         <i class="fas fa-calendar-times"></i> Gestión de Cortes
@@ -483,6 +483,19 @@
     border: 2px dashed #dee2e6;
 }
 
+/* Badge para fecha */
+.badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.badge-info {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
 /* Responsivo */
 @media (max-width: 768px) {
     .config-row {
@@ -568,17 +581,35 @@ function inicializarCortes() {
                 validarBtn.disabled = true;
                 validarBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Validando...';
                 
-                // Obtener datos de sesión
+                // ✅ CORRECCIÓN: Obtener datos de sesión igual que en otros módulos
                 const userUID = sessionStorage.getItem('userUID');
-                const userRole = sessionStorage.getItem('userRole');
+                const userEmail = sessionStorage.getItem('userEmail');
+                let userData = null;
+                let userRole = null;
                 
-                if (!userUID || !userRole) {
-                    throw new Error('No se encontraron datos de sesión');
+                // Obtener userData y extraer el rol
+                try {
+                    const userDataStr = sessionStorage.getItem('userData');
+                    if (userDataStr) {
+                        userData = JSON.parse(userDataStr);
+                        userRole = userData?.role || null;
+                    }
+                } catch (e) {
+                    console.error('Error al parsear userData de sessionStorage:', e);
                 }
                 
-                console.log('👤 Usuario:', userUID, 'Rol:', userRole);
+                if (!userUID || !userRole) {
+                    throw new Error('No se encontraron datos de sesión válidos. Por favor, vuelve a iniciar sesión.');
+                }
+                
+                console.log('👤 Sesión validada - Usuario:', userUID, 'Email:', userEmail, 'Rol:', userRole);
                 console.log('📅 Fecha:', fechaCorte.value);
                 console.log('💰 Monto esperado:', montoEsperadoVal);
+                
+                // Verificar permisos (solo admin puede hacer cortes)
+                if (userRole !== 'admin') {
+                    throw new Error('No tienes permisos para realizar cortes. Se requiere rol de administrador.');
+                }
                 
                 // Preparar datos para la API
                 const requestData = {
@@ -604,7 +635,18 @@ function inicializarCortes() {
                 
                 if (!response.ok) {
                     const errorText = await response.text();
-                    throw new Error(`Error HTTP ${response.status}: ${errorText}`);
+                    console.error('❌ Error HTTP:', response.status, errorText);
+                    
+                    let errorMessage = `Error HTTP ${response.status}`;
+                    if (errorText) {
+                        // Intentar extraer mensaje de error del HTML o texto
+                        if (errorText.includes('Error:') || errorText.includes('Exception:')) {
+                            errorMessage = errorText.substring(0, 200); // Limitar longitud
+                        } else {
+                            errorMessage += `: ${errorText.substring(0, 100)}`;
+                        }
+                    }
+                    throw new Error(errorMessage);
                 }
                 
                 const resultado = await response.json();
@@ -631,7 +673,7 @@ function inicializarCortes() {
         function mostrarResultadosSicatel(data, montoEsperado) {
             console.log('📊 Mostrando resultados:', data);
             
-            const montoGenerado = parseFloat(data.monto_total);
+            const montoGenerado = parseFloat(data.monto_total) || 0;
             const diferencia = montoGenerado - montoEsperado;
             const porcentajeDiferencia = montoEsperado > 0 ? ((diferencia / montoEsperado) * 100) : 0;
             
@@ -639,14 +681,16 @@ function inicializarCortes() {
             let iconoResultado = 'fas fa-equals';
             let textoResultado = 'Monto exacto';
             
-            if (diferencia > 0) {
-                claseResultado = 'positiva';
-                iconoResultado = 'fas fa-arrow-up';
-                textoResultado = `Excedente de $${diferencia.toFixed(2)}`;
-            } else if (diferencia < 0) {
-                claseResultado = 'negativa';
-                iconoResultado = 'fas fa-arrow-down';
-                textoResultado = `Faltante de $${Math.abs(diferencia).toFixed(2)}`;
+            if (Math.abs(diferencia) > 0.01) { // Tolerancia de 1 centavo
+                if (diferencia > 0) {
+                    claseResultado = 'positiva';
+                    iconoResultado = 'fas fa-arrow-up';
+                    textoResultado = `Excedente de $${diferencia.toFixed(2)}`;
+                } else {
+                    claseResultado = 'negativa';
+                    iconoResultado = 'fas fa-arrow-down';
+                    textoResultado = `Faltante de $${Math.abs(diferencia).toFixed(2)}`;
+                }
             }
             
             // Generar tabla de solicitudes
@@ -670,12 +714,12 @@ function inicializarCortes() {
                                 <tbody>
                                     ${data.solicitudes.map(sol => `
                                         <tr>
-                                            <td style="font-weight: 600;">#${sol.id}</td>
-                                            <td style="font-size: 0.8rem;">${sol.fecha_formateada}</td>
+                                            <td style="font-weight: 600;">#${sol.solicitud_id || sol.id}</td>
+                                            <td style="font-size: 0.8rem;">${sol.fecha_creacion_formateada || 'N/A'}</td>
                                             <td>${sol.nombre_cliente || 'N/A'}</td>
-                                            <td style="font-weight: 500; text-transform: uppercase;">${sol.proveedor}</td>
-                                            <td>${sol.tipo_servicio}</td>
-                                            <td style="font-weight: 600; color: #28a745;">$${parseFloat(sol.monto).toFixed(2)}</td>
+                                            <td style="font-weight: 500; text-transform: uppercase;">${sol.proveedor || 'N/A'}</td>
+                                            <td>${sol.tipo_servicio || 'N/A'}</td>
+                                            <td style="font-weight: 600; color: #28a745;">$${parseFloat(sol.monto || 0).toFixed(2)}</td>
                                         </tr>
                                     `).join('')}
                                 </tbody>
@@ -683,13 +727,27 @@ function inicializarCortes() {
                         </div>
                     </div>
                 `;
+            } else {
+                tablaSolicitudes = `
+                    <div class="detalle-solicitudes">
+                        <div class="mensaje info">
+                            <i class="fas fa-info-circle"></i>
+                            No se encontraron solicitudes para la fecha seleccionada.
+                        </div>
+                    </div>
+                `;
             }
+            
+            // Obtener datos de desglose de manera segura
+            const desglose = data.desglose || {};
+            const telcelData = desglose.telcel || { operaciones: 0, monto: 0, monto_formateado: '$0.00' };
+            const telmexData = desglose.telmex || { operaciones: 0, monto: 0, monto_formateado: '$0.00' };
             
             const html = `
                 <div class="resultado-card">
                     <div class="resultado-header">
                         <h4><i class="fas fa-chart-line"></i> Resultado del Corte Sicatel</h4>
-                        <span class="badge badge-info">${data.fecha}</span>
+                        <span class="badge badge-info">${data.fecha || fechaCorte.value}</span>
                     </div>
                     
                     <div class="resultado-grid">
@@ -704,12 +762,12 @@ function inicializarCortes() {
                         </div>
                         
                         <div class="resultado-item">
-                            <div class="resultado-valor">${data.total_solicitudes}</div>
+                            <div class="resultado-valor">${data.total_solicitudes || 0}</div>
                             <div class="resultado-label">Solicitudes Procesadas</div>
                         </div>
                         
                         <div class="resultado-item">
-                            <div class="resultado-valor">${data.proveedores.telcel + data.proveedores.telmex}</div>
+                            <div class="resultado-valor">${(telcelData.operaciones + telmexData.operaciones)}</div>
                             <div class="resultado-label">Total Operaciones</div>
                         </div>
                     </div>
@@ -727,10 +785,10 @@ function inicializarCortes() {
                         <h6 style="margin: 0 0 10px 0; color: #555;">Desglose por Proveedor:</h6>
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
                             <div style="text-align: center; padding: 10px; background: #f8f9fa; border-radius: 4px;">
-                                <strong>Telcel:</strong> ${data.proveedores.telcel} ops, $${data.montos.telcel.toFixed(2)}
+                                <strong>Telcel:</strong> ${telcelData.operaciones} ops, ${telcelData.monto_formateado}
                             </div>
                             <div style="text-align: center; padding: 10px; background: #f8f9fa; border-radius: 4px;">
-                                <strong>Telmex:</strong> ${data.proveedores.telmex} ops, $${data.montos.telmex.toFixed(2)}
+                                <strong>Telmex:</strong> ${telmexData.operaciones} ops, ${telmexData.monto_formateado}
                             </div>
                         </div>
                     </div>
@@ -756,6 +814,8 @@ function inicializarCortes() {
         
         // Función para mostrar errores
         function mostrarErrorSicatel(mensaje) {
+            console.error('❌ Mostrando error:', mensaje);
+            
             const html = `
                 <div class="mensaje error">
                     <i class="fas fa-exclamation-triangle"></i>
@@ -792,11 +852,28 @@ function inicializarCortes() {
         
         // Funciones globales para debugging
         window.debugCortes = function() {
+            const userUID = sessionStorage.getItem('userUID');
+            const userEmail = sessionStorage.getItem('userEmail');
+            let userData = null;
+            let userRole = null;
+            
+            try {
+                const userDataStr = sessionStorage.getItem('userData');
+                if (userDataStr) {
+                    userData = JSON.parse(userDataStr);
+                    userRole = userData?.role || null;
+                }
+            } catch (e) {
+                console.error('Error al parsear userData:', e);
+            }
+            
             console.log('🔍 Debug Cortes:', {
                 fecha: fechaCorte.value,
                 monto: montoEsperado.value,
-                usuario: sessionStorage.getItem('userUID'),
-                rol: sessionStorage.getItem('userRole')
+                userUID: userUID,
+                userEmail: userEmail,
+                userRole: userRole,
+                userData: userData
             });
         };
         
